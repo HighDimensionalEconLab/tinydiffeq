@@ -1,0 +1,50 @@
+site_name: tinydiffeq
+site_description: Tiny differentiable ODE/SDE solvers for JAX
+site_url: https://highdimensionaleconlab.github.io/tinydiffeq/
+repo_url: https://github.com/HighDimensionalEconLab/tinydiffeq
+repo_name: HighDimensionalEconLab/tinydiffeq
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.top
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: true
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - admonition
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+nav:
+  - Home: index.md
+  - Static Shapes: static_shapes.md
+  - Adaptive Stepping and AD: adaptive_ad.md
+  - SDEs: sde.md
+  - Migration from Hand-Rolled Integrators: migration.md
+  - API Reference: api.md
