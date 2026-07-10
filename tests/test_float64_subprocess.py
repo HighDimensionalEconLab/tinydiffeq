@@ -359,20 +359,130 @@ assert jnp.abs(value32 - jnp.exp(p32)) < 2e-4
 assert jnp.abs(grad32 - jnp.exp(p32)) < 2e-4
 
 # y and z each require an internally uniform dtype, but may differ.
-mixed = solve_semi_explicit_dae(
-    lambda y, z: (jnp.asarray(0.2, y.dtype) * z).astype(y.dtype),
-    lambda y, z: z - y.astype(z.dtype),
-    Tsit5(),
-    0.0,
-    0.2,
-    y32,
-    z64,
-    dt_0=0.05,
-    controller=IController(),
-    root_solver=LMRootSolver(atol=1e-10),
-    max_steps=16,
-)
+def mixed_solve(q):
+    return solve_semi_explicit_dae(
+        lambda y, z, t, args, p: (p * z).astype(y.dtype),
+        lambda y, z: z - y.astype(z.dtype),
+        Tsit5(),
+        0.0,
+        0.2,
+        y32,
+        z64,
+        p=q,
+        dt_0=0.05,
+        controller=IController(),
+        root_solver=LMRootSolver(atol=1e-10),
+        max_steps=16,
+    )
+
+
+p_mixed = jnp.asarray(0.2, jnp.float32)
+mixed = mixed_solve(p_mixed)
+mixed_jvp = jax.jvp(
+    lambda q: mixed_solve(q).ys,
+    (p_mixed,),
+    (jnp.ones_like(p_mixed),),
+)[1]
+mixed_vjp = jax.grad(lambda q: mixed_solve(q).ys)(p_mixed)
 assert mixed.ys.dtype == jnp.float32
 assert mixed.zs.dtype == jnp.float64
+assert mixed_jvp.dtype == jnp.float32
+assert mixed_vjp.dtype == jnp.float32
+assert jnp.allclose(mixed_jvp, mixed_vjp, rtol=1e-5, atol=1e-6)
 assert mixed.ok
+""")
+
+
+def test_aux_dense_output_and_sdae_dtype_contracts():
+    run_script(r"""
+import os
+os.environ["JAX_PLATFORMS"] = "cpu"
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+
+from tinydiffeq import (
+    EulerMaruyama,
+    RK4,
+    SaveAt,
+    solve_semi_explicit_dae,
+    solve_semi_explicit_sdae,
+)
+
+
+def dae_endpoint(dtype):
+    y_0 = jnp.asarray(1.0, dtype)
+    z_0 = jnp.asarray(0.8, dtype)
+    p = jnp.asarray(0.2, dtype)
+    grid = jnp.linspace(0.0, 1.0, 5, dtype=dtype)
+    return solve_semi_explicit_dae(
+        lambda y, z, t, args, q: q * z,
+        lambda y, z, t, args, q: (z - y, {"value": q * z + y}),
+        RK4(),
+        0.0,
+        1.0,
+        y_0,
+        z_0,
+        p=p,
+        dt_0=0.125,
+        max_steps=8,
+        save_at=SaveAt(ts=grid),
+        has_aux=True,
+    )
+
+
+for dtype in (jnp.float32, jnp.float64):
+    sol = dae_endpoint(dtype)
+    assert sol.ys.dtype == dtype
+    assert sol.zs.dtype == dtype
+    assert sol.aux["value"].dtype == dtype
+    if dtype == jnp.float64:
+        jaxpr = jax.make_jaxpr(lambda: dae_endpoint(dtype))()
+        assert "f32" not in str(jaxpr), jaxpr
+
+
+mixed = solve_semi_explicit_dae(
+    lambda y, z: z,
+    lambda y, z: (z - y, {"f32": z.astype(jnp.float32), "f64": z}),
+    RK4(),
+    0.0,
+    0.25,
+    jnp.asarray(1.0, jnp.float64),
+    jnp.asarray(1.0, jnp.float64),
+    dt_0=0.125,
+    max_steps=2,
+    save_at=SaveAt(ts=jnp.linspace(0.0, 0.25, 3, dtype=jnp.float64)),
+    has_aux=True,
+)
+assert mixed.aux["f32"].dtype == jnp.float32
+assert mixed.aux["f64"].dtype == jnp.float64
+
+
+def sdae_endpoint(y_0, p):
+    return solve_semi_explicit_sdae(
+        lambda y, z, t, args, q: q * z,
+        lambda y, z: jnp.asarray(0.1, y.dtype) * z,
+        lambda y, z, t, args, q: (z - y, {"value": q * z}),
+        EulerMaruyama(),
+        0.0,
+        1.0,
+        y_0,
+        y_0,
+        p=p,
+        key=jax.random.key(0),
+        n_steps=8,
+        has_aux=True,
+    )
+
+
+for dtype in (jnp.float32, jnp.float64):
+    y_0 = jnp.asarray(1.0, dtype)
+    p = jnp.asarray(0.2, dtype)
+    sol = sdae_endpoint(y_0, p)
+    assert sol.ys.dtype == dtype
+    assert sol.zs.dtype == dtype
+    assert sol.aux["value"].dtype == dtype
+    if dtype == jnp.float64:
+        jaxpr = jax.make_jaxpr(sdae_endpoint)(y_0, p)
+        assert "f32" not in str(jaxpr), jaxpr
 """)

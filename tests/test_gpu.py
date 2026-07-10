@@ -10,6 +10,7 @@ from tinydiffeq import (
     solve_ode,
     solve_sde,
     solve_semi_explicit_dae,
+    solve_semi_explicit_sdae,
 )
 
 
@@ -153,3 +154,58 @@ def test_pytree_ode_and_sde_run_on_gpu():
         leaf.devices().pop().platform == "gpu" for leaf in jax.tree.leaves(ode.xs)
     )
     assert all(jnp.all(jnp.isfinite(leaf)) for leaf in jax.tree.leaves(sde.xs))
+
+
+def test_interpolated_aux_and_sdae_ad_run_on_gpu():
+    gpu = gpu_devices()[0]
+    dtype = jnp.float32
+
+    def dae_output(p):
+        sol = solve_semi_explicit_dae(
+            lambda y, z, t, args, q: q * z,
+            lambda y, z, t, args, q: (
+                z - y,
+                {"value": q * z + y},
+            ),
+            Tsit5(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0, dtype),
+            jnp.asarray(0.8, dtype),
+            p=p,
+            dt_0=0.1,
+            controller=IController(),
+            max_steps=64,
+            save_at=SaveAt(ts=jnp.linspace(0.0, 1.0, 9, dtype=dtype)),
+            has_aux=True,
+        )
+        return jnp.sum(sol.zs + sol.aux["value"])
+
+    def sdae_output(p):
+        sol = solve_semi_explicit_sdae(
+            lambda y, z, t, args, q: q * z,
+            lambda y, z: jnp.asarray(0.1, dtype) * z,
+            lambda y, z, t, args, q: (z - y, {"value": q * z}),
+            EulerMaruyama(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0, dtype),
+            jnp.asarray(0.8, dtype),
+            p=p,
+            key=jax.random.key(0),
+            n_steps=16,
+            has_aux=True,
+        )
+        return sol.ys + sol.aux["value"]
+
+    with jax.default_device(gpu):
+        p = jnp.asarray(0.2, dtype)
+        values = jax.jit(lambda q: (dae_output(q), sdae_output(q)))(p)
+        gradients = jax.jit(
+            lambda q: (jax.grad(dae_output)(q), jax.grad(sdae_output)(q))
+        )(p)
+        jax.block_until_ready((values, gradients))
+
+    for leaf in jax.tree.leaves((values, gradients)):
+        assert leaf.devices().pop().platform == "gpu"
+        assert bool(jnp.isfinite(leaf))

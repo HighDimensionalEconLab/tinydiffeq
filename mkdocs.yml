@@ -1,5 +1,5 @@
 site_name: tinydiffeq
-site_description: Tiny differentiable ODE/SDE solvers for JAX
+site_description: Tiny differentiable ODE/SDE/DAE/SDAE solvers for JAX
 site_url: https://highdimensionaleconlab.github.io/tinydiffeq/
 repo_url: https://github.com/HighDimensionalEconLab/tinydiffeq
 repo_name: HighDimensionalEconLab/tinydiffeq
@@ -46,5 +46,6 @@ nav:
   - Static Shapes: static_shapes.md
   - Adaptive Stepping and AD: adaptive_ad.md
   - Semi-Explicit DAEs: dae.md
+  - Semi-Explicit SDAEs: sdae.md
   - SDEs: sde.md
   - API Reference: api.md

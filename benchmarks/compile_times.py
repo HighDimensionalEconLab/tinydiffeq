@@ -36,7 +36,9 @@ def compile_once(run, initial):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--methods", nargs="+", default=["rk4", "tsit5", "em", "dae"])
+    parser.add_argument(
+        "--methods", nargs="+", default=["rk4", "tsit5", "em", "dae", "sdae"]
+    )
     parser.add_argument("--states", nargs="+", default=["scalar", "vector16", "tree16"])
     parser.add_argument("--transforms", nargs="+", default=["primal", "jvp", "vjp"])
     parser.add_argument("--repeat", type=int, default=3)

@@ -113,7 +113,7 @@ def test_save_at_exclusivity():
         SaveAt(steps=True, fill="zero")
 
 
-def test_old_public_spellings_are_rejected():
+def test_noncanonical_public_spellings_are_rejected():
     with pytest.raises(TypeError):
         SaveAt(t1=True)
     with pytest.raises(TypeError):

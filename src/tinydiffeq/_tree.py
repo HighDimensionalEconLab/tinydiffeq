@@ -26,6 +26,23 @@ def asarray_state(state, name):
     return state, dtype
 
 
+def asarray_aux(aux):
+    """Convert an aux pytree to nonempty, real floating array leaves."""
+    try:
+        aux = jax.tree.map(jnp.asarray, aux)
+    except (TypeError, ValueError) as error:
+        raise TypeError("aux must be a pytree of array-like leaves") from error
+    leaves = jax.tree.leaves(aux)
+    if not leaves:
+        raise ValueError("aux must contain at least one array leaf")
+    for leaf in leaves:
+        if not jnp.issubdtype(leaf.dtype, jnp.floating):
+            raise TypeError("aux leaves must have a real floating dtype")
+        if leaf.size == 0:
+            raise ValueError("aux leaves must not be empty")
+    return aux
+
+
 def assert_same_structure(reference, value, name):
     if jax.tree.structure(reference) != jax.tree.structure(value):
         raise ValueError(f"{name} must have the same pytree structure as the state")

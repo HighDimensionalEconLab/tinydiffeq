@@ -41,7 +41,11 @@ def hermite_interpolate(ts_query, knot_ts, knot_xs, knot_fs):
         def bc(a):
             return a.reshape(a.shape + (1,) * extra)
 
-        s_, w_, deg_ = bc(s), bc(width_safe), bc(degenerate)
+        # Each leaf keeps its own dtype. This matters for mixed-precision aux
+        # pytrees: a float64 time grid must not widen a float32 output leaf.
+        s_leaf = s.astype(xs.dtype)
+        width_leaf = width_safe.astype(xs.dtype)
+        s_, w_, deg_ = bc(s_leaf), bc(width_leaf), bc(degenerate)
         h_00 = (1.0 + 2.0 * s_) * (1.0 - s_) ** 2
         h_10 = s_ * (1.0 - s_) ** 2
         h_01 = s_**2 * (3.0 - 2.0 * s_)

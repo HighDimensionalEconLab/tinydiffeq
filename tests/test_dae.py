@@ -89,7 +89,7 @@ def test_adaptive_tsit5_and_steps_padding():
     assert jnp.abs(sol.ys[-1] - jnp.exp(2.0)) < 2e-4
 
 
-def test_requested_times_resolve_nonlinear_constraint():
+def test_interpolated_z_has_small_constraint_defect():
     def f(y, z):
         return z
 
@@ -380,6 +380,83 @@ def test_adaptive_stage_root_failure_retries_with_smaller_step():
     assert jnp.abs(sol.zs[-1] - sol.ys[-1]) < 1e-6
 
 
+def test_masked_failed_lane_has_safe_implicit_root_jvp_and_vjp():
+    y_0 = jnp.asarray([1.0, -1.0])
+    z_0 = jnp.asarray([1.0, 0.0])
+
+    def one_lane(y, z, p):
+        return solve_semi_explicit_dae(
+            lambda y, z: jnp.zeros_like(y),
+            lambda y, z, t, args, p: z**2 - y - p,
+            RK4(),
+            0.0,
+            0.1,
+            y,
+            z,
+            p=p,
+            dt_0=0.1,
+            max_steps=1,
+            failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
+        )
+
+    def batch(p):
+        return jax.vmap(lambda y, z: one_lane(y, z, p))(y_0, z_0)
+
+    def loss(p):
+        sol = batch(p)
+        return jnp.sum(jnp.where(sol.ok, sol.zs, 0.0))
+
+    p = jnp.asarray(0.0)
+    assert jnp.array_equal(batch(p).ok, jnp.asarray([True, False]))
+    assert jnp.allclose(jax.jvp(loss, (p,), (jnp.ones_like(p),))[1], 0.5)
+    assert jnp.allclose(jax.grad(loss)(p), 0.5)
+
+
+@pytest.mark.parametrize(
+    ("save_at", "multiplicity"),
+    [
+        (SaveAt(t_1=True), 1.0),
+        (SaveAt(ts=jnp.asarray([0.0, 0.1])), 2.0),
+    ],
+)
+@pytest.mark.parametrize("domain_sign", [1.0, -1.0])
+def test_nonfinite_failed_root_cannot_poison_masked_vjp(
+    save_at, multiplicity, domain_sign
+):
+    y_0 = jnp.asarray([domain_sign, -2.0 * domain_sign])
+    z_0 = jnp.asarray([1.0, 0.0])
+
+    def one_lane(y, z, p):
+        return solve_semi_explicit_dae(
+            lambda y, z: jnp.zeros_like(y),
+            lambda y, z, t, args, p: z - jnp.sqrt(domain_sign * (y + p)),
+            RK4(),
+            0.0,
+            0.1,
+            y,
+            z,
+            p=p,
+            dt_0=0.1,
+            max_steps=1,
+            save_at=save_at,
+            failure_ad_reference=(domain_sign, 1.0, 0.0, 0.0),
+        )
+
+    def batch(p):
+        return jax.vmap(lambda y, z: one_lane(y, z, p))(y_0, z_0)
+
+    def loss(p):
+        sol = batch(p)
+        lane_values = sol.zs.reshape(2, -1).sum(axis=1)
+        return jnp.sum(jnp.where(sol.ok, lane_values, 0.0))
+
+    p = jnp.asarray(0.0)
+    expected = 0.5 * domain_sign * multiplicity
+    assert jnp.array_equal(batch(p).ok, jnp.asarray([True, False]))
+    assert jnp.allclose(jax.jvp(loss, (p,), (jnp.ones_like(p),))[1], expected)
+    assert jnp.allclose(jax.grad(loss)(p), expected)
+
+
 def test_validation():
     with pytest.raises(ValueError, match="dt_0 is required"):
         solve_semi_explicit_dae(
@@ -404,3 +481,44 @@ def test_validation():
             1.0,
             dt_0=0.1,
         )
+    with pytest.raises(TypeError, match="failure_ad_reference"):
+        solve_semi_explicit_dae(
+            lambda y, z: z,
+            identity_constraint,
+            RK4(),
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+            dt_0=0.1,
+            failure_ad_reference=(1.0, 1.0),
+        )
+    with pytest.raises(ValueError, match="finite"):
+        solve_semi_explicit_dae(
+            lambda y, z: z,
+            identity_constraint,
+            RK4(),
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+            dt_0=0.1,
+            failure_ad_reference=(jnp.nan, 1.0, 0.0, None),
+        )
+
+    @jax.jit
+    def jitted_with_reference(y_0):
+        return solve_semi_explicit_dae(
+            lambda y, z: z,
+            identity_constraint,
+            RK4(),
+            0.0,
+            0.1,
+            y_0,
+            jnp.asarray(1.0),
+            dt_0=0.1,
+            max_steps=1,
+            failure_ad_reference=(1.0, 1.0, 0.0, None),
+        ).ys
+
+    assert jnp.isfinite(jitted_with_reference(jnp.asarray(1.0)))

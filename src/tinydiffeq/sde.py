@@ -7,6 +7,27 @@ from tinydiffeq.save_at import SaveAt
 from tinydiffeq.solution import Solution
 
 
+def _diagonal_brownian_increments(x_0, key, n_steps, dt, dtype):
+    """Generate one diagonal-noise draw for an array or pytree state."""
+    leaves, treedef = jax.tree.flatten(x_0)
+    if treedef == jax.tree.structure(0):
+        return jnp.sqrt(dt) * jax.random.normal(
+            key, (n_steps,) + x_0.shape, dtype=dtype
+        )
+    sizes = [leaf.size for leaf in leaves]
+    flat_noise = jnp.sqrt(dt) * jax.random.normal(
+        key, (n_steps, sum(sizes)), dtype=dtype
+    )
+    noise_leaves = []
+    start = 0
+    for leaf, size in zip(leaves, sizes, strict=True):
+        noise_leaves.append(
+            flat_noise[:, start : start + size].reshape((n_steps,) + leaf.shape)
+        )
+        start += size
+    return jax.tree.unflatten(treedef, noise_leaves)
+
+
 def solve_sde(
     drift,
     diffusion,
@@ -59,24 +80,7 @@ def solve_sde(
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt = (t_1 - t_0) / n_steps
-    leaves, treedef = jax.tree.flatten(x_0)
-    if treedef == jax.tree.structure(0):
-        d_w = jnp.sqrt(dt) * jax.random.normal(
-            key, (n_steps,) + x_0.shape, dtype=time_dtype
-        )
-    else:
-        sizes = [leaf.size for leaf in leaves]
-        flat_noise = jnp.sqrt(dt) * jax.random.normal(
-            key, (n_steps, sum(sizes)), dtype=time_dtype
-        )
-        noise_leaves = []
-        start = 0
-        for leaf, size in zip(leaves, sizes, strict=True):
-            noise_leaves.append(
-                flat_noise[:, start : start + size].reshape((n_steps,) + leaf.shape)
-            )
-            start += size
-        d_w = jax.tree.unflatten(treedef, noise_leaves)
+    d_w = _diagonal_brownian_increments(x_0, key, n_steps, dt, time_dtype)
     time_grid = jnp.linspace(t_0, t_1, n_steps + 1)
 
     def project_state(x):

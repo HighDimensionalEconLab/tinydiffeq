@@ -15,6 +15,7 @@ from tinydiffeq import (
     solve_ode,
     solve_sde,
     solve_semi_explicit_dae,
+    solve_semi_explicit_sdae,
 )
 
 
@@ -81,6 +82,24 @@ def make_solve(method, initial):
         z_flat = jnp.concatenate([jnp.ravel(leaf) for leaf in jax.tree.leaves(z)])
         return z_flat - y_flat
 
+    if method == "sdae":
+        return lambda y: (
+            solve_semi_explicit_sdae(
+                lambda state, z: tree_map(lambda leaf: -0.2 * leaf, z),
+                lambda state, z: tree_map(
+                    lambda leaf: 0.1 * jnp.ones_like(leaf), state
+                ),
+                constraint,
+                EulerMaruyama(),
+                0.0,
+                1.0,
+                y,
+                z_0,
+                key=jax.random.key(7),
+                n_steps=64,
+            ).ys
+        )
+
     return lambda y: (
         solve_semi_explicit_dae(
             lambda state, z: tree_map(lambda leaf: -0.2 * leaf, z),
@@ -97,7 +116,7 @@ def make_solve(method, initial):
     )
 
 
-@pytest.mark.parametrize("method", ["rk4", "tsit5", "em", "dae"])
+@pytest.mark.parametrize("method", ["rk4", "tsit5", "em", "dae", "sdae"])
 @pytest.mark.parametrize("state_kind", ["scalar", "vector16", "tree16"])
 @pytest.mark.parametrize("transform", ["primal", "jvp", "vjp"])
 def test_steady_state(benchmark, method, state_kind, transform):

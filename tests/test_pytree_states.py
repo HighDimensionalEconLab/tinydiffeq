@@ -28,7 +28,6 @@ def tree_initial():
 
 
 def tree_field(x, t, args, p):
-    del t, args
     return jax.tree.map(lambda leaf: p * leaf, x)
 
 
@@ -186,7 +185,6 @@ def test_dae_supports_pytree_differential_and_algebraic_states():
     z_0 = (jnp.asarray(0.8), jnp.asarray(1.8))
 
     def f(y, z, t, args, p):
-        del y, t, args
         return {"a": p * z[0], "b": p * z[1]}
 
     def g(y, z):

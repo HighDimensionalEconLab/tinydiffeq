@@ -1,9 +1,10 @@
 # tinydiffeq
 
-`tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE/DAE
+`tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE/DAE/SDAE
 integrators for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
 proportional-integral step-size control, fixed-step Euler–Maruyama for Itô
-SDEs, and nonstiff semi-explicit index-1 DAEs. Time integration runs
+SDEs, and nonstiff semi-explicit index-1 deterministic and stochastic DAEs.
+Time integration runs
 inside one bounded `lax.scan` with static shapes, and every solve is
 differentiable in **both** forward and reverse mode — including
 reverse-over-forward, the pattern a Levenberg–Marquardt optimizer with
@@ -64,6 +65,9 @@ no special autonomous code path: an unused `t` is dead-code-eliminated.
 Semi-explicit DAE fields use `(y, z)`, `(y, z, t)`,
 `(y, z, t, args)`, or `(y, z, t, args, p)`; see
 [Semi-Explicit DAEs](dae.md).
+Algebraic functions may return `(residual, aux)` under `has_aux=True`; aux is
+a floating pytree stored at consistent nodes and differentiated through the
+implicit root. [Semi-Explicit SDAEs](sdae.md) use the same field convention.
 
 ## Minimal example
 
@@ -136,4 +140,5 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
 
 Read next: [Static Shapes](static_shapes.md) for the bounded-scan design and
 `SaveAt`, [Adaptive Stepping and AD](adaptive_ad.md) for what is and is not
-differentiated, [SDEs](sde.md), and the [API Reference](api.md).
+differentiated, [DAEs](dae.md), [SDEs](sde.md), [SDAEs](sdae.md), and the
+[API Reference](api.md).

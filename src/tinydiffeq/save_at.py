@@ -15,7 +15,7 @@ class SaveAt:
       ``(len(ts), ...)`` regardless of how many internal steps the controller
       takes, so changing curvature never changes shapes or recompiles.
       ``ts`` is a data leaf; a different grid of the same length retraces
-      nothing. ODE only.
+      nothing. ODE and deterministic DAE only.
     - ``steps=True``: the initial state and accepted internal steps as a
       chronological prefix of a ``max_steps + 1`` buffer. Rejected attempts
       are omitted. ``fill="last"`` (default) pads the tail with the final

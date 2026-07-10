@@ -32,14 +32,15 @@ class Solution:
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
 class DAESolution:
-    """Result of :func:`tinydiffeq.solve_semi_explicit_dae`.
+    """Result of the deterministic or stochastic semi-explicit DAE solver.
 
     ``ts`` and ``ys`` follow the same :class:`tinydiffeq.SaveAt` shape
-    contract as :class:`Solution`. ``zs`` contains algebraic states satisfying
-    the constraint at those times: requested observation times interpolate
-    ``y`` and then solve the algebraic equation rather than interpolating
-    ``z``. ``ok`` is true only when the integration reached ``t_1`` and every
-    algebraic solve needed for the returned output converged.
+    contract as :class:`Solution`. ``zs`` holds algebraic states and ``aux``
+    holds the optional algebraic auxiliary-output pytree. Internal-step and
+    endpoint values are evaluated at converged roots. Requested observation
+    values are dense interpolants and need not satisfy the algebraic
+    constraint exactly. ``ok`` is true only when every required root converged
+    and the integration reached ``t_1``.
     """
 
     ts: jax.Array
@@ -48,3 +49,4 @@ class DAESolution:
     ok: jax.Array
     num_accepted: jax.Array
     accepted: jax.Array | None = None
+    aux: Any = None

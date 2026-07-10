@@ -7,9 +7,10 @@
 [![License: MIT](https://img.shields.io/github/license/HighDimensionalEconLab/tinydiffeq)](https://github.com/HighDimensionalEconLab/tinydiffeq/blob/main/LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-Tiny differentiable ODE/SDE/DAE solvers for JAX: fixed-step Euler/RK4,
+Tiny differentiable ODE/SDE/DAE/SDAE solvers for JAX: fixed-step Euler/RK4,
 adaptive Tsit5 with integral or proportional-integral step-size control,
-Euler–Maruyama for Itô SDEs, and nonstiff semi-explicit index-1 DAEs.
+Euler–Maruyama for Itô SDEs, and nonstiff semi-explicit index-1 deterministic
+and stochastic DAEs.
 One bounded `lax.scan` of exactly `max_steps` iterations serves fixed and
 adaptive stepping, so shapes are static, nothing recompiles as tolerances or
 curvature change, and every solve is differentiable in **both** forward and
@@ -21,8 +22,8 @@ differentiates through a rollout. After a solve reaches its horizon, a
 This is a deliberately small, jvp/vjp-friendly subset of
 [diffrax](https://docs.kidger.site/diffrax/). Use diffrax if you need stiff
 or fully implicit solvers, higher-index DAEs, full
-derivative-term PID control, events, dense output, or checkpointed/backsolve
-adjoints. The DAE algebraic solve uses `nlls-gram`.
+derivative-term PID control, events, continuous interpolation objects, or
+checkpointed/backsolve adjoints. The DAE algebraic solve uses `nlls-gram`.
 
 ## Install
 
@@ -44,8 +45,8 @@ The vector field may take `(x)`, `(x, t)`, `(x, t, args)`, or
 AD target by convention); `p` holds differentiable parameters (any pytree).
 The state may also be any JAX pytree. It must contain at least one leaf, and
 every leaf must be a nonempty real floating array with the same dtype; vector
-fields and `project` preserve that
-structure. Output keeps the structure and adds the saved-time axis to each
+fields and `project` preserve that structure. Output keeps the structure and
+adds the saved-time axis to each
 leaf.
 
 ```python
@@ -103,24 +104,30 @@ def dae_f(y, z, t, args, p):
     return p * z
 
 
-def dae_g(y, z):
-    return z - y
+def dae_g(y, z, t, args, p):
+    return z - y, {"flow": p * z}
 
 
 dae_sol = solve_semi_explicit_dae(
     dae_f, dae_g, Tsit5(), 0.0, 1.0,
     jnp.asarray(1.0), jnp.asarray(0.5),
     p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128,
+    controller=IController(), max_steps=128, has_aux=True,
 )
-print(dae_sol.ys, dae_sol.zs)
+print(dae_sol.ys, dae_sol.zs, dae_sol.aux["flow"])
 ```
 
-`z_0` is a guess and is made consistent automatically. Algebraic roots use
-an implicitly differentiated square LM solve, so JVP, VJP, and
+`z_0` is a guess and is made consistent automatically. Algebraic equations
+may return a floating aux pytree stored at every accepted node and
+Hermite-interpolated with `z` on requested deterministic grids. Algebraic
+roots use an implicitly differentiated square LM solve, so JVP, VJP, and
 reverse-over-forward propagate with respect to `y`, `t`, and `p`. See the
 [DAE documentation](https://highdimensionaleconlab.github.io/tinydiffeq/dae/)
 for root controls, `SaveAt`, and scope limits.
+
+Fixed-step semi-explicit Itô SDAEs use the corresponding
+`solve_semi_explicit_sdae` interface with `EulerMaruyama`, a PRNG key, and
+`n_steps`; see the [SDAE documentation](https://highdimensionaleconlab.github.io/tinydiffeq/sdae/).
 
 ## Gradients through the solve
 

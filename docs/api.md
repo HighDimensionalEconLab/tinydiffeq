@@ -6,6 +6,8 @@
 
 ::: tinydiffeq.solve_semi_explicit_dae
 
+::: tinydiffeq.solve_semi_explicit_sdae
+
 ::: tinydiffeq.solve_sde
 
 ## Solvers
