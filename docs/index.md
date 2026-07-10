@@ -13,7 +13,6 @@ It is a jvp/vjp-friendly subset of
 [diffrax](https://docs.kidger.site/diffrax/). **Use diffrax instead if you
 need any of:**
 
-- pytree states (tinydiffeq states are single arrays, scalar or vector)
 - stiff or fully implicit solvers, or higher-index DAEs
 - full derivative-term PID step-size control
 - events, root-finding, or backward-time integration
@@ -49,7 +48,8 @@ f(x, t, args)
 f(x, t, args, p)
 ```
 
-- `x` is the array state (scalar or vector).
+- `x` is an array or pytree state. Leaves must share one real floating dtype;
+  the vector field returns the same structure and dtype.
 - `t` is time.
 - `args` is pass-through data. By convention it is **not** an AD target —
   nothing stops you differentiating with respect to it, but the library's
@@ -124,12 +124,12 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
   attempts are omitted and the tail repeats the last accepted state.
 - **Forward time only**: `t_1 > t_0`.
 - **Never poisons.** `sol.ok` reports whether `t_1` was reached; callers that
-  want diverging residuals do `jnp.where(sol.ok, sol.xs, jnp.inf)`.
+  want diverging residuals can map `jnp.where(sol.ok, x, jnp.inf)` over
+  `sol.xs`.
 - **`project`** (an idempotent clamp, e.g. positivity) is applied at every
   point where the vector field is evaluated and to every accepted state.
-- **Never sets `jax_enable_x64`.** The time dtype follows
-  `jnp.result_type(x_0, float)`; float32 problems stay float32 even under
-  x64.
+- **Never sets `jax_enable_x64`.** The time dtype follows the common state
+  dtype; float32 problems stay float32 even when x64 is enabled.
 - Solvers, controllers, `SaveAt`, and `Solution` are frozen dataclasses
   registered as pytrees: numeric fields (tolerances, grids, `dt_0`, `x_0`) are
   data leaves, so changing them never recompiles.

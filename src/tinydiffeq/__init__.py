@@ -9,10 +9,10 @@ output: the endpoint, cubic-Hermite interpolation onto a fixed grid, or
 accepted internal steps with fixed-shape padding. solve_sde is fixed-step
 Euler-Maruyama with presampled
 diagonal noise. solve_semi_explicit_dae handles nonstiff index-1 systems with
-an implicitly differentiated algebraic root. States are arrays (scalar or
-vector); pytree states, stiff or fully implicit solvers, full derivative-term
-PID control, events, dense output, and adjoint methods are non-goals — use
-diffrax for those.
+an implicitly differentiated algebraic root. States may be arrays or pytrees
+of same-dtype real floating arrays. Stiff or fully implicit solvers, full
+derivative-term PID control, events, dense output, and adjoint methods are
+non-goals — use diffrax for those.
 """
 
 from tinydiffeq.controllers import ConstantStepSize, IController, PIController

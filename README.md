@@ -19,8 +19,8 @@ differentiates through a rollout. After a solve reaches its horizon, a
 `lax.cond` skips solver and controller work during the padded scan tail.
 
 This is a deliberately small, jvp/vjp-friendly subset of
-[diffrax](https://docs.kidger.site/diffrax/). Use diffrax if you need pytree
-states, stiff or fully implicit solvers, higher-index DAEs, full
+[diffrax](https://docs.kidger.site/diffrax/). Use diffrax if you need stiff
+or fully implicit solvers, higher-index DAEs, full
 derivative-term PID control, events, dense output, or checkpointed/backsolve
 adjoints. The DAE algebraic solve uses `nlls-gram`.
 
@@ -42,6 +42,11 @@ uv add tinydiffeq "jax[cuda13]"
 The vector field may take `(x)`, `(x, t)`, `(x, t, args)`, or
 `(x, t, args, p)` — always in that order. `args` is pass-through data (not an
 AD target by convention); `p` holds differentiable parameters (any pytree).
+The state may also be any JAX pytree. It must contain at least one leaf, and
+every leaf must be a nonempty real floating array with the same dtype; vector
+fields and `project` preserve that
+structure. Output keeps the structure and adds the saved-time axis to each
+leaf.
 
 ```python
 import jax

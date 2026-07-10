@@ -8,8 +8,11 @@ $$
 $$
 
 where the algebraic equation is square and $g_z$ is nonsingular along the
-solution. `y` and `z` are array states. The implementation supports fixed-step
-RK4 and Tsit5 with fixed or adaptive control.
+solution. `y` and `z` may independently be array or pytree states. Leaves
+within each state share one real floating dtype; the `y` and `z` dtypes may
+differ. The residual `g` is a single array whose flattened size matches the
+total size of `z`. The implementation supports fixed-step RK4 and Tsit5 with
+fixed or adaptive control.
 
 The algebraic solve uses
 [`nlls-gram`](https://highdimensionaleconlab.github.io/nlls_gram/square_systems/)'s
@@ -110,6 +113,8 @@ All `SaveAt` modes are supported:
   so every returned algebraic state satisfies the constraint.
 
 The result is `DAESolution(ts, ys, zs, ok, num_accepted, accepted)`.
+For pytree states, saved rows are a leading axis on every `ys`/`zs` leaf and
+the one `accepted` mask applies to the complete state.
 
 ## Deliberate limits
 

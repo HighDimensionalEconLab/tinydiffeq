@@ -3,10 +3,12 @@ import jax.numpy as jnp
 import pytest
 
 from tinydiffeq import (
+    EulerMaruyama,
     IController,
     SaveAt,
     Tsit5,
     solve_ode,
+    solve_sde,
     solve_semi_explicit_dae,
 )
 
@@ -109,3 +111,45 @@ def test_dae_value_and_gradient_run_on_gpu():
     assert next(iter(grad.devices())).platform == "gpu"
     assert bool(jnp.isfinite(value))
     assert bool(jnp.isfinite(grad))
+
+
+def test_pytree_ode_and_sde_run_on_gpu():
+    gpu = gpu_devices()[0]
+    x_0 = {"a": jnp.asarray(1.0), "b": jnp.asarray([2.0, 3.0])}
+
+    def scale(x, factor):
+        return jax.tree.map(lambda leaf: factor * leaf, x)
+
+    @jax.jit
+    def run(x):
+        ode = solve_ode(
+            lambda state: scale(state, -0.2),
+            Tsit5(),
+            0.0,
+            1.0,
+            x,
+            dt_0=0.1,
+            controller=IController(),
+            max_steps=32,
+        )
+        sde = solve_sde(
+            lambda state: scale(state, -0.2),
+            lambda state: jax.tree.map(lambda leaf: jnp.ones_like(leaf) * 0.1, state),
+            EulerMaruyama(),
+            0.0,
+            1.0,
+            x,
+            key=jax.random.key(0),
+            n_steps=16,
+        )
+        return ode, sde
+
+    with jax.default_device(gpu):
+        ode, sde = run(x_0)
+        jax.block_until_ready((ode, sde))
+
+    assert bool(ode.ok & sde.ok)
+    assert all(
+        leaf.devices().pop().platform == "gpu" for leaf in jax.tree.leaves(ode.xs)
+    )
+    assert all(jnp.all(jnp.isfinite(leaf)) for leaf in jax.tree.leaves(sde.xs))

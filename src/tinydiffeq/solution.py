@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import jax
 
@@ -9,11 +10,11 @@ class Solution:
     """Result of ``solve_ode``/``solve_sde``.
 
     - ``ts``/``xs``: times and states in the shape dictated by ``SaveAt`` —
-      scalar/endpoint for ``t_1``, ``(len(ts), ...)`` for ``ts``,
-      ``(max_steps + 1, ...)`` for ``steps``.
+      scalar/endpoint for ``t_1``; for multi-row modes, every state pytree leaf
+      receives a leading ``len(ts)`` or ``max_steps + 1`` axis.
     - ``ok``: scalar bool, True iff the integration reached ``t_1`` within the
       attempt budget. The package never poisons outputs; callers that want
-      diverging residuals do ``jnp.where(sol.ok, sol.xs, jnp.inf)``.
+      diverging residuals map ``jnp.where(sol.ok, x, jnp.inf)`` over leaves.
     - ``num_accepted``: number of accepted steps (excluding the initial
       state).
     - ``accepted``: ``steps`` mode only (otherwise None): validity mask for
@@ -22,7 +23,7 @@ class Solution:
     """
 
     ts: jax.Array
-    xs: jax.Array
+    xs: Any
     ok: jax.Array
     num_accepted: jax.Array
     accepted: jax.Array | None = None
@@ -42,8 +43,8 @@ class DAESolution:
     """
 
     ts: jax.Array
-    ys: jax.Array
-    zs: jax.Array
+    ys: Any
+    zs: Any
     ok: jax.Array
     num_accepted: jax.Array
     accepted: jax.Array | None = None

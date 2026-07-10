@@ -3,6 +3,15 @@ import inspect
 import jax
 import jax.numpy as jnp
 
+from tinydiffeq._tree import (
+    asarray_state,
+    assert_same_structure,
+    fill_rows,
+    prepend,
+    take,
+    where,
+    zeros_like,
+)
 from tinydiffeq.controllers import ConstantStepSize
 from tinydiffeq.interpolation import hermite_interpolate
 from tinydiffeq.save_at import SaveAt
@@ -65,9 +74,10 @@ def solve_ode(
     """Integrate ``dx/dt = f(x, t, args, p)`` from ``t_0`` to ``t_1 > t_0``.
 
     The vector field may be declared ``f(x)``, ``f(x, t)``, ``f(x, t, args)``,
-    or ``f(x, t, args, p)`` — always in that order. ``x`` is an array state
-    (scalar or vector), ``args`` is pass-through data that is by convention
-    not an AD target, and ``p`` holds differentiable parameters (any pytree);
+    or ``f(x, t, args, p)`` — always in that order. ``x`` is a pytree whose
+    nonempty leaves share one real floating dtype. ``args`` is pass-through
+    data that is by convention not an AD target, and ``p`` holds differentiable
+    parameters (any pytree);
     jvp/vjp with respect to ``p`` and ``x_0`` are first-class.
 
     Fixed and adaptive stepping share one bounded ``lax.scan`` of exactly
@@ -83,7 +93,7 @@ def solve_ode(
     a :class:`Solution`; ``sol.ok`` is False if the budget ran out before
     ``t_1`` (outputs are then the reached prefix, never poisoned).
 
-    The time dtype follows ``jnp.result_type(x_0, float)``; the library never
+    The time dtype follows the state dtype; the library never
     sets ``jax_enable_x64`` — do that in your application.
     """
     if dt_0 is None:
@@ -101,8 +111,7 @@ def solve_ode(
         )
     f = canonicalize_field(f)
 
-    x_0 = jnp.asarray(x_0)
-    time_dtype = jnp.result_type(x_0, float)
+    x_0, time_dtype = asarray_state(x_0, "x_0")
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt_0 = jnp.asarray(dt_0, time_dtype)
@@ -114,11 +123,22 @@ def solve_ode(
     # dt_0 = (t_1 - t_0)/n with max_steps = n would strand a one-ulp sliver.
     t_slack = max_steps * t_eps
 
+    def project_state(x):
+        value, dtype = asarray_state(project(x), "project(x)")
+        assert_same_structure(x_0, value, "project(x)")
+        if dtype != time_dtype:
+            raise TypeError("project(x) must preserve the state dtype")
+        return value
+
     def g(x, t):
-        return f(project(x), t, args, p)
+        value, dtype = asarray_state(f(project_state(x), t, args, p), "f(x, t)")
+        assert_same_structure(x_0, value, "f(x, t)")
+        if dtype != time_dtype:
+            raise TypeError("f(x, t) must preserve the state dtype")
+        return value
 
     need_f = solver.fsal or (save_at.ts is not None)
-    f_init = g(x_0, t_0) if need_f else jnp.zeros_like(x_0)
+    f_init = g(x_0, t_0) if need_f else zeros_like(x_0)
     controller_state_init = controller.init(x_0)
 
     def attempt_step(carry):
@@ -129,16 +149,18 @@ def solve_ode(
             jnp.maximum(remaining, positive_time_floor),
             dt,
         )
-        x_1, f_1, err = solver.step(g, t, x, h, f_cur if need_f else None, project)
+        x_1, f_1, err = solver.step(
+            g, t, x, h, f_cur if need_f else None, project_state
+        )
         if need_f and f_1 is None:
             f_1 = g(x_1, t + h)
         accept, dt_next, controller_state_next = controller.adapt(
             x, x_1, err, h, dt, solver.order, controller_state, t_1
         )
         advance = accept & ~done
-        x_new = jnp.where(advance, x_1, x)
+        x_new = where(advance, x_1, x)
         t_new = jnp.where(advance, t + h, t)
-        f_new = jnp.where(advance, f_1, f_cur) if need_f else f_cur
+        f_new = where(advance, f_1, f_cur) if need_f else f_cur
         dt_new = jnp.where(done, dt, dt_next)
         controller_state_new = jax.tree.map(
             lambda old, new: jnp.where(done, old, new),
@@ -198,24 +220,22 @@ def solve_ode(
     else:
         ts_s, xs_s, fs_s, adv_s = rows
     all_times = jnp.concatenate([t_0[None], ts_s])
-    all_states = jnp.concatenate([x_0[None], xs_s])
+    all_states = prepend(x_0, xs_s)
     raw_accepted = jnp.concatenate([jnp.ones((1,), bool), adv_s])
 
     if save_at.steps:
         output_size = max_steps + 1
         accepted_indices = jnp.nonzero(raw_accepted, size=output_size, fill_value=0)[0]
         compact_times = all_times[accepted_indices]
-        compact_states = all_states[accepted_indices]
+        compact_states = take(all_states, accepted_indices)
         accepted = jnp.arange(output_size) <= num_accepted
         last_time = compact_times[num_accepted]
-        last_state = compact_states[num_accepted]
-        state_mask = accepted.reshape(accepted.shape + (1,) * (compact_states.ndim - 1))
+        last_state = take(compact_states, num_accepted)
         if save_at.fill == "inf":
             output_times = jnp.where(accepted, compact_times, jnp.inf)
-            output_states = jnp.where(state_mask, compact_states, jnp.inf)
         else:
             output_times = jnp.where(accepted, compact_times, last_time)
-            output_states = jnp.where(state_mask, compact_states, last_state)
+        output_states = fill_rows(compact_states, accepted, last_state, save_at.fill)
         return Solution(
             ts=output_times,
             xs=output_states,
@@ -224,7 +244,7 @@ def solve_ode(
             accepted=accepted,
         )
 
-    fs_all = jnp.concatenate([f_init[None], fs_s])
+    fs_all = prepend(f_init, fs_s)
     query_times = jnp.asarray(save_at.ts, time_dtype)
     query_states = hermite_interpolate(query_times, all_times, all_states, fs_all)
     return Solution(ts=query_times, xs=query_states, ok=done, num_accepted=num_accepted)

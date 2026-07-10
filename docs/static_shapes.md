@@ -51,8 +51,9 @@ state.
 
 This is the answer to "adaptive steps vs static shapes". Internal steps
 adapt freely; the output is cubic-Hermite interpolation onto your fixed
-query grid, so `sol.xs.shape == (len(grid),) + x_0.shape` **regardless of how
-many steps the controller took**. Changing tolerances, initial conditions,
+query grid, so each output leaf has shape
+`(len(grid),) + corresponding_input_leaf.shape` **regardless of how many
+steps the controller took**. Changing tolerances, initial conditions,
 or curvature changes the internal knots but never the output shape — no
 recompilation. A one-dimensional JAX/NumPy array or Python sequence is
 accepted; times must be nondecreasing and within `[t_0, t_1]`, while repeated
@@ -93,6 +94,20 @@ If the attempt budget is exhausted, the same contract holds for the reached
 accepted prefix, the tail repeats or masks its last state, and `sol.ok` is
 `False`. No fake endpoint is inserted. Compaction is a stable fixed-size
 gather; it performs no sorting.
+
+## Pytree states
+
+ODE, SDE, and DAE states may be arbitrary JAX pytrees, including registered
+dataclasses. Each state contains at least one nonempty real floating array,
+and all leaves use one dtype. Solver arithmetic is mapped directly
+over leaves: states are not flattened or concatenated inside a time step.
+Consequently, a single-array state retains the array execution path; the
+pytree structure is resolved while tracing. A change to leaf values with the
+same shapes and structure reuses a compilation, while changing the treedef or
+a leaf shape requires a new compilation.
+
+For every multi-row `SaveAt` mode the leading row dimension is added to each
+leaf independently. `sol.accepted` is one shared mask for all leaves.
 
 ## Why one compilation, precisely
 

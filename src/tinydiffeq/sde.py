@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 
+from tinydiffeq._tree import asarray_state, assert_same_structure, prepend
 from tinydiffeq.ode import canonicalize_field, identity_project
 from tinydiffeq.save_at import SaveAt
 from tinydiffeq.solution import Solution
@@ -28,10 +29,11 @@ def solve_sde(
     ``solve_ode`` — ``(x)``, ``(x, t)``, ``(x, t, args)``, or
     ``(x, t, args, p)``. ``n_steps`` must be a static Python int (the honest
     static-shape contract; there is no adaptive SDE stepping in v1). The
-    Brownian increments are presampled from ``key`` as
-    ``sqrt(dt) * normal(key, (n_steps,) + x_0.shape)``, so a fixed key gives a
-    fixed noise process: reproducible across calls and differentiable with
-    respect to ``x_0`` and ``p`` (not ``key``).
+    Brownian increments are presampled from ``key``. Arrays retain the exact
+    ``(n_steps,) + x_0.shape`` random draw. Pytree states use one shared flat
+    draw, partitioned into leaves in JAX's deterministic pytree leaf order.
+    Thus a fixed key gives a fixed noise process: reproducible across calls
+    and differentiable with respect to ``x_0`` and ``p`` (not ``key``).
 
     ``SaveAt(ts=...)`` raises — cubic Hermite interpolation is wrong for
     rough paths; use ``t_1`` (default) or ``steps`` (here ``n_steps + 1``
@@ -53,25 +55,56 @@ def solve_sde(
     drift = canonicalize_field(drift, name="drift")
     diffusion = canonicalize_field(diffusion, name="diffusion")
 
-    x_0 = jnp.asarray(x_0)
-    time_dtype = jnp.result_type(x_0, float)
+    x_0, time_dtype = asarray_state(x_0, "x_0")
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt = (t_1 - t_0) / n_steps
-    d_w = jnp.sqrt(dt) * jax.random.normal(
-        key, (n_steps,) + x_0.shape, dtype=time_dtype
-    )
+    leaves, treedef = jax.tree.flatten(x_0)
+    if treedef == jax.tree.structure(0):
+        d_w = jnp.sqrt(dt) * jax.random.normal(
+            key, (n_steps,) + x_0.shape, dtype=time_dtype
+        )
+    else:
+        sizes = [leaf.size for leaf in leaves]
+        flat_noise = jnp.sqrt(dt) * jax.random.normal(
+            key, (n_steps, sum(sizes)), dtype=time_dtype
+        )
+        noise_leaves = []
+        start = 0
+        for leaf, size in zip(leaves, sizes, strict=True):
+            noise_leaves.append(
+                flat_noise[:, start : start + size].reshape((n_steps,) + leaf.shape)
+            )
+            start += size
+        d_w = jax.tree.unflatten(treedef, noise_leaves)
     time_grid = jnp.linspace(t_0, t_1, n_steps + 1)
 
+    def project_state(x):
+        value, dtype = asarray_state(project(x), "project(x)")
+        assert_same_structure(x_0, value, "project(x)")
+        if dtype != time_dtype:
+            raise TypeError("project(x) must preserve the state dtype")
+        return value
+
     def g_drift(x, t):
-        return drift(project(x), t, args, p)
+        value, dtype = asarray_state(drift(project_state(x), t, args, p), "drift(x, t)")
+        assert_same_structure(x_0, value, "drift(x, t)")
+        if dtype != time_dtype:
+            raise TypeError("drift(x, t) must preserve the state dtype")
+        return value
 
     def g_diffusion(x, t):
-        return diffusion(project(x), t, args, p)
+        value, dtype = asarray_state(
+            diffusion(project_state(x), t, args, p), "diffusion(x, t)"
+        )
+        assert_same_structure(x_0, value, "diffusion(x, t)")
+        if dtype != time_dtype:
+            raise TypeError("diffusion(x, t) must preserve the state dtype")
+        return value
 
     def body(x, inputs):
         t, d_w_step = inputs
-        x_1 = solver.step(g_drift, g_diffusion, t, x, dt, d_w_step, project)
+        x_1 = solver.step(g_drift, g_diffusion, t, x, dt, d_w_step, project_state)
         return x_1, x_1 if save_at.steps else None
 
     x_final, step_states = jax.lax.scan(body, x_0, (time_grid[:-1], d_w))
@@ -81,7 +114,7 @@ def solve_sde(
     if save_at.t_1:
         return Solution(ts=t_1, xs=x_final, ok=ok, num_accepted=num_accepted)
 
-    all_states = jnp.concatenate([x_0[None], step_states])
+    all_states = prepend(x_0, step_states)
     accepted = jnp.ones((n_steps + 1,), bool)
     return Solution(
         ts=time_grid,

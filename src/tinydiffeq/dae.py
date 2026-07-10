@@ -6,6 +6,18 @@ import jax
 import jax.numpy as jnp
 from nlls_gram import LMStatus, SquareLevenbergMarquardt
 
+from tinydiffeq._tree import (
+    add_scaled,
+    asarray_state,
+    assert_same_structure,
+    fill_rows,
+    full_like,
+    prepend,
+    take,
+    weighted_sum,
+    where,
+    zeros_like,
+)
 from tinydiffeq.controllers import ConstantStepSize
 from tinydiffeq.interpolation import hermite_interpolate
 from tinydiffeq.save_at import SaveAt
@@ -145,13 +157,6 @@ def _get_algebraic_solver(g, config):
         return _build_algebraic_solver(g, config)
 
 
-def _weighted_sum(ks, coefficients):
-    value = jnp.zeros_like(ks[0])
-    for coefficient, k in zip(coefficients, ks, strict=True):
-        value = value + coefficient * k
-    return value
-
-
 def solve_semi_explicit_dae(
     f,
     g,
@@ -208,9 +213,8 @@ def solve_semi_explicit_dae(
     f = _canonicalize_dae_field(f, "f")
     algebraic_solver = _get_algebraic_solver(g, root_solver)
 
-    y_0 = jnp.asarray(y_0)
-    z_0 = jnp.asarray(z_0)
-    time_dtype = jnp.result_type(y_0, float)
+    y_0, time_dtype = asarray_state(y_0, "y_0")
+    z_0, z_dtype = asarray_state(z_0, "z_0")
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt_0 = jnp.asarray(dt_0, time_dtype)
@@ -227,17 +231,25 @@ def solve_semi_explicit_dae(
             atol=root_solver.atol,
         )
         ok = result.status == jnp.asarray(LMStatus.CONVERGED, result.status.dtype)
-        return result.x, ok
+        value, dtype = asarray_state(result.x, "algebraic root")
+        assert_same_structure(z_0, value, "algebraic root")
+        if dtype != z_dtype:
+            raise TypeError("the algebraic root must preserve the z dtype")
+        return value, ok
 
     def differential(y, z, t):
-        return f(y, z, t, args, p)
+        value, dtype = asarray_state(f(y, z, t, args, p), "f(y, z, t)")
+        assert_same_structure(y_0, value, "f(y, z, t)")
+        if dtype != time_dtype:
+            raise TypeError("f(y, z, t) must preserve the y dtype")
+        return value
 
     z_initial, initial_root_ok = solve_root(y_0, t_0, z_0)
     need_f = solver.fsal or (save_at.ts is not None)
     f_initial = jax.lax.cond(
         initial_root_ok,
         lambda: differential(y_0, z_initial, t_0),
-        lambda: jnp.zeros_like(y_0),
+        lambda: zeros_like(y_0),
     )
     controller_state_initial = controller.init(y_0)
 
@@ -248,23 +260,23 @@ def solve_semi_explicit_dae(
                 k_stage = jax.lax.cond(
                     root_ok,
                     lambda: differential(y_stage, z_stage, t_stage),
-                    lambda: jnp.zeros_like(y_stage),
+                    lambda: zeros_like(y_stage),
                 )
             else:
-                k_stage = jnp.zeros_like(y_stage)
+                k_stage = zeros_like(y_stage)
             return z_stage, k_stage, root_ok
 
         def skip():
-            return z_guess, jnp.zeros_like(y_stage), jnp.asarray(False)
+            return z_guess, zeros_like(y_stage), jnp.asarray(False)
 
         return jax.lax.cond(active, evaluate, skip)
 
     def rk4_step(t, y, z, h, f_cur):
         k_1 = differential(y, z, t) if f_cur is None else f_cur
-        z_2, k_2, ok_2 = stage(y + 0.5 * h * k_1, t + 0.5 * h, z, True)
-        z_3, k_3, ok_3 = stage(y + 0.5 * h * k_2, t + 0.5 * h, z_2, ok_2)
-        z_4, k_4, ok_4 = stage(y + h * k_3, t + h, z_3, ok_2 & ok_3)
-        y_1 = y + (h / 6.0) * (k_1 + 2.0 * k_2 + 2.0 * k_3 + k_4)
+        z_2, k_2, ok_2 = stage(add_scaled(y, (0.5 * h, k_1)), t + 0.5 * h, z, True)
+        z_3, k_3, ok_3 = stage(add_scaled(y, (0.5 * h, k_2)), t + 0.5 * h, z_2, ok_2)
+        z_4, k_4, ok_4 = stage(add_scaled(y, (h, k_3)), t + h, z_3, ok_2 & ok_3)
+        y_1 = add_scaled(y, (h / 6.0, weighted_sum((k_1, k_2, k_3, k_4), (1, 2, 2, 1))))
         stage_ok = ok_2 & ok_3 & ok_4
         z_1, f_1, endpoint_ok = stage(y_1, t + h, z_4, stage_ok, need_derivative=need_f)
         return y_1, z_1, f_1, None, stage_ok & endpoint_ok
@@ -282,17 +294,20 @@ def solve_semi_explicit_dae(
             ((A_61, A_62, A_63, A_64, A_65), C_6),
         )
         for coefficients, stage_time in rows:
-            y_stage = y + h * _weighted_sum(ks, coefficients)
+            y_stage = add_scaled(y, (h, weighted_sum(ks, coefficients)))
             z_stage, k_stage, root_ok = stage(
                 y_stage, t + stage_time * h, z_stage, stages_ok
             )
             stages_ok = stages_ok & root_ok
             ks.append(k_stage)
-        y_1 = y + h * _weighted_sum(ks, (B_1, B_2, B_3, B_4, B_5, B_6))
+        y_1 = add_scaled(y, (h, weighted_sum(ks, (B_1, B_2, B_3, B_4, B_5, B_6))))
         z_1, k_7, endpoint_ok = stage(y_1, t + h, z_stage, stages_ok)
         ks.append(k_7)
         root_ok = stages_ok & endpoint_ok
-        err = h * _weighted_sum(ks, (E_1, E_2, E_3, E_4, E_5, E_6, E_7))
+        err = jax.tree.map(
+            lambda value: h * value,
+            weighted_sum(ks, (E_1, E_2, E_3, E_4, E_5, E_6, E_7)),
+        )
         return y_1, z_1, k_7, err, root_ok
 
     def attempt_step(carry):
@@ -313,7 +328,7 @@ def solve_semi_explicit_dae(
             )
 
         if controller.uses_error_estimate:
-            control_err = jnp.where(root_ok, err, jnp.inf)
+            control_err = where(root_ok, err, full_like(err, jnp.inf))
         else:
             control_err = err
         controller_accept, dt_next, controller_state_next = controller.adapt(
@@ -321,10 +336,10 @@ def solve_semi_explicit_dae(
         )
         accept = controller_accept & root_ok
         advance = accept & ~reached & ~failed
-        y_new = jnp.where(advance, y_1, y)
-        z_new = jnp.where(advance, z_1, z)
+        y_new = where(advance, y_1, y)
+        z_new = where(advance, z_1, z)
         t_new = jnp.where(advance, t + h, t)
-        f_new = jnp.where(advance, f_1, f_cur) if need_f else f_cur
+        f_new = where(advance, f_1, f_cur) if need_f else f_cur
         dt_new = jnp.where(reached | failed, dt, dt_next)
         controller_state_next = jax.tree.map(
             lambda old, new: jnp.where(root_ok, new, old),
@@ -400,25 +415,20 @@ def solve_semi_explicit_dae(
     else:
         ts_s, ys_s, zs_s, fs_s, adv_s = rows
     all_times = jnp.concatenate([t_0[None], ts_s])
-    all_ys = jnp.concatenate([y_0[None], ys_s])
-    all_zs = jnp.concatenate([z_initial[None], zs_s])
+    all_ys = prepend(y_0, ys_s)
+    all_zs = prepend(z_initial, zs_s)
     raw_accepted = jnp.concatenate([jnp.ones((1,), bool), adv_s])
 
     if save_at.steps:
         output_size = max_steps + 1
         accepted_indices = jnp.nonzero(raw_accepted, size=output_size, fill_value=0)[0]
         compact_times = all_times[accepted_indices]
-        compact_ys = all_ys[accepted_indices]
-        compact_zs = all_zs[accepted_indices]
+        compact_ys = take(all_ys, accepted_indices)
+        compact_zs = take(all_zs, accepted_indices)
         accepted = jnp.arange(output_size) <= num_accepted
         last_time = compact_times[num_accepted]
-        last_y = compact_ys[num_accepted]
-        last_z = compact_zs[num_accepted]
-
-        def fill(values, last):
-            mask = accepted.reshape(accepted.shape + (1,) * (values.ndim - 1))
-            replacement = jnp.inf if save_at.fill == "inf" else last
-            return jnp.where(mask, values, replacement)
+        last_y = take(compact_ys, num_accepted)
+        last_z = take(compact_zs, num_accepted)
 
         output_times = jnp.where(
             accepted,
@@ -427,14 +437,14 @@ def solve_semi_explicit_dae(
         )
         return DAESolution(
             ts=output_times,
-            ys=fill(compact_ys, last_y),
-            zs=fill(compact_zs, last_z),
+            ys=fill_rows(compact_ys, accepted, last_y, save_at.fill),
+            zs=fill_rows(compact_zs, accepted, last_z, save_at.fill),
             ok=integration_ok,
             num_accepted=num_accepted,
             accepted=accepted,
         )
 
-    fs_all = jnp.concatenate([f_initial[None], fs_s])
+    fs_all = prepend(f_initial, fs_s)
     query_times = jnp.asarray(save_at.ts, time_dtype)
     query_ys = hermite_interpolate(query_times, all_times, all_ys, fs_all)
     guess_indices = jnp.clip(
@@ -442,7 +452,7 @@ def solve_semi_explicit_dae(
         0,
         all_times.shape[0] - 1,
     )
-    query_guesses = all_zs[guess_indices]
+    query_guesses = take(all_zs, guess_indices)
     query_zs, query_root_ok = jax.vmap(solve_root)(query_ys, query_times, query_guesses)
     return DAESolution(
         ts=query_times,

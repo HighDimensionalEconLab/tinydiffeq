@@ -244,6 +244,37 @@ for controller in (IController(), PIController()):
 """)
 
 
+def test_pytree_states_preserve_float32_and_float64():
+    run_script(r"""
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+
+from tinydiffeq import IController, Tsit5, solve_ode
+
+
+def endpoint(state):
+    return solve_ode(
+        lambda x: jax.tree.map(lambda leaf: -leaf, x),
+        Tsit5(),
+        0.0,
+        1.0,
+        state,
+        dt_0=0.1,
+        controller=IController(),
+        max_steps=64,
+    ).xs
+
+
+for dtype, forbidden in ((jnp.float32, "f64"), (jnp.float64, "f32")):
+    state = {"a": jnp.asarray(1.0, dtype), "b": (jnp.ones(2, dtype),)}
+    result = endpoint(state)
+    assert all(leaf.dtype == dtype for leaf in jax.tree.leaves(result))
+    jaxpr = jax.make_jaxpr(endpoint)(state)
+    assert forbidden not in str(jaxpr), jaxpr
+""")
+
+
 def test_dae_float64_and_float32_dtype_contracts():
     run_script(r"""
 import os
@@ -326,4 +357,22 @@ assert value32.dtype == jnp.float32
 assert grad32.dtype == jnp.float32
 assert jnp.abs(value32 - jnp.exp(p32)) < 2e-4
 assert jnp.abs(grad32 - jnp.exp(p32)) < 2e-4
+
+# y and z each require an internally uniform dtype, but may differ.
+mixed = solve_semi_explicit_dae(
+    lambda y, z: (jnp.asarray(0.2, y.dtype) * z).astype(y.dtype),
+    lambda y, z: z - y.astype(z.dtype),
+    Tsit5(),
+    0.0,
+    0.2,
+    y32,
+    z64,
+    dt_0=0.05,
+    controller=IController(),
+    root_solver=LMRootSolver(atol=1e-10),
+    max_steps=16,
+)
+assert mixed.ys.dtype == jnp.float32
+assert mixed.zs.dtype == jnp.float64
+assert mixed.ok
 """)

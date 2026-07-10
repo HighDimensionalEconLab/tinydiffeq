@@ -6,9 +6,9 @@ $$
 dX_t = \mu(X_t, t)\,dt + \sigma(X_t, t)\,dW_t
 $$
 
-with fixed-step Euler–Maruyama and **diagonal noise**: `diffusion` returns an
-array of the state's shape, multiplied elementwise by independent Brownian
-increments.
+with fixed-step Euler–Maruyama and **diagonal noise**: `diffusion` returns the
+same pytree structure as the state, multiplied leafwise and elementwise by
+independent Brownian increments.
 
 ```python
 from tinydiffeq import solve_sde, EulerMaruyama, SaveAt
@@ -35,7 +35,7 @@ for now; a roadmap issue sketches what it would take here.
 
 ## Key semantics: a fixed noise process
 
-The Brownian increments are presampled once,
+For an array state, the Brownian increments retain the original draw exactly,
 
 ```python
 d_w = jnp.sqrt(dt) * jax.random.normal(key, (n_steps,) + x_0.shape)
@@ -48,6 +48,12 @@ so a fixed `key` pins the entire noise path:
   held fixed, the solution map is smooth, and jvp/vjp against finite
   differences are tested in `tests/test_sde.py`. This is exactly the "common
   random numbers" setup simulation-based estimators want.
+
+For a pytree, tinydiffeq draws one `(n_steps, total_state_size)` array and
+partitions it into leaves in JAX's deterministic leaf order. This makes the
+noise identical to that of one equivalent flat array without flattening the
+state during integration. Changing the tree structure changes the assignment
+of random components and requires a new compilation.
 
 ## Orders of convergence
 

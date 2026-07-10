@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 import jax
 
+from tinydiffeq._tree import add_scaled, multiply, weighted_sum
+
 # Solvers are stateless frozen dataclasses registered as pytrees so they pass
 # through jit/vmap as ordinary arguments. `step` receives `g(x, t)` -- the
 # user vector field already wrapped so every evaluation goes through
@@ -63,7 +65,7 @@ class Euler:
 
     def step(self, g, t, x, dt, f_0, project):
         k_1 = g(x, t) if f_0 is None else f_0
-        x_1 = project(x + dt * k_1)
+        x_1 = project(add_scaled(x, (dt, k_1)))
         return x_1, None, None
 
 
@@ -78,10 +80,12 @@ class RK4:
 
     def step(self, g, t, x, dt, f_0, project):
         k_1 = g(x, t) if f_0 is None else f_0
-        k_2 = g(x + 0.5 * dt * k_1, t + 0.5 * dt)
-        k_3 = g(x + 0.5 * dt * k_2, t + 0.5 * dt)
-        k_4 = g(x + dt * k_3, t + dt)
-        x_1 = project(x + (dt / 6.0) * (k_1 + 2.0 * k_2 + 2.0 * k_3 + k_4))
+        k_2 = g(add_scaled(x, (0.5 * dt, k_1)), t + 0.5 * dt)
+        k_3 = g(add_scaled(x, (0.5 * dt, k_2)), t + 0.5 * dt)
+        k_4 = g(add_scaled(x, (dt, k_3)), t + dt)
+        x_1 = project(
+            add_scaled(x, (dt / 6.0, weighted_sum((k_1, k_2, k_3, k_4), (1, 2, 2, 1))))
+        )
         return x_1, None, None
 
 
@@ -102,30 +106,54 @@ class Tsit5:
 
     def step(self, g, t, x, dt, f_0, project):
         k_1 = g(x, t) if f_0 is None else f_0
-        k_2 = g(x + dt * (A_21 * k_1), t + C_2 * dt)
-        k_3 = g(x + dt * (A_31 * k_1 + A_32 * k_2), t + C_3 * dt)
-        k_4 = g(x + dt * (A_41 * k_1 + A_42 * k_2 + A_43 * k_3), t + C_4 * dt)
+        k_2 = g(add_scaled(x, (dt * A_21, k_1)), t + C_2 * dt)
+        k_3 = g(
+            add_scaled(x, (dt, weighted_sum((k_1, k_2), (A_31, A_32)))),
+            t + C_3 * dt,
+        )
+        k_4 = g(
+            add_scaled(x, (dt, weighted_sum((k_1, k_2, k_3), (A_41, A_42, A_43)))),
+            t + C_4 * dt,
+        )
         k_5 = g(
-            x + dt * (A_51 * k_1 + A_52 * k_2 + A_53 * k_3 + A_54 * k_4), t + C_5 * dt
+            add_scaled(
+                x,
+                (dt, weighted_sum((k_1, k_2, k_3, k_4), (A_51, A_52, A_53, A_54))),
+            ),
+            t + C_5 * dt,
         )
         k_6 = g(
-            x + dt * (A_61 * k_1 + A_62 * k_2 + A_63 * k_3 + A_64 * k_4 + A_65 * k_5),
+            add_scaled(
+                x,
+                (
+                    dt,
+                    weighted_sum(
+                        (k_1, k_2, k_3, k_4, k_5),
+                        (A_61, A_62, A_63, A_64, A_65),
+                    ),
+                ),
+            ),
             t + C_6 * dt,
         )
         x_1 = project(
-            x
-            + dt
-            * (B_1 * k_1 + B_2 * k_2 + B_3 * k_3 + B_4 * k_4 + B_5 * k_5 + B_6 * k_6)
+            add_scaled(
+                x,
+                (
+                    dt,
+                    weighted_sum(
+                        (k_1, k_2, k_3, k_4, k_5, k_6),
+                        (B_1, B_2, B_3, B_4, B_5, B_6),
+                    ),
+                ),
+            )
         )
         k_7 = g(x_1, t + C_7 * dt)
-        err = dt * (
-            E_1 * k_1
-            + E_2 * k_2
-            + E_3 * k_3
-            + E_4 * k_4
-            + E_5 * k_5
-            + E_6 * k_6
-            + E_7 * k_7
+        err = jax.tree.map(
+            lambda value: dt * value,
+            weighted_sum(
+                (k_1, k_2, k_3, k_4, k_5, k_6, k_7),
+                (E_1, E_2, E_3, E_4, E_5, E_6, E_7),
+            ),
         )
         return x_1, k_7, err
 
@@ -138,4 +166,6 @@ class EulerMaruyama:
     order = 1
 
     def step(self, g_drift, g_diffusion, t, x, dt, d_w, project):
-        return project(x + dt * g_drift(x, t) + g_diffusion(x, t) * d_w)
+        return project(
+            add_scaled(x, (dt, g_drift(x, t)), (1.0, multiply(g_diffusion(x, t), d_w)))
+        )
