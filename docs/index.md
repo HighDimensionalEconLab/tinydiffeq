@@ -1,8 +1,9 @@
 # tinydiffeq
 
 `tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE integrators
-for JAX: fixed-step Euler and RK4, adaptive Tsit5 with an integral step-size
-controller, and fixed-step Euler–Maruyama for Itô SDEs. Everything runs
+for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
+proportional-integral step-size control, and fixed-step Euler–Maruyama for
+Itô SDEs. Everything runs
 inside one bounded `lax.scan` with static shapes, and every solve is
 differentiable in **both** forward and reverse mode — including
 reverse-over-forward, the pattern a Levenberg–Marquardt optimizer with
@@ -14,7 +15,7 @@ need any of:**
 
 - pytree states (tinydiffeq states are single arrays, scalar or vector)
 - stiff or implicit solvers
-- PID step-size control
+- full derivative-term PID step-size control
 - events, root-finding, or backward-time integration
 - dense output / continuous interpolation objects
 - checkpointed or backsolve adjoints for long horizons
@@ -54,7 +55,7 @@ f(x, t, args, p)
   nothing stops you differentiating with respect to it, but the library's
   contracts and tests treat it as constants.
 - `p` holds differentiable parameters — any pytree, e.g. neural-network
-  weights. jvp/vjp with respect to `p` and `x0` are first-class and tested.
+  weights. jvp/vjp with respect to `p` and `x_0` are first-class and tested.
 
 The arity is inspected once and the function is wrapped into the canonical
 four-argument form, so the compiled code is identical for all four. There is
@@ -78,14 +79,20 @@ def f(x, t, args, p):
 sol = solve_ode(
     f, Tsit5(), 0.0, 2.0, jnp.asarray(1.0),
     p=jnp.asarray(1.3),
-    dt0=0.1,
+    dt_0=0.1,
     controller=IController(rtol=1e-8, atol=1e-10),
     max_steps=512,
-    saveat=SaveAt(ts=jnp.linspace(0.0, 2.0, 21)),
+    save_at=SaveAt(ts=jnp.linspace(0.0, 2.0, 21)),
 )
 sol.xs  # (21,) states on the grid, however many internal steps were taken
-sol.ok  # False if max_steps ran out before t1
+sol.ok  # False if max_steps ran out before t_1
 ```
+
+With no arguments, `IController()` and `PIController()` use precision-aware
+tolerances: `rtol=1e-4, atol=1e-6` for float32 states and
+`rtol=1e-7, atol=1e-9` for float64 states. Explicit values override the
+policy and are cast to the state dtype. Automatic `dt_min` is
+`10 * eps * max(1, abs(t_1))` in the time dtype.
 
 Gradients go straight through the solve:
 
@@ -93,7 +100,7 @@ Gradients go straight through the solve:
 def endpoint(p):
     return solve_ode(
         f, Tsit5(), 0.0, 2.0, jnp.asarray(1.0), p=p,
-        dt0=0.1, controller=IController(rtol=1e-10, atol=1e-12),
+        dt_0=0.1, controller=IController(rtol=1e-10, atol=1e-12),
         max_steps=512,
     ).xs
 
@@ -106,20 +113,24 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
 
 ## Design contracts at a glance
 
-- **`dt0` is required.** There is no initial-step heuristic.
-- **Forward time only**: `t1 > t0`.
-- **Never poisons.** `sol.ok` reports whether `t1` was reached; callers that
+- **`dt_0` is required.** There is no initial-step heuristic.
+- **`max_steps` counts attempted internal steps**, including rejections. It
+  controls the bounded scan and only becomes an output-row count in
+  `SaveAt(steps=True)`, which returns `max_steps + 1` padded rows including
+  the initial state. Accepted steps form a contiguous prefix; rejected
+  attempts are omitted and the tail repeats the last accepted state.
+- **Forward time only**: `t_1 > t_0`.
+- **Never poisons.** `sol.ok` reports whether `t_1` was reached; callers that
   want diverging residuals do `jnp.where(sol.ok, sol.xs, jnp.inf)`.
 - **`project`** (an idempotent clamp, e.g. positivity) is applied at every
   point where the vector field is evaluated and to every accepted state.
 - **Never sets `jax_enable_x64`.** The time dtype follows
-  `jnp.result_type(x0, float)`; float32 problems stay float32 even under
+  `jnp.result_type(x_0, float)`; float32 problems stay float32 even under
   x64.
 - Solvers, controllers, `SaveAt`, and `Solution` are frozen dataclasses
-  registered as pytrees: numeric fields (tolerances, grids, `dt0`, `x0`) are
+  registered as pytrees: numeric fields (tolerances, grids, `dt_0`, `x_0`) are
   data leaves, so changing them never recompiles.
 
 Read next: [Static Shapes](static_shapes.md) for the bounded-scan design and
 `SaveAt`, [Adaptive Stepping and AD](adaptive_ad.md) for what is and is not
-differentiated, [SDEs](sde.md), and
-[Migration](migration.md) if you are replacing hand-rolled RK4/Tsit5 loops.
+differentiated, [SDEs](sde.md), and the [API Reference](api.md).

@@ -14,11 +14,11 @@ increments.
 from tinydiffeq import solve_sde, EulerMaruyama, SaveAt
 
 sol = solve_sde(
-    drift, diffusion, EulerMaruyama(), 0.0, 1.0, x0,
+    drift, diffusion, EulerMaruyama(), 0.0, 1.0, x_0,
     key=jax.random.PRNGKey(0),
     n_steps=256,
     p=(mu, sigma),
-    saveat=SaveAt(steps=True),
+    save_at=SaveAt(steps=True),
 )
 ```
 
@@ -38,13 +38,13 @@ for now; a roadmap issue sketches what it would take here.
 The Brownian increments are presampled once,
 
 ```python
-dW = jnp.sqrt(dt) * jax.random.normal(key, (n_steps,) + x0.shape)
+d_w = jnp.sqrt(dt) * jax.random.normal(key, (n_steps,) + x_0.shape)
 ```
 
 so a fixed `key` pins the entire noise path:
 
 - **Reproducible** — the same key gives the same path, every call.
-- **Differentiable with respect to `x0` and `p`** (not `key`): with the path
+- **Differentiable with respect to `x_0` and `p`** (not `key`): with the path
   held fixed, the solution map is smooth, and jvp/vjp against finite
   differences are tested in `tests/test_sde.py`. This is exactly the "common
   random numbers" setup simulation-based estimators want.
@@ -61,7 +61,7 @@ X_T = X_0 \exp\left((\mu - \tfrac{\sigma^2}{2})T + \sigma W_T\right),
 \qquad W_T = \textstyle\sum_k \Delta W_k .
 $$
 
-Because the increments `dW` are exactly reproducible from the key, the test
+Because the increments `d_w` are exactly reproducible from the key, the test
 regenerates them, computes the exact endpoint on the same path, and checks
 the mean absolute error slope across `dt` levels lands in `[0.35, 0.65]`.
 That shared-path construction is the right way to measure strong error —
@@ -69,7 +69,7 @@ comparing against an independently sampled exact solution measures nothing.
 
 ## SaveAt for SDEs
 
-`SaveAt(t1=True)` (default) and `SaveAt(steps=True)` (`n_steps + 1` rows,
+`SaveAt(t_1=True)` (default) and `SaveAt(steps=True)` (`n_steps + 1` rows,
 all accepted) are supported. `SaveAt(ts=...)` **raises**: cubic Hermite
 interpolation assumes smooth trajectories and is simply wrong between the
 points of a rough path. Land your grid on the step boundaries instead by

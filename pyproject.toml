@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tinydiffeq"
-version = "0.1.0"
+version = "0.2.0"
 description = "Tiny differentiable ODE/SDE solvers for JAX — bounded-scan adaptive stepping, static shapes, jvp/vjp-safe"
 readme = "README.md"
 license = "MIT"

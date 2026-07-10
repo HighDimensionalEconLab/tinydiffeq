@@ -9,7 +9,8 @@ import jax.numpy as jnp
 # extrapolation beyond the reached time when the budget was exhausted. The
 # bracketing indices are integer and non-differentiable, consistent with the
 # stop-gradiented step controller (the sliding-knot d(dt)/dtheta term is
-# deliberately excluded); values differentiate fully through xL, xR, fL, fR.
+# deliberately excluded); values differentiate fully through the left/right
+# states and derivatives.
 
 
 def hermite_interpolate(ts_query, knot_ts, knot_xs, knot_fs):
@@ -39,9 +40,9 @@ def hermite_interpolate(ts_query, knot_ts, knot_xs, knot_fs):
         return a.reshape(a.shape + (1,) * extra)
 
     s_, w_, deg_ = bc(s), bc(width_safe), bc(degenerate)
-    h00 = (1.0 + 2.0 * s_) * (1.0 - s_) ** 2
-    h10 = s_ * (1.0 - s_) ** 2
-    h01 = s_**2 * (3.0 - 2.0 * s_)
-    h11 = s_**2 * (s_ - 1.0)
-    value = h00 * x_left + h10 * w_ * f_left + h01 * x_right + h11 * w_ * f_right
+    h_00 = (1.0 + 2.0 * s_) * (1.0 - s_) ** 2
+    h_10 = s_ * (1.0 - s_) ** 2
+    h_01 = s_**2 * (3.0 - 2.0 * s_)
+    h_11 = s_**2 * (s_ - 1.0)
+    value = h_00 * x_left + h_10 * w_ * f_left + h_01 * x_right + h_11 * w_ * f_right
     return jnp.where(deg_, x_left, value)

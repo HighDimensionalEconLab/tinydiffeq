@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 import jax.scipy.linalg as jsp_linalg
 import numpy as np
@@ -6,39 +7,41 @@ from kernels_reference import rk4_grid
 from tinydiffeq import RK4, Euler, SaveAt, solve_ode
 
 
-def logistic_exact(x0, t):
-    return x0 * jnp.exp(t) / (1.0 + x0 * (jnp.exp(t) - 1.0))
+def logistic_exact(x_0, t):
+    return x_0 * jnp.exp(t) / (1.0 + x_0 * (jnp.exp(t) - 1.0))
 
 
 def test_linear_system_vs_expm():
     A = jnp.asarray([[0.0, 1.0], [-1.0, -0.3]])
-    x0 = jnp.asarray([1.0, 0.5])
+    x_0 = jnp.asarray([1.0, 0.5])
     T = 2.0
-    exact = jsp_linalg.expm(A * T) @ x0
+    exact = jsp_linalg.expm(A * T) @ x_0
 
     def f(x):
         return A @ x
 
     n = 2000
-    euler = solve_ode(f, Euler(), 0.0, T, x0, dt0=T / n, max_steps=n)
-    rk4 = solve_ode(f, RK4(), 0.0, T, x0, dt0=T / n, max_steps=n)
+    euler = solve_ode(f, Euler(), 0.0, T, x_0, dt_0=T / n, max_steps=n)
+    rk4 = solve_ode(f, RK4(), 0.0, T, x_0, dt_0=T / n, max_steps=n)
     assert bool(euler.ok) and bool(rk4.ok)
     assert jnp.max(jnp.abs(euler.xs - exact)) < 2e-3
     assert jnp.max(jnp.abs(rk4.xs - exact)) < 1e-12
 
 
 def test_logistic_closed_form():
-    x0 = jnp.asarray(0.1)
+    x_0 = jnp.asarray(0.1)
     T = 3.0
     n = 300
-    sol = solve_ode(lambda x: x * (1.0 - x), RK4(), 0.0, T, x0, dt0=T / n, max_steps=n)
-    assert jnp.abs(sol.xs - logistic_exact(x0, T)) < 1e-9
+    sol = solve_ode(
+        lambda x: x * (1.0 - x), RK4(), 0.0, T, x_0, dt_0=T / n, max_steps=n
+    )
+    assert jnp.abs(sol.xs - logistic_exact(x_0, T)) < 1e-9
 
 
 def test_convergence_slopes():
-    x0 = jnp.asarray(0.1)
+    x_0 = jnp.asarray(0.1)
     T = 2.0
-    exact = logistic_exact(x0, T)
+    exact = logistic_exact(x_0, T)
 
     def f(x):
         return x * (1.0 - x)
@@ -46,7 +49,7 @@ def test_convergence_slopes():
     for solver, expected in ((Euler(), 1.0), (RK4(), 4.0)):
         errors, dts = [], []
         for n in (20, 40, 80, 160):
-            sol = solve_ode(f, solver, 0.0, T, x0, dt0=T / n, max_steps=n)
+            sol = solve_ode(f, solver, 0.0, T, x_0, dt_0=T / n, max_steps=n)
             assert bool(sol.ok)
             errors.append(float(jnp.abs(sol.xs - exact)))
             dts.append(T / n)
@@ -54,13 +57,38 @@ def test_convergence_slopes():
         assert abs(slope - expected) < 0.3, (type(solver).__name__, slope)
 
 
-def test_non_dividing_dt0_lands_on_t1():
-    x0 = jnp.asarray(0.1)
-    sol = solve_ode(lambda x: x * (1.0 - x), RK4(), 0.0, 1.0, x0, dt0=0.3, max_steps=4)
+def test_non_dividing_dt_0_lands_on_t_1():
+    x_0 = jnp.asarray(0.1)
+    sol = solve_ode(
+        lambda x: x * (1.0 - x), RK4(), 0.0, 1.0, x_0, dt_0=0.3, max_steps=4
+    )
     assert bool(sol.ok)
     assert sol.ts == 1.0
     assert int(sol.num_accepted) == 4
-    assert jnp.abs(sol.xs - logistic_exact(x0, 1.0)) < 1e-4
+    assert jnp.abs(sol.xs - logistic_exact(x_0, 1.0)) < 1e-4
+
+
+def test_completed_solve_skips_post_horizon_field_evaluations():
+    evaluation_times = []
+
+    def f(x, t):
+        jax.debug.callback(
+            lambda value: evaluation_times.append(float(value)), t, ordered=True
+        )
+        return -x
+
+    sol = solve_ode(
+        f,
+        Euler(),
+        0.0,
+        1.0,
+        jnp.asarray(1.0),
+        dt_0=0.25,
+        max_steps=20,
+    )
+    jax.block_until_ready(sol.xs)
+    assert bool(sol.ok)
+    assert evaluation_times == [0.0, 0.25, 0.5, 0.75]
 
 
 def test_scalar_vs_vector_shapes():
@@ -69,7 +97,7 @@ def test_scalar_vs_vector_shapes():
 
     n = 8
     scalar = solve_ode(
-        f, RK4(), 0.0, 1.0, 1.0, dt0=1.0 / n, max_steps=n, saveat=SaveAt(steps=True)
+        f, RK4(), 0.0, 1.0, 1.0, dt_0=1.0 / n, max_steps=n, save_at=SaveAt(steps=True)
     )
     vector = solve_ode(
         f,
@@ -77,13 +105,13 @@ def test_scalar_vs_vector_shapes():
         0.0,
         1.0,
         jnp.asarray([1.0, 2.0]),
-        dt0=1.0 / n,
+        dt_0=1.0 / n,
         max_steps=n,
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
     )
     assert scalar.xs.shape == (n + 1,)
     assert vector.xs.shape == (n + 1, 2)
-    endpoint = solve_ode(f, RK4(), 0.0, 1.0, 1.0, dt0=1.0 / n, max_steps=n)
+    endpoint = solve_ode(f, RK4(), 0.0, 1.0, 1.0, dt_0=1.0 / n, max_steps=n)
     assert endpoint.xs.shape == ()
     assert jnp.array_equal(endpoint.xs, scalar.xs[-1])
 
@@ -99,17 +127,17 @@ def test_parity_rk4_grid_growth_field():
         return jnp.maximum(k, 1e-6)
 
     n, dt = 16, 1.0 / 16.0
-    for x0 in (jnp.asarray(1.0), jnp.asarray([0.5, 1.0, 2.0])):
-        reference = rk4_grid(f, x0, n, dt, project)
+    for x_0 in (jnp.asarray(1.0), jnp.asarray([0.5, 1.0, 2.0])):
+        reference = rk4_grid(f, x_0, n, dt, project)
         sol = solve_ode(
             f,
             RK4(),
             0.0,
             n * dt,
-            x0,
-            dt0=dt,
+            x_0,
+            dt_0=dt,
             max_steps=n,
-            saveat=SaveAt(steps=True),
+            save_at=SaveAt(steps=True),
             project=project,
         )
         assert bool(sol.ok)
@@ -127,17 +155,17 @@ def test_parity_rk4_grid_binding_clamp():
         return jnp.maximum(y, 0.3)
 
     n, dt = 8, 0.25
-    x0 = jnp.asarray(1.0)
-    reference = rk4_grid(f, x0, n, dt, project)
+    x_0 = jnp.asarray(1.0)
+    reference = rk4_grid(f, x_0, n, dt, project)
     sol = solve_ode(
         f,
         RK4(),
         0.0,
         n * dt,
-        x0,
-        dt0=dt,
+        x_0,
+        dt_0=dt,
         max_steps=n,
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
         project=project,
     )
     assert np.array_equal(np.asarray(sol.xs), np.asarray(reference))

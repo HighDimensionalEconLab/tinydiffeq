@@ -22,6 +22,8 @@
 
 ::: tinydiffeq.IController
 
+::: tinydiffeq.PIController
+
 ## Output selection and results
 
 ::: tinydiffeq.SaveAt

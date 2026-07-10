@@ -46,5 +46,4 @@ nav:
   - Static Shapes: static_shapes.md
   - Adaptive Stepping and AD: adaptive_ad.md
   - SDEs: sde.md
-  - Migration from Hand-Rolled Integrators: migration.md
   - API Reference: api.md

@@ -5,14 +5,14 @@ import pytest
 
 from tinydiffeq import Euler, EulerMaruyama, SaveAt, solve_ode, solve_sde
 
-# Geometric Brownian motion dX = mu X dt + sigma X dW has the exact solution
-# X_T = X0 exp((mu - sigma^2/2) T + sigma W_T). solve_sde presamples its
+# Geometric Brownian motion dX = mu X dt + sigma X d_w has the exact solution
+# X_T = X_0 exp((mu - sigma^2/2) T + sigma W_T). solve_sde presamples its
 # increments as sqrt(dt) * normal(key, (n_steps,) + shape), so the test can
 # regenerate the SAME path and evaluate the exact endpoint on it -- the
 # strong error at each dt level compares EM and the exact solution driven by
 # identical noise.
 
-MU, SIGMA, X0, T = 0.7, 0.5, 1.0, 1.0
+MU, SIGMA, X_0, T = 0.7, 0.5, 1.0, 1.0
 
 
 def drift(x, t, args, p):
@@ -32,7 +32,7 @@ def em_endpoint(key, n_steps, p=(MU, SIGMA)):
         EulerMaruyama(),
         0.0,
         T,
-        jnp.asarray(X0),
+        jnp.asarray(X_0),
         key=key,
         n_steps=n_steps,
         p=p,
@@ -41,9 +41,9 @@ def em_endpoint(key, n_steps, p=(MU, SIGMA)):
 
 def exact_endpoint(key, n_steps):
     dt = T / n_steps
-    dW = jnp.sqrt(dt) * jax.random.normal(key, (n_steps,), dtype=jnp.float64)
-    w_T = jnp.sum(dW)
-    return X0 * jnp.exp((MU - 0.5 * SIGMA**2) * T + SIGMA * w_T)
+    d_w = jnp.sqrt(dt) * jax.random.normal(key, (n_steps,), dtype=jnp.float64)
+    w_T = jnp.sum(d_w)
+    return X_0 * jnp.exp((MU - 0.5 * SIGMA**2) * T + SIGMA * w_T)
 
 
 def test_gbm_strong_convergence_rate():
@@ -66,11 +66,11 @@ def test_same_key_reproducible():
         EulerMaruyama(),
         0.0,
         T,
-        jnp.asarray(X0),
+        jnp.asarray(X_0),
         key=key,
         n_steps=64,
         p=(MU, SIGMA),
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
     )
     b = solve_sde(
         drift,
@@ -78,34 +78,34 @@ def test_same_key_reproducible():
         EulerMaruyama(),
         0.0,
         T,
-        jnp.asarray(X0),
+        jnp.asarray(X_0),
         key=key,
         n_steps=64,
         p=(MU, SIGMA),
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
     )
     assert jnp.array_equal(a.xs, b.xs)
     assert jnp.array_equal(a.ts, b.ts)
 
 
-def test_jvp_vjp_wrt_x0_mu_sigma_vs_finite_differences():
+def test_jvp_vjp_wrt_x_0_mu_sigma_vs_finite_differences():
     key = jax.random.PRNGKey(7)
 
     def endpoint(theta):
-        x0, mu, sigma = theta
+        x_0, mu, sigma = theta
         return solve_sde(
             drift,
             diffusion,
             EulerMaruyama(),
             0.0,
             T,
-            x0,
+            x_0,
             key=key,
             n_steps=128,
             p=(mu, sigma),
         ).xs
 
-    theta = jnp.asarray([X0, MU, SIGMA])
+    theta = jnp.asarray([X_0, MU, SIGMA])
     grad = jax.grad(endpoint)(theta)
     jvps = jnp.stack(
         [jax.jvp(endpoint, (theta,), (jnp.eye(3)[i],))[1] for i in range(3)]
@@ -132,20 +132,20 @@ def test_zero_diffusion_matches_euler_ode():
         EulerMaruyama(),
         0.0,
         T,
-        jnp.asarray(X0),
+        jnp.asarray(X_0),
         key=jax.random.PRNGKey(0),
         n_steps=n,
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
     )
     ode = solve_ode(
         f,
         Euler(),
         0.0,
         T,
-        jnp.asarray(X0),
-        dt0=T / n,
+        jnp.asarray(X_0),
+        dt_0=T / n,
         max_steps=n,
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
     )
     assert jnp.max(jnp.abs(sde.xs - ode.xs)) < 1e-14
 
@@ -158,11 +158,11 @@ def test_saveat_ts_raises():
             EulerMaruyama(),
             0.0,
             T,
-            jnp.asarray(X0),
+            jnp.asarray(X_0),
             key=jax.random.PRNGKey(0),
             n_steps=8,
             p=(MU, SIGMA),
-            saveat=SaveAt(ts=jnp.linspace(0.0, T, 5)),
+            save_at=SaveAt(ts=jnp.linspace(0.0, T, 5)),
         )
 
 
@@ -174,7 +174,7 @@ def test_traced_n_steps_raises():
             EulerMaruyama(),
             0.0,
             T,
-            jnp.asarray(X0),
+            jnp.asarray(X_0),
             key=jax.random.PRNGKey(0),
             n_steps=jnp.asarray(8),
             p=(MU, SIGMA),
@@ -189,11 +189,11 @@ def test_steps_mode_shapes_and_flags():
         EulerMaruyama(),
         0.0,
         T,
-        jnp.asarray([X0, 2.0]),
+        jnp.asarray([X_0, 2.0]),
         key=jax.random.PRNGKey(1),
         n_steps=n,
         p=(MU, SIGMA),
-        saveat=SaveAt(steps=True),
+        save_at=SaveAt(steps=True),
     )
     assert sol.ts.shape == (n + 1,)
     assert sol.xs.shape == (n + 1, 2)

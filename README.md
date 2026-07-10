@@ -8,19 +8,21 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Tiny differentiable ODE/SDE solvers for JAX: fixed-step Euler/RK4, adaptive
-Tsit5 with an integral step-size controller, and Euler–Maruyama for Itô SDEs.
+Tsit5 with integral or proportional-integral step-size control, and
+Euler–Maruyama for Itô SDEs.
 One bounded `lax.scan` of exactly `max_steps` iterations serves fixed and
 adaptive stepping, so shapes are static, nothing recompiles as tolerances or
 curvature change, and every solve is differentiable in **both** forward and
 reverse mode — including reverse-over-forward, the pattern a
 Levenberg–Marquardt optimizer with geodesic acceleration needs when it
-differentiates through a rollout.
+differentiates through a rollout. After a solve reaches its horizon, a
+`lax.cond` skips solver and controller work during the padded scan tail.
 
 This is a deliberately small, jvp/vjp-friendly subset of
 [diffrax](https://docs.kidger.site/diffrax/). Use diffrax if you need pytree
-states, stiff/implicit solvers, PID control, events, dense output, or
-checkpointed/backsolve adjoints. tinydiffeq's single runtime dependency is
-`jax`.
+states, stiff/implicit solvers, full derivative-term PID control, events,
+dense output, or checkpointed/backsolve adjoints. tinydiffeq's single runtime
+dependency is `jax`.
 
 ## Install
 
@@ -56,14 +58,32 @@ def f(x, t, args, p):
 sol = solve_ode(
     f, Tsit5(), 0.0, 2.0, jnp.asarray(1.0),
     p=jnp.asarray(1.3),
-    dt0=0.1,
+    dt_0=0.1,
     controller=IController(rtol=1e-8, atol=1e-10),
     max_steps=512,
-    saveat=SaveAt(ts=jnp.linspace(0.0, 2.0, 21)),  # fixed output shape,
+    save_at=SaveAt(ts=jnp.linspace(0.0, 2.0, 21)),  # fixed output shape,
 )                                                  # however many steps adapt
 print(sol.xs)   # states on the grid
-print(sol.ok)   # reached t1 within the max_steps budget?
+print(sol.ok)   # reached t_1 within the max_steps budget?
 ```
+
+`IController()` and `PIController()` choose tolerances from `x_0.dtype`:
+`rtol=1e-4, atol=1e-6` for float32 and `rtol=1e-7, atol=1e-9` for
+float64. Pass explicit values when tolerances are part of your model's
+scientific specification. The default `dt_min` is
+`10 * finfo(dtype).eps * max(1, abs(t_1))`.
+
+`max_steps` is the total internal **attempt budget**: accepted steps plus
+rejections. It is not normally the number of returned times. Endpoint mode
+returns one time/state, `SaveAt(ts=...)` returns the requested grid, and
+`SaveAt(steps=True)` returns the initial state and accepted internal steps as
+a contiguous prefix of `max_steps + 1` rows. The remaining rows repeat the
+last accepted state by default; `sol.accepted` distinguishes data from
+padding. Rejected attempts never appear in the returned trajectory.
+
+`SaveAt(ts=...)` also accepts a Python sequence. These are observation times:
+the adaptive controller still chooses its own internal mesh, and cubic
+Hermite interpolation evaluates the solution at every requested point.
 
 ## Gradients through the solve
 
@@ -71,7 +91,7 @@ print(sol.ok)   # reached t1 within the max_steps budget?
 def endpoint(p):
     return solve_ode(
         f, Tsit5(), 0.0, 2.0, jnp.asarray(1.0), p=p,
-        dt0=0.1, controller=IController(rtol=1e-10, atol=1e-12),
+        dt_0=0.1, controller=IController(rtol=1e-10, atol=1e-12),
         max_steps=512,
     ).xs
 
@@ -87,7 +107,7 @@ non-differentiable either way, and the error-ratio power blows up at exactly
 zero error); the states differentiate fully through the RK stages. See the
 [docs](https://highdimensionaleconlab.github.io/tinydiffeq/) for the design
 contracts: static shapes and `SaveAt`, AD through adaptive stepping, SDE key
-semantics, and migration recipes from hand-rolled RK4/Tsit5 loops.
+semantics, and the package API.
 
 ## License
 

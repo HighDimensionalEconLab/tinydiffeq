@@ -26,24 +26,24 @@ def test_jitted_adaptive_solve_runs_on_gpu():
         return -p * x
 
     @jax.jit
-    def run(x0, p):
+    def run(x_0, p):
         return solve_ode(
             f,
             Tsit5(),
             0.0,
             1.0,
-            x0,
+            x_0,
             p=p,
-            dt0=0.1,
+            dt_0=0.1,
             controller=IController(rtol=1e-6, atol=1e-8),
             max_steps=128,
-            saveat=SaveAt(steps=True),
+            save_at=SaveAt(steps=True),
         )
 
     with jax.default_device(gpu):
-        x0 = jnp.asarray([1.0, 2.0])
+        x_0 = jnp.asarray([1.0, 2.0])
         p = jnp.asarray(1.3)
-        sol = run(x0, p)
+        sol = run(x_0, p)
         jax.block_until_ready(sol)
 
     assert bool(sol.ok)
@@ -62,7 +62,7 @@ def test_gradient_through_solve_on_gpu():
             1.0,
             jnp.asarray(1.0),
             p=p,
-            dt0=0.1,
+            dt_0=0.1,
             controller=IController(rtol=1e-8, atol=1e-10),
             max_steps=128,
         ).xs
