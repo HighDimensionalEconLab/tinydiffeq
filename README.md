@@ -7,9 +7,9 @@
 [![License: MIT](https://img.shields.io/github/license/HighDimensionalEconLab/tinydiffeq)](https://github.com/HighDimensionalEconLab/tinydiffeq/blob/main/LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-Tiny differentiable ODE/SDE solvers for JAX: fixed-step Euler/RK4, adaptive
-Tsit5 with integral or proportional-integral step-size control, and
-Euler–Maruyama for Itô SDEs.
+Tiny differentiable ODE/SDE/DAE solvers for JAX: fixed-step Euler/RK4,
+adaptive Tsit5 with integral or proportional-integral step-size control,
+Euler–Maruyama for Itô SDEs, and nonstiff semi-explicit index-1 DAEs.
 One bounded `lax.scan` of exactly `max_steps` iterations serves fixed and
 adaptive stepping, so shapes are static, nothing recompiles as tolerances or
 curvature change, and every solve is differentiable in **both** forward and
@@ -20,9 +20,9 @@ differentiates through a rollout. After a solve reaches its horizon, a
 
 This is a deliberately small, jvp/vjp-friendly subset of
 [diffrax](https://docs.kidger.site/diffrax/). Use diffrax if you need pytree
-states, stiff/implicit solvers, full derivative-term PID control, events,
-dense output, or checkpointed/backsolve adjoints. tinydiffeq's single runtime
-dependency is `jax`.
+states, stiff or fully implicit solvers, higher-index DAEs, full
+derivative-term PID control, events, dense output, or checkpointed/backsolve
+adjoints. The DAE algebraic solve uses `nlls-gram`.
 
 ## Install
 
@@ -84,6 +84,38 @@ padding. Rejected attempts never appear in the returned trajectory.
 `SaveAt(ts=...)` also accepts a Python sequence. These are observation times:
 the adaptive controller still chooses its own internal mesh, and cubic
 Hermite interpolation evaluates the solution at every requested point.
+
+## Semi-explicit DAEs
+
+For a square index-1 system `dy/dt = f(y, z, t, args, p)` and
+`0 = g(y, z, t, args, p)`:
+
+```python
+from tinydiffeq import IController, Tsit5, solve_semi_explicit_dae
+
+
+def dae_f(y, z, t, args, p):
+    return p * z
+
+
+def dae_g(y, z):
+    return z - y
+
+
+dae_sol = solve_semi_explicit_dae(
+    dae_f, dae_g, Tsit5(), 0.0, 1.0,
+    jnp.asarray(1.0), jnp.asarray(0.5),
+    p=jnp.asarray(2.0), dt_0=0.1,
+    controller=IController(), max_steps=128,
+)
+print(dae_sol.ys, dae_sol.zs)
+```
+
+`z_0` is a guess and is made consistent automatically. Algebraic roots use
+an implicitly differentiated square LM solve, so JVP, VJP, and
+reverse-over-forward propagate with respect to `y`, `t`, and `p`. See the
+[DAE documentation](https://highdimensionaleconlab.github.io/tinydiffeq/dae/)
+for root controls, `SaveAt`, and scope limits.
 
 ## Gradients through the solve
 

@@ -546,6 +546,18 @@ wheels = [
 ]
 
 [[package]]
+name = "nlls-gram"
+version = "1.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jax" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/4e/6230b3b4182c7344314e1d47a09e56f44805893b75999eb82ff064fb5223/nlls_gram-1.6.0.tar.gz", hash = "sha256:b909bfae69031e1346d19f447d945e6165090c34c23e7c6a73b4d6e8feb01890", size = 188515, upload-time = "2026-07-10T05:21:13.903Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/7d/6e73fc9db561afdfeef3aa388bab2ccc5b284ebc5ff990d5865ccbfdf9bc/nlls_gram-1.6.0-py3-none-any.whl", hash = "sha256:6c8f98ccdf6263bb054fc9772cb424d333d042fc08d94110a06a524e33a190a1", size = 35836, upload-time = "2026-07-10T05:21:12.115Z" },
+]
+
+[[package]]
 name = "numpy"
 version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1215,10 +1227,11 @@ wheels = [
 
 [[package]]
 name = "tinydiffeq"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "jax" },
+    { name = "nlls-gram" },
 ]
 
 [package.dev-dependencies]
@@ -1240,7 +1253,10 @@ gpu = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "jax", specifier = ">=0.7.0" }]
+requires-dist = [
+    { name = "jax", specifier = ">=0.7.0" },
+    { name = "nlls-gram", specifier = ">=1.6.0" },
+]
 
 [package.metadata.requires-dev]
 benchmark = [{ name = "pytest-benchmark", specifier = ">=5.2.3" }]

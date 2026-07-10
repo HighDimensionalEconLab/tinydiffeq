@@ -242,3 +242,88 @@ for controller in (IController(), PIController()):
     assert jnp.abs(value - exact) < 1e-4, (controller, value, exact)
     assert jnp.abs(grad - exact) < 1e-4, (controller, grad, exact)
 """)
+
+
+def test_dae_float64_and_float32_dtype_contracts():
+    run_script(r"""
+import os
+os.environ["JAX_PLATFORMS"] = "cpu"
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+
+from tinydiffeq import (
+    IController,
+    LMRootSolver,
+    SaveAt,
+    Tsit5,
+    solve_semi_explicit_dae,
+)
+
+
+def f(y, z, t, args, p):
+    return p * z
+
+
+def g(y, z):
+    return z - y
+
+
+def endpoint(y_0, z_0, p):
+    return solve_semi_explicit_dae(
+        f,
+        g,
+        Tsit5(),
+        0.0,
+        1.0,
+        y_0,
+        z_0,
+        p=p,
+        dt_0=0.1,
+        controller=IController(rtol=1e-9, atol=1e-11),
+        root_solver=LMRootSolver(atol=1e-11),
+        max_steps=128,
+        save_at=SaveAt(t_1=True),
+    ).ys
+
+
+y64 = jnp.asarray(1.0, dtype=jnp.float64)
+z64 = jnp.asarray(0.5, dtype=jnp.float64)
+p64 = jnp.asarray(1.3, dtype=jnp.float64)
+jaxpr64 = jax.make_jaxpr(endpoint)(y64, z64, p64)
+assert "f32" not in str(jaxpr64), jaxpr64
+value64 = endpoint(y64, z64, p64)
+grad64 = jax.grad(lambda p: endpoint(y64, z64, p))(p64)
+assert value64.dtype == jnp.float64
+assert grad64.dtype == jnp.float64
+assert jnp.abs(value64 - jnp.exp(p64)) < 1e-8
+assert jnp.abs(grad64 - jnp.exp(p64)) < 1e-8
+
+y32 = jnp.asarray(1.0, dtype=jnp.float32)
+z32 = jnp.asarray(0.5, dtype=jnp.float32)
+p32 = jnp.asarray(1.3, dtype=jnp.float32)
+
+
+def endpoint32(y_0, z_0, p):
+    return solve_semi_explicit_dae(
+        f,
+        g,
+        Tsit5(),
+        0.0,
+        1.0,
+        y_0,
+        z_0,
+        p=p,
+        dt_0=0.1,
+        controller=IController(),
+        root_solver=LMRootSolver(),
+        max_steps=128,
+    ).ys
+
+value32 = endpoint32(y32, z32, p32)
+grad32 = jax.grad(lambda p: endpoint32(y32, z32, p))(p32)
+assert value32.dtype == jnp.float32
+assert grad32.dtype == jnp.float32
+assert jnp.abs(value32 - jnp.exp(p32)) < 2e-4
+assert jnp.abs(grad32 - jnp.exp(p32)) < 2e-4
+""")

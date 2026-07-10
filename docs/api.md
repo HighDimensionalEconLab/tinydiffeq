@@ -4,6 +4,8 @@
 
 ::: tinydiffeq.solve_ode
 
+::: tinydiffeq.solve_semi_explicit_dae
+
 ::: tinydiffeq.solve_sde
 
 ## Solvers
@@ -27,6 +29,10 @@
 ## Output selection and results
 
 ::: tinydiffeq.SaveAt
+
+::: tinydiffeq.LMRootSolver
+
+::: tinydiffeq.DAESolution
 
 ::: tinydiffeq.Solution
 

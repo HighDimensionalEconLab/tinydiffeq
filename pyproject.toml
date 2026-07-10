@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tinydiffeq"
-version = "0.2.0"
-description = "Tiny differentiable ODE/SDE solvers for JAX — bounded-scan adaptive stepping, static shapes, jvp/vjp-safe"
+version = "0.3.0"
+description = "Tiny differentiable ODE/SDE/DAE solvers for JAX with static shapes and composable AD"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -29,6 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "jax>=0.7.0",
+    "nlls-gram>=1.6.0",
 ]
 
 [project.urls]

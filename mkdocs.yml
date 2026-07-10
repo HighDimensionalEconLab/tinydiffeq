@@ -45,5 +45,6 @@ nav:
   - Home: index.md
   - Static Shapes: static_shapes.md
   - Adaptive Stepping and AD: adaptive_ad.md
+  - Semi-Explicit DAEs: dae.md
   - SDEs: sde.md
   - API Reference: api.md

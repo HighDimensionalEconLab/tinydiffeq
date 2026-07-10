@@ -2,7 +2,13 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from tinydiffeq import IController, SaveAt, Tsit5, solve_ode
+from tinydiffeq import (
+    IController,
+    SaveAt,
+    Tsit5,
+    solve_ode,
+    solve_semi_explicit_dae,
+)
 
 
 def gpu_devices():
@@ -72,4 +78,34 @@ def test_gradient_through_solve_on_gpu():
         grad.block_until_ready()
 
     assert next(iter(grad.devices())).platform == "gpu"
+    assert bool(jnp.isfinite(grad))
+
+
+def test_dae_value_and_gradient_run_on_gpu():
+    gpu = gpu_devices()[0]
+
+    def endpoint(p):
+        return solve_semi_explicit_dae(
+            lambda y, z, t, args, q: q * z,
+            lambda y, z: z - y,
+            Tsit5(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0),
+            jnp.asarray(0.5),
+            p=p,
+            dt_0=0.1,
+            controller=IController(rtol=1e-5, atol=1e-7),
+            max_steps=64,
+        ).ys
+
+    with jax.default_device(gpu):
+        value, grad = jax.jit(lambda p: (endpoint(p), jax.grad(endpoint)(p)))(
+            jnp.asarray(1.3)
+        )
+        jax.block_until_ready((value, grad))
+
+    assert next(iter(value.devices())).platform == "gpu"
+    assert next(iter(grad.devices())).platform == "gpu"
+    assert bool(jnp.isfinite(value))
     assert bool(jnp.isfinite(grad))

@@ -1,9 +1,9 @@
 # tinydiffeq
 
-`tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE integrators
-for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
-proportional-integral step-size control, and fixed-step Euler–Maruyama for
-Itô SDEs. Everything runs
+`tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE/DAE
+integrators for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
+proportional-integral step-size control, fixed-step Euler–Maruyama for Itô
+SDEs, and nonstiff semi-explicit index-1 DAEs. Time integration runs
 inside one bounded `lax.scan` with static shapes, and every solve is
 differentiable in **both** forward and reverse mode — including
 reverse-over-forward, the pattern a Levenberg–Marquardt optimizer with
@@ -14,7 +14,7 @@ It is a jvp/vjp-friendly subset of
 need any of:**
 
 - pytree states (tinydiffeq states are single arrays, scalar or vector)
-- stiff or implicit solvers
+- stiff or fully implicit solvers, or higher-index DAEs
 - full derivative-term PID step-size control
 - events, root-finding, or backward-time integration
 - dense output / continuous interpolation objects
@@ -61,6 +61,9 @@ The arity is inspected once and the function is wrapped into the canonical
 four-argument form, so the compiled code is identical for all four. There is
 no special autonomous code path: an unused `t` is dead-code-eliminated.
 `drift` and `diffusion` in [`solve_sde`](sde.md) follow the same convention.
+Semi-explicit DAE fields use `(y, z)`, `(y, z, t)`,
+`(y, z, t, args)`, or `(y, z, t, args, p)`; see
+[Semi-Explicit DAEs](dae.md).
 
 ## Minimal example
 
