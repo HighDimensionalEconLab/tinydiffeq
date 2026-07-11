@@ -7,6 +7,7 @@ from tinydiffeq import (
     ConstantStepSize,
     IController,
     LMRootSolver,
+    Rodas5P,
     SaveAt,
     Tsit5,
     solve_semi_explicit_dae,
@@ -278,11 +279,12 @@ def test_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity):
     assert jnp.allclose(jax.grad(loss)(p), expected)
 
 
-def test_nonfinite_initial_aux_fails_without_attempting_time_steps():
+@pytest.mark.parametrize("solver", [RK4(), Rodas5P()])
+def test_nonfinite_initial_aux_fails_without_attempting_time_steps(solver):
     sol = solve_semi_explicit_dae(
         lambda y, z: jnp.full_like(y, jnp.nan),
         lambda y, z: (z - y, {"bad": jnp.sqrt(-y)}),
-        RK4(),
+        solver,
         0.0,
         1.0,
         jnp.asarray(1.0),
@@ -299,11 +301,12 @@ def test_nonfinite_initial_aux_fails_without_attempting_time_steps():
     assert jnp.all(sol.aux["bad"] == 0.0)
 
 
-def test_nonfinite_endpoint_aux_terminates_at_previous_node():
+@pytest.mark.parametrize("solver", [RK4(), Rodas5P()])
+def test_nonfinite_endpoint_aux_terminates_at_previous_node(solver):
     sol = solve_semi_explicit_dae(
         lambda y, z: jnp.ones_like(y),
         lambda y, z, t: (z - y, {"limited": jnp.sqrt(0.05 - t)}),
-        RK4(),
+        solver,
         0.0,
         0.2,
         jnp.asarray(0.0),

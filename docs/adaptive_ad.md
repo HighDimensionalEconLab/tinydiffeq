@@ -36,7 +36,7 @@ their scaled error norms and next-step factors inside `stop_gradient`:
 > and the `d(dt)/dtheta` term only slides sample points along the visited
 > trajectory — irrelevant to a residual that must vanish at every state.
 
-The states themselves remain fully differentiable through the RK stages: the
+The states themselves remain fully differentiable through the solver stages: the
 gradient you get is the derivative of the numerical flow map *for the step
 pattern actually taken*. This is the same convention diffrax uses.
 
@@ -113,6 +113,35 @@ on the output is not enough — reverse mode differentiates both branches, and
   accepts/rejects independently through the masked scan, and batched results
   equal the individual solves exactly.
 
+## Reusing a linearization
+
+A single `jax.jvp` must evaluate the primal trajectory and propagate its
+tangent together. If several tangent directions are needed at the same
+`x_0`, `p`, and other primal inputs, cache the linearization instead:
+
+```python
+value, pushforward = jax.linearize(endpoint, x_0)
+tangent_batch = jax.jit(jax.vmap(pushforward))(directions)
+
+value, pullback = jax.vjp(endpoint, x_0)
+cotangent_batch = jax.jit(
+    jax.vmap(lambda cotangent: pullback(cotangent)[0])
+)(cotangents)
+```
+
+The setup computes and stores residuals for that one primal point. Reuse the
+pushforward or pullback only while every primal input is unchanged; otherwise
+linearize again. This is particularly important for Rodas5P and implicit DAE
+roots: their custom linear-solve rules retain primal LU/Cholesky factors, so
+multiple directions reuse those factors rather than refactoring independently.
+
+On the 256-state fixed Tsit5 benchmark, cached pushforwards were about 8–18%
+faster than a fused `vmap(jvp)` on CPU after excluding setup. On the RTX 3090,
+cached pushforwards and pullbacks were roughly 2.2–2.5x faster for 1–16
+directions because the primal trajectory was not replicated across mapped
+lanes. For one direction at a new primal point, ordinary `jax.jvp` or
+`jax.vjp` remains the right interface.
+
 ## What to watch
 
 - Reductions over the valid prefix of `SaveAt(steps=True)` are
@@ -121,3 +150,36 @@ on the output is not enough — reverse mode differentiates both branches, and
   default tail repeats the endpoint, `xs[-1]` remains the reached final state.
 - Finite-difference checks of adaptive solves are noisy for the same reason;
   compare AD against closed forms or use fixed-step solvers for FD tests.
+
+## Custom-rule audit
+
+tinydiffeq uses hand-coded derivative boundaries only where they remove
+iteration or factorization work without changing the mathematical derivative:
+
+- Rodas5P's factored linear solve has a custom JVP
+  \(\delta x=A^{-1}(\delta b-\delta A\,x)\). Every stage tangent and the
+  transposed VJP reuse the attempt's pivoted LU factors; pivot selection is not
+  differentiated.
+- Semi-explicit DAE roots use the implicit-function rule
+  \(\delta z=-g_z^{-1}(g_y\delta y+g_t\delta t+g_p\delta p)\). The exact
+  constraint Jacobian generally cannot reuse the primal LM factor because the
+  latter is damped and may be based on an earlier iterate. A cached
+  `jax.linearize`/`jax.vjp` does reuse the implicit factor across directions.
+- nlls-gram's public solve boundary already supplies implicit Cholesky/CG
+  derivative rules, including aux derivatives. tinydiffeq does not
+  differentiate its optimizer iterations.
+- Dense linear exponential actions use a Fréchet custom JVP for active matrix
+  or time tangents and reuse the matrix exponential when only the initial state
+  varies.
+- Matrix-free terminal exponential sensitivities expose
+  `jvp_linear_ode`/`vjp_linear_ode`, applying the forward or transposed
+  exponential directly instead of differentiating Arnoldi orthogonalization.
+- `AdaptiveKrylovExponential` uses a bounded scan and residual-controlled
+  internal slices. Ordinary AD follows the realized controller path; the
+  hand-coded initial-state rules apply independent adaptive forward or
+  transposed actions and avoid differentiating the Arnoldi basis.
+
+Explicit Runge--Kutta, Euler--Maruyama, Hermite/Rodas interpolation, and
+cumulative trapezoids remain ordinary JAX programs. Their recurrences and
+polynomials already transpose efficiently, and a custom rule would either
+duplicate JAX's work or introduce a different continuous-adjoint derivative.

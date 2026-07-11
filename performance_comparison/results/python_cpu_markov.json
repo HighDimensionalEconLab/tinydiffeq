@@ -1,0 +1,493 @@
+{
+  "metadata": {
+    "backend": "cpu",
+    "devices": [
+      "cpu:0"
+    ],
+    "jax": "0.10.2",
+    "python": "3.13.13",
+    "quick": true
+  },
+  "results": [
+    {
+      "median_seconds": 0.0016004937788238749,
+      "iqr_seconds": 1.5477155102416873e-05,
+      "compile_seconds": 0.15557855600491166,
+      "first_execute_seconds": 0.002631420036777854,
+      "iterations_per_sample": 32,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.09287628997117281
+    },
+    {
+      "median_seconds": 0.015624541731085628,
+      "iqr_seconds": 0.0013872731215087697,
+      "compile_seconds": 0.2234538160264492,
+      "first_execute_seconds": 0.0069457050412893295,
+      "iterations_per_sample": 8,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0006187120452523232
+    },
+    {
+      "median_seconds": 0.012056211766321212,
+      "iqr_seconds": 0.00040029361844062805,
+      "compile_seconds": 0.7676939039956778,
+      "first_execute_seconds": 0.012243021046742797,
+      "iterations_per_sample": 4,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0012453419622033834
+    },
+    {
+      "median_seconds": 0.001781874059815891,
+      "iqr_seconds": 6.389986083377153e-06,
+      "compile_seconds": 0.14683085400611162,
+      "first_execute_seconds": 0.002290416043251753,
+      "iterations_per_sample": 32,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.00926638301461935
+    },
+    {
+      "median_seconds": 0.013974304136354476,
+      "iqr_seconds": 0.001197217425215058,
+      "compile_seconds": 0.22879499313421547,
+      "first_execute_seconds": 0.007225167006254196,
+      "iterations_per_sample": 8,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0006511169485747814
+    },
+    {
+      "median_seconds": 0.017849730094894767,
+      "iqr_seconds": 0.00022977450862526894,
+      "compile_seconds": 0.7067154729738832,
+      "first_execute_seconds": 0.016995980171486735,
+      "iterations_per_sample": 2,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0006791630294173956
+    },
+    {
+      "median_seconds": 0.04451411683112383,
+      "iqr_seconds": 0.002028353977948427,
+      "compile_seconds": 0.14487417601048946,
+      "first_execute_seconds": 0.04220615583471954,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.0006796859670430422
+    },
+    {
+      "median_seconds": 0.11500640609301627,
+      "iqr_seconds": 0.005028662504628301,
+      "compile_seconds": 0.22665867814794183,
+      "first_execute_seconds": 0.12261518114246428,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float32",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0006911288946866989
+    },
+    {
+      "median_seconds": 0.24436647701077163,
+      "iqr_seconds": 0.003271277993917465,
+      "compile_seconds": 0.7204026440158486,
+      "first_execute_seconds": 0.2316491319797933,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float32",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0006873770616948605
+    },
+    {
+      "median_seconds": 0.05234821909107268,
+      "iqr_seconds": 0.0015908865025267005,
+      "compile_seconds": 0.1516416878439486,
+      "first_execute_seconds": 0.050153937889263034,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.0007453020662069321
+    },
+    {
+      "median_seconds": 0.09418966295197606,
+      "iqr_seconds": 0.0013154711341485381,
+      "compile_seconds": 0.235332045936957,
+      "first_execute_seconds": 0.08988950401544571,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float64",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.000790532911196351
+    },
+    {
+      "median_seconds": 0.27451959205791354,
+      "iqr_seconds": 0.0027492650551721454,
+      "compile_seconds": 0.7451307310257107,
+      "first_execute_seconds": 0.25534770311787724,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "discrete",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float64",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0007410859689116478
+    },
+    {
+      "median_seconds": 0.0031414873228641227,
+      "iqr_seconds": 2.0619620045181364e-05,
+      "compile_seconds": 0.22875995887443423,
+      "first_execute_seconds": 0.0035474009346216917,
+      "iterations_per_sample": 16,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.031162197003141046
+    },
+    {
+      "median_seconds": 0.009729418030474335,
+      "iqr_seconds": 6.941772880963981e-05,
+      "compile_seconds": 0.3820328910369426,
+      "first_execute_seconds": 0.010646854061633348,
+      "iterations_per_sample": 4,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0006730020977556705
+    },
+    {
+      "median_seconds": 0.03209373005665839,
+      "iqr_seconds": 0.0005291861016303301,
+      "compile_seconds": 1.7357555609196424,
+      "first_execute_seconds": 0.030309624038636684,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0006891069933772087
+    },
+    {
+      "median_seconds": 0.003679821500554681,
+      "iqr_seconds": 0.00010898242180701345,
+      "compile_seconds": 0.21763024502433836,
+      "first_execute_seconds": 0.004992503905668855,
+      "iterations_per_sample": 8,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.010435315081849694
+    },
+    {
+      "median_seconds": 0.010777957504615188,
+      "iqr_seconds": 0.00019312123185954988,
+      "compile_seconds": 0.3950187910813838,
+      "first_execute_seconds": 0.011502667097374797,
+      "iterations_per_sample": 4,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0007229840848594904
+    },
+    {
+      "median_seconds": 0.0371913961134851,
+      "iqr_seconds": 0.0003874239046126604,
+      "compile_seconds": 1.75506002898328,
+      "first_execute_seconds": 0.03590748901478946,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0007396480068564415
+    },
+    {
+      "median_seconds": 0.08376218611374497,
+      "iqr_seconds": 0.0025264734867960215,
+      "compile_seconds": 0.27172185690142214,
+      "first_execute_seconds": 0.07892849203199148,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.0007049040868878365
+    },
+    {
+      "median_seconds": 0.2048023499082774,
+      "iqr_seconds": 0.0014411240117624402,
+      "compile_seconds": 0.4211914830375463,
+      "first_execute_seconds": 0.20032396400347352,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float32",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0007074689492583275
+    },
+    {
+      "median_seconds": 0.6056983058806509,
+      "iqr_seconds": 0.008182074525393546,
+      "compile_seconds": 1.647094819927588,
+      "first_execute_seconds": 0.5710550840012729,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float32",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0008005071431398392
+    },
+    {
+      "median_seconds": 0.0982097431551665,
+      "iqr_seconds": 0.00021090602967888117,
+      "compile_seconds": 0.26637705392204225,
+      "first_execute_seconds": 0.0955825389828533,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.0007299690041691065
+    },
+    {
+      "median_seconds": 0.17717450391501188,
+      "iqr_seconds": 0.003428501426242292,
+      "compile_seconds": 0.42627818207256496,
+      "first_execute_seconds": 0.17785068810917437,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float64",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0007438980974256992
+    },
+    {
+      "median_seconds": 0.7020150881726295,
+      "iqr_seconds": 0.002058134996332228,
+      "compile_seconds": 1.6703034860547632,
+      "first_execute_seconds": 0.6557241079863161,
+      "iterations_per_sample": 1,
+      "case": {
+        "kind": "continuous",
+        "states": 8,
+        "length": 1024,
+        "batch": 4096,
+        "dtype": "float64",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0007849580142647028
+    },
+    {
+      "median_seconds": 0.0003882626806444023,
+      "iqr_seconds": 6.234658940229565e-07,
+      "compile_seconds": 0.2892866269685328,
+      "first_execute_seconds": 0.0008559138514101505,
+      "iterations_per_sample": 128,
+      "case": {
+        "kind": "continuous",
+        "states": 2,
+        "length": 64,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.06735923397354782
+    },
+    {
+      "median_seconds": 0.000902283500181511,
+      "iqr_seconds": 2.433351255604066e-06,
+      "compile_seconds": 0.4419061460066587,
+      "first_execute_seconds": 0.0014687010552734137,
+      "iterations_per_sample": 64,
+      "case": {
+        "kind": "continuous",
+        "states": 2,
+        "length": 64,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0005273008719086647
+    },
+    {
+      "median_seconds": 0.0008179617652785964,
+      "iqr_seconds": 3.9361402741633356e-06,
+      "compile_seconds": 0.5986075701657683,
+      "first_execute_seconds": 0.001394644845277071,
+      "iterations_per_sample": 64,
+      "case": {
+        "kind": "continuous",
+        "states": 2,
+        "length": 64,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0005227290093898773
+    },
+    {
+      "median_seconds": 0.0004896171703876462,
+      "iqr_seconds": 2.1122341422596946e-06,
+      "compile_seconds": 0.2856757421977818,
+      "first_execute_seconds": 0.0009206559043377638,
+      "iterations_per_sample": 64,
+      "case": {
+        "kind": "continuous",
+        "states": 2,
+        "length": 64,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "preparation_seconds": 0.015927664935588837
+    },
+    {
+      "median_seconds": 0.0010386062203906476,
+      "iqr_seconds": 1.7278434825129807e-06,
+      "compile_seconds": 0.4531313700135797,
+      "first_execute_seconds": 0.0015993991401046515,
+      "iterations_per_sample": 32,
+      "case": {
+        "kind": "continuous",
+        "states": 2,
+        "length": 64,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential_unroll16"
+      },
+      "preparation_seconds": 0.0005505450535565615
+    },
+    {
+      "median_seconds": 0.0008907221708795987,
+      "iqr_seconds": 6.091733666835353e-06,
+      "compile_seconds": 0.5876221989747137,
+      "first_execute_seconds": 0.001328937942162156,
+      "iterations_per_sample": 64,
+      "case": {
+        "kind": "continuous",
+        "states": 2,
+        "length": 64,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "associative"
+      },
+      "preparation_seconds": 0.0005539848934859037
+    }
+  ]
+}

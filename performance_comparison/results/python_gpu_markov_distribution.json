@@ -1,0 +1,853 @@
+{
+  "metadata": {
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "jax": "0.10.2",
+    "python": "3.13.13",
+    "quick": true
+  },
+  "results": [
+    {
+      "median_seconds": 4.0726331008045236e-05,
+      "iqr_seconds": 3.924163820556714e-07,
+      "compile_seconds": 0.08428702293895185,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.005744920752476901,
+      "iqr_seconds": 7.716548861935735e-05,
+      "compile_seconds": 0.09444543602876365,
+      "iterations_per_sample": 4,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0005392956118157599,
+      "iqr_seconds": 5.9565390984062105e-06,
+      "compile_seconds": 0.32570124906487763,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0008344312191184144,
+      "iqr_seconds": 0.00013565534572990146,
+      "compile_seconds": 0.5167662929743528,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 5.960464477539063e-08
+    },
+    {
+      "median_seconds": 4.2821507804546854e-05,
+      "iqr_seconds": 6.034765192453051e-06,
+      "compile_seconds": 0.0869968740735203,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.005790570518001914,
+      "iqr_seconds": 5.388236604630947e-05,
+      "compile_seconds": 0.10169093101285398,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0006642823427682742,
+      "iqr_seconds": 0.00011526557864272036,
+      "compile_seconds": 0.3041924119461328,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0008241716095653828,
+      "iqr_seconds": 8.249298844020814e-07,
+      "compile_seconds": 0.5766760229598731,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 2.7755575615628914e-17
+    },
+    {
+      "median_seconds": 5.0104867113986984e-05,
+      "iqr_seconds": 4.512963414526894e-06,
+      "compile_seconds": 0.17082543391734362,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.005932551895966753,
+      "iqr_seconds": 6.486305210273713e-05,
+      "compile_seconds": 0.09726531198248267,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0005430163437267765,
+      "iqr_seconds": 5.449202944873832e-06,
+      "compile_seconds": 0.276713210856542,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0008373425771424081,
+      "iqr_seconds": 8.912171870179009e-05,
+      "compile_seconds": 0.4704102990217507,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 0.00011229515075683594
+    },
+    {
+      "median_seconds": 4.64045742774033e-05,
+      "iqr_seconds": 5.358374437491875e-07,
+      "compile_seconds": 0.2573319000657648,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.006697180506307632,
+      "iqr_seconds": 1.4434874174185097e-05,
+      "compile_seconds": 0.10203184816055,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0006026135924912523,
+      "iqr_seconds": 0.00012911499288748018,
+      "compile_seconds": 0.5720655531622469,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0012899378489237279,
+      "iqr_seconds": 0.00023492259424529038,
+      "compile_seconds": 0.5515178090427071,
+      "iterations_per_sample": 32,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 8,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 1.942890293094024e-16
+    },
+    {
+      "median_seconds": 4.300911223253934e-05,
+      "iqr_seconds": 1.99480837181909e-07,
+      "compile_seconds": 0.06712930696085095,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.006831296486780047,
+      "iqr_seconds": 0.0008987897454062477,
+      "compile_seconds": 0.09373539010994136,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0005627046884910669,
+      "iqr_seconds": 2.017002407228574e-05,
+      "compile_seconds": 0.3795481638517231,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0015264251560438424,
+      "iqr_seconds": 0.0002531898862798698,
+      "compile_seconds": 1.080757203977555,
+      "iterations_per_sample": 32,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 1.4901161193847656e-08
+    },
+    {
+      "median_seconds": 6.14700174992322e-05,
+      "iqr_seconds": 1.1783981790358666e-07,
+      "compile_seconds": 0.08030116092413664,
+      "iterations_per_sample": 512,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.006238281115656719,
+      "iqr_seconds": 1.5069774235598743e-05,
+      "compile_seconds": 0.09475733898580074,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0006617945473408327,
+      "iqr_seconds": 8.088672439043876e-05,
+      "compile_seconds": 0.6625476039480418,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.001976835003006272,
+      "iqr_seconds": 3.947621735278517e-06,
+      "compile_seconds": 1.2230250330176204,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 2.0816681711721685e-17
+    },
+    {
+      "median_seconds": 5.4410504844781826e-05,
+      "iqr_seconds": 2.1909530687480583e-06,
+      "compile_seconds": 0.1789826420135796,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.006375023251166567,
+      "iqr_seconds": 0.0005658528098138049,
+      "compile_seconds": 0.10495201707817614,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0006740557510056533,
+      "iqr_seconds": 4.833615639654454e-05,
+      "compile_seconds": 0.34112074109725654,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0022347206249833107,
+      "iqr_seconds": 0.0001622928393771872,
+      "compile_seconds": 1.1574156458955258,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 2.8952956199645996e-05
+    },
+    {
+      "median_seconds": 0.00011226935453123588,
+      "iqr_seconds": 7.699997013332904e-06,
+      "compile_seconds": 0.4098882242105901,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.009837218502070755,
+      "iqr_seconds": 0.0008140671416185796,
+      "compile_seconds": 0.10310405096970499,
+      "iterations_per_sample": 4,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 32,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.000673707891110098,
+      "iqr_seconds": 1.953148967004381e-06,
+      "compile_seconds": 0.4995307538192719,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.005928816390223801,
+      "iqr_seconds": 1.0949050192721188e-05,
+      "compile_seconds": 1.2198646520264447,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 32,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 8.326672684688674e-17
+    },
+    {
+      "median_seconds": 4.9893064442585455e-05,
+      "iqr_seconds": 2.9940591730337474e-06,
+      "compile_seconds": 0.11096062115393579,
+      "iterations_per_sample": 1024,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.007672580512007698,
+      "iqr_seconds": 0.0005957693792879581,
+      "compile_seconds": 0.11385405785404146,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0008162448575603776,
+      "iqr_seconds": 4.4012140278937295e-05,
+      "compile_seconds": 0.9988171712029725,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0015527951181866229,
+      "iqr_seconds": 3.789702896028757e-05,
+      "compile_seconds": 0.46673455997370183,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 3.725290298461914e-09
+    },
+    {
+      "median_seconds": 5.9644822158588795e-05,
+      "iqr_seconds": 2.2841484224045416e-06,
+      "compile_seconds": 0.2473252231720835,
+      "iterations_per_sample": 512,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.008484100253554061,
+      "iqr_seconds": 0.00031082212808541954,
+      "compile_seconds": 0.08580359490588307,
+      "iterations_per_sample": 8,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.001168450660770759,
+      "iqr_seconds": 1.6618650988675654e-06,
+      "compile_seconds": 4.684997370000929,
+      "iterations_per_sample": 32,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0025444046332268044,
+      "iqr_seconds": 2.9497336072381586e-05,
+      "compile_seconds": 0.44633213500492275,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 1.3877787807814457e-17
+    },
+    {
+      "median_seconds": 7.423443366860738e-05,
+      "iqr_seconds": 2.493827651051106e-07,
+      "compile_seconds": 0.5134536649566144,
+      "iterations_per_sample": 512,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.009156819258350879,
+      "iqr_seconds": 0.00010821400792337954,
+      "compile_seconds": 0.11004420486278832,
+      "iterations_per_sample": 4,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0008226339232351165,
+      "iqr_seconds": 2.226937795057893e-06,
+      "compile_seconds": 0.593628061003983,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.003405316369025968,
+      "iqr_seconds": 1.1347787221893668e-05,
+      "compile_seconds": 0.7838868221733719,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 8.60355794429779e-06
+    },
+    {
+      "median_seconds": 9.110590053751366e-05,
+      "iqr_seconds": 2.7003602554032113e-07,
+      "compile_seconds": 1.6492995971348137,
+      "iterations_per_sample": 512,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "power"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.02971021202392876,
+      "iqr_seconds": 6.993301212787628e-06,
+      "compile_seconds": 0.18386344518512487,
+      "iterations_per_sample": 2,
+      "case": {
+        "problem": "dtmc_endpoint",
+        "states": 128,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0011874099654960446,
+      "iqr_seconds": 5.647827492794022e-06,
+      "compile_seconds": 1.6228185039944947,
+      "iterations_per_sample": 32,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.010266787488944829,
+      "iqr_seconds": 0.0001040915958583355,
+      "compile_seconds": 0.6320610318798572,
+      "iterations_per_sample": 4,
+      "case": {
+        "problem": "ctmc_endpoint",
+        "states": 128,
+        "points": 1,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 2.0816681711721685e-17
+    },
+    {
+      "median_seconds": 0.008404809515923262,
+      "iqr_seconds": 2.531090285629034e-05,
+      "compile_seconds": 0.1268774988129735,
+      "iterations_per_sample": 4,
+      "case": {
+        "problem": "dtmc_path",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.00012771026194968726,
+      "iqr_seconds": 2.4133337319653947e-06,
+      "compile_seconds": 0.6499031719285995,
+      "iterations_per_sample": 256,
+      "case": {
+        "problem": "dtmc_path",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float32",
+        "method": "associative"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0003316665934107732,
+      "iqr_seconds": 3.213126547052525e-07,
+      "compile_seconds": 0.8229702399112284,
+      "iterations_per_sample": 128,
+      "case": {
+        "problem": "ctmc_grid",
+        "states": 32,
+        "points": 33,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.002441255812300369,
+      "iqr_seconds": 2.1408559405244887e-05,
+      "compile_seconds": 1.0272537558339536,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_grid",
+        "states": 32,
+        "points": 33,
+        "batch": 1,
+        "dtype": "float32",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 2.2351741790771484e-08
+    },
+    {
+      "median_seconds": 0.008835305750835687,
+      "iqr_seconds": 0.00011170899961143732,
+      "compile_seconds": 0.1375403250567615,
+      "iterations_per_sample": 4,
+      "case": {
+        "problem": "dtmc_path",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "sequential"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0002866561717382865,
+      "iqr_seconds": 1.1609427019720897e-07,
+      "compile_seconds": 0.9040497210808098,
+      "iterations_per_sample": 128,
+      "case": {
+        "problem": "dtmc_path",
+        "states": 8,
+        "points": 1024,
+        "batch": 256,
+        "dtype": "float64",
+        "method": "associative"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0007870777808420826,
+      "iqr_seconds": 2.3618704290129244e-05,
+      "compile_seconds": 0.7732949310448021,
+      "iterations_per_sample": 64,
+      "case": {
+        "problem": "ctmc_grid",
+        "states": 32,
+        "points": 33,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "dense"
+      },
+      "maximum_dense_disagreement": null
+    },
+    {
+      "median_seconds": 0.0035424921225057915,
+      "iqr_seconds": 1.9249935576226562e-05,
+      "compile_seconds": 1.2328302280511707,
+      "iterations_per_sample": 16,
+      "case": {
+        "problem": "ctmc_grid",
+        "states": 32,
+        "points": 33,
+        "batch": 1,
+        "dtype": "float64",
+        "method": "krylov_pytree"
+      },
+      "maximum_dense_disagreement": 4.85722573273506e-17
+    }
+  ]
+}

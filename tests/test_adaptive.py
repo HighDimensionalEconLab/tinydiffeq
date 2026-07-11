@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
@@ -222,6 +223,30 @@ def test_ok_false_when_starved_and_restored():
         max_steps=2048,
     )
     assert bool(restored.ok)
+
+
+def test_adaptive_non_divisible_chunk_budget_preserves_result_and_ad():
+    def endpoint(x_0, max_steps):
+        return solve_ode(
+            lambda x: -0.2 * x,
+            Tsit5(),
+            0.0,
+            1.0,
+            x_0,
+            dt_0=0.1,
+            controller=IController(rtol=1e-5, atol=1e-7),
+            max_steps=max_steps,
+        ).xs
+
+    x_0 = jnp.asarray(1.0)
+    reference = endpoint(x_0, 32)
+    value = endpoint(x_0, 17)
+    _, tangent = jax.jvp(lambda x: endpoint(x, 17), (x_0,), (jnp.ones_like(x_0),))
+    gradient = jax.grad(lambda x: endpoint(x, 17))(x_0)
+
+    assert jnp.allclose(value, reference)
+    assert jnp.isfinite(tangent)
+    assert jnp.isfinite(gradient)
 
 
 def test_parity_tsit5_free():

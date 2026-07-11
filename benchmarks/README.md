@@ -7,7 +7,7 @@ JAX_PLATFORMS=cpu uv run --group benchmark pytest benchmarks --benchmark-only
 ```
 
 It measures post-compilation primal, JVP, and VJP execution for RK4, Tsit5,
-Euler-Maruyama, and the semi-explicit DAE/SDAE solvers. Each method is
+Rodas5P, Euler-Maruyama, and the semi-explicit DAE/SDAE solvers. Each method is
 exercised on a scalar array, a length-16 array, and an equal-sized two-leaf
 pytree. The array cases are the performance-regression baseline; pytree
 timings show the cost of executing separate leaves. Compilation is
@@ -23,6 +23,21 @@ JAX_PLATFORMS=cpu uv run --group benchmark python -m benchmarks.compile_times \
 
 The script clears JAX's compilation caches between `timeit` repetitions and
 reports the median. Keep compilation and execution results separate.
+
+For workloads that apply several tangent or cotangent directions at one fixed
+primal trajectory, compare fused `vmap(jvp)`/`vmap(vjp)` calls with cached
+`jax.linearize` pushforwards and `jax.vjp` pullbacks using:
+
+```bash
+JAX_PLATFORMS=cpu JAX_ENABLE_X64=1 \
+  uv run python -m benchmarks.jvp_strategies
+```
+
+The cached columns exclude the one-time primal linearization and therefore
+represent repeated use at the same `x_0` and parameters. Recompute
+`jax.linearize` or `jax.vjp` whenever any primal input changes. For a single
+call at a new primal point, use ordinary `jax.jvp`/`jax.vjp`; caching is
+beneficial only when setup can be amortized.
 
 `test_aux_dense_output.py` separately measures the intentionally changed DAE
 grid-output path across accepted-step and query-grid counts, both with and

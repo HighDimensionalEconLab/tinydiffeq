@@ -1,6 +1,6 @@
 # Semi-Explicit Index-1 DAEs
 
-`solve_semi_explicit_dae` integrates nonstiff systems of the form
+`solve_semi_explicit_dae` integrates systems of the form
 
 $$
 \dot y = f(y, z, t, \mathrm{args}, p), \qquad
@@ -11,13 +11,18 @@ where the algebraic equation is square and $g_z$ is nonsingular along the
 solution. `y` and `z` may independently be array or pytree states. Leaves
 within each state share one real floating dtype; the `y` and `z` dtypes may
 differ. The residual `g` is a single array whose flattened size matches the
-total size of `z`. The implementation supports fixed-step RK4 and Tsit5 with
-fixed or adaptive control.
+total size of `z`. The implementation supports root-restored RK4/Tsit5 and
+linearly implicit Rodas5P with fixed or adaptive control.
 
 The algebraic solve uses
 [`nlls-gram`](https://highdimensionaleconlab.github.io/nlls_gram/square_systems/)'s
 solve-only `SquareLevenbergMarquardt`: an augmented-QR damped step for the
 primal root and a direct implicit Jacobian solve for derivatives.
+
+Rodas5P is a JAX adaptation of Steinebach's method following SciML's
+[`OrdinaryDiffEqRosenbrock`](https://github.com/SciML/OrdinaryDiffEq.jl/tree/master/lib/OrdinaryDiffEqRosenbrock)
+implementation. See [Rodas5P](rodas5p.md) for direct links to SciML's tableau,
+step, and interpolation sources.
 
 ## Minimal examples
 
@@ -35,6 +40,7 @@ import jax.numpy as jnp
 from tinydiffeq import (
     IController,
     RK4,
+    Rodas5P,
     Tsit5,
     solve_semi_explicit_dae,
 )
@@ -62,11 +68,19 @@ adaptive = solve_semi_explicit_dae(
 )
 
 adaptive.aux["flow"]
+
+linearly_implicit = solve_semi_explicit_dae(
+    f, g, Rodas5P(), 0.0, 1.0,
+    jnp.asarray(1.0), jnp.asarray(0.5),
+    p=jnp.asarray(2.0), dt_0=0.1,
+    controller=IController(), max_steps=128, has_aux=True,
+)
 ```
 
 `z_0` is a root-finding guess, not an assumed-consistent initial value. Both
 calls first solve `g(y_0, z, t_0, args, p) = 0`, so the `0.5` guess becomes
-the consistent value `1.0`.
+the consistent value `1.0`. RK4 and Tsit5 then solve the algebraic equation at
+every stage. Rodas5P performs no further nonlinear solves.
 
 ## Nonlinear-solve and AD contract
 
@@ -83,9 +97,11 @@ root_solver = LMRootSolver(
 ```
 
 The outer `max_steps` counts attempted time steps, including adaptive
-rejections. `root_solver.max_steps` separately bounds one algebraic root.
+rejections. `root_solver.max_steps` separately bounds one algebraic root. For
+Rodas5P it affects only initial consistency; the method's later stages reuse
+one dense LU factorization per attempted time step.
 
-Every root passes `(y, t, p)` through nlls-gram's differentiated parameter
+Every nonlinear root passes `(y, t, p)` through nlls-gram's differentiated parameter
 pytree. Thus it differentiates the defining constraint,
 
 $$
@@ -94,23 +110,25 @@ $$
 $$
 
 rather than differentiating the LM iterations. The warm-start guess has zero
-derivative by design. `args` is fixed data; put every differentiated model
-quantity in `p`. JVP, VJP, `vmap`, and reverse-over-forward compose through
-the complete DAE solve.
+derivative by design. Rodas5P differentiates through its exact JAX Jacobian,
+time derivative, LU factorization, and linear stage solves. `args` is fixed
+data; put every differentiated model quantity in `p`. JVP, VJP, `vmap`, and
+reverse-over-forward compose through the complete DAE solve.
 
 With `has_aux=True`, `g` returns `(residual, aux)`. Aux is a nonempty pytree
 of nonempty real floating arrays; different leaves may use different floating
 dtypes. It is never an input to the time integrator or nonlinear solver.
 tinydiffeq evaluates it once at the initial consistent root and once at each
-accepted endpoint. Ordinary JAX differentiation of this evaluation composes
-with the root's implicit derivative, so aux tangents and cotangents include
-both its direct dependence on `p` and its indirect dependence through `z`.
+accepted endpoint. Ordinary JAX differentiation composes with either the
+root's implicit derivative or the Rodas5P stages, so aux tangents and
+cotangents include both direct dependence on `p` and indirect dependence
+through `z`.
 Every aux leaf must be finite. A nonfinite initial aux value sets `ok=False`
 and the bounded scan performs no stage or root work; a later nonfinite aux
 value terminates at the previous accepted node.
 
-An adaptive stage-root failure rejects the time-step attempt and asks the
-controller for a smaller step. A fixed-step root failure terminates the solve.
+An adaptive stage-root or Rodas5P linear failure rejects the time-step attempt
+and asks the controller for a smaller step. A fixed-step failure terminates.
 In either case `sol.ok` is false if the endpoint is not reached with valid
 algebraic states. Nonconverged roots receive a zero implicit tangent before
 the linear solve, and aux at a failed initial root is a zero pytree of the
@@ -128,17 +146,18 @@ never a valid solution.
 
 All `SaveAt` modes are supported:
 
-- `SaveAt(t_1=True)` returns the consistent endpoint.
+- `SaveAt(t_1=True)` returns the endpoint.
 - `SaveAt(steps=True)` returns the initial point and accepted internal steps
   as a padded `max_steps + 1` buffer with the usual `accepted` mask.
-- `SaveAt(ts=grid)` cubic-Hermite-interpolates `y`, `z`, and aux from accepted
-  internal knots. It performs no query-time nonlinear solves.
+- `SaveAt(ts=grid)` uses cubic Hermite for root-restored methods and Rodas5P's
+  stiff-aware continuous extension for `(y, z)`. Aux uses cubic Hermite in
+  both cases. It performs no query-time nonlinear solves.
 
 The result is `DAESolution(ts, ys, zs, ok, num_accepted, accepted, aux)`.
 For pytree states, saved rows are a leading axis on every state and aux leaf;
 the one `accepted` mask applies to the complete output.
 
-### Why dense algebraic output uses implicit Hermite slopes
+### Dense output for root-restored RK4 and Tsit5
 
 At a consistent knot, differentiating the constraint gives
 
@@ -169,6 +188,22 @@ actual converged root. Dense output also requires one `g_z` factorization per
 accepted knot, rather than one nonlinear solve per requested time; its cost
 therefore scales with internal steps rather than grid length.
 
+### Dense output for Rodas5P
+
+Rodas5P stores the three coefficient pytrees defined by Steinebach's
+fourth-order stiff-aware continuous extension. tinydiffeq evaluates the same
+polynomial form used by
+[SciML's Rosenbrock interpolant](https://github.com/SciML/OrdinaryDiffEq.jl/blob/master/lib/OrdinaryDiffEqRosenbrock/src/rosenbrock_interpolants.jl)
+for the combined `(y, z)` state. No `g_z` factorization or nonlinear solve is
+performed for requested times.
+
+Aux remains a stored accepted-knot quantity. Its cubic-Hermite endpoint
+tangents come from the Rodas polynomial's endpoint derivatives and a JVP of
+the aux map. Aux is therefore interpolated rather than recalculated at every
+query. Rodas5P accepted knots are not root-restored: their constraint defect,
+and that of dense output, is controlled by integration accuracy rather than
+`LMRootSolver.atol`.
+
 Knot selection and adaptive step sizes remain non-differentiable, consistent
 with the frozen-controller convention. Values, implicit slopes, and aux are
 fully differentiated. If `sol.ok` is false, neither outputs nor their
@@ -176,9 +211,11 @@ derivatives should be treated as a valid solution.
 
 ## Deliberate limits
 
-This is an explicit, nonstiff, semi-explicit index-1 integrator. It does not
-support mass-matrix or fully implicit DAEs, stiff implicit time stepping,
-higher-index constraints, or automatic index reduction. It is an initial-value
-solver: it does not determine unknown initial costates or solve boundary-value
-or saddle-path conditions. A warm-start guess follows one local root branch;
-branch selection and jumps between multiple roots are not differentiable.
+Only the internally constructed constant block mass matrix
+`diag(I_y, 0_z)` is supported; there is no public general mass-matrix or fully
+implicit residual API. Rodas5P uses dense Jacobians and dense pivoted LU, not
+sparse or Krylov linear algebra. Higher-index constraints and automatic index
+reduction are unsupported. This is an initial-value solver: it does not
+determine unknown initial costates or solve boundary-value or saddle-path
+conditions. Initial branch selection and jumps between multiple roots are not
+differentiable.

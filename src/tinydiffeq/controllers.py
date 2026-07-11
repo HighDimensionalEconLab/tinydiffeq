@@ -104,8 +104,11 @@ class IController:
         # d(dt)/dtheta term only slides sample points along the visited
         # trajectory -- irrelevant to a residual that must vanish at every
         # state. The states themselves remain fully differentiable through
-        # the RK stages.
-        scaled_error = jax.lax.stop_gradient(error_ratio(x_0, x_1, err, rtol, atol))
+        # the solver stages.
+        scaled_error = jnp.asarray(
+            jax.lax.stop_gradient(error_ratio(x_0, x_1, err, rtol, atol)),
+            dtype,
+        )
         accept = (scaled_error <= 1.0) | (dt_used <= dt_min)
         error_floor = jnp.asarray(jnp.finfo(dtype).eps, dtype)
         factor = jnp.clip(
@@ -165,7 +168,10 @@ class PIController:
         factor_max = jnp.asarray(self.factor_max, dtype)
         p_coeff = jnp.asarray(self.p_coeff, dtype)
         i_coeff = jnp.asarray(self.i_coeff, dtype)
-        scaled_error = jax.lax.stop_gradient(error_ratio(x_0, x_1, err, rtol, atol))
+        scaled_error = jnp.asarray(
+            jax.lax.stop_gradient(error_ratio(x_0, x_1, err, rtol, atol)),
+            dtype,
+        )
         accept = (scaled_error <= 1.0) | (dt_used <= dt_min)
         error_floor = jnp.asarray(jnp.finfo(dtype).eps, dtype)
         safe_error_ratio = jnp.maximum(scaled_error, error_floor)

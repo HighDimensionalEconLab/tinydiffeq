@@ -1,0 +1,6091 @@
+{
+  "metadata": {
+    "backend": "cpu",
+    "devices": [
+      "cpu:0"
+    ],
+    "jax": "0.10.2",
+    "diffrax": "0.7.2",
+    "tinydiffeq_git": "23fa371742eef93055269807e10d74d403a6b0d9",
+    "python": "3.13.13",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "quick": true,
+    "x64_enabled": true,
+    "environment": {
+      "JAX_PLATFORMS": "cpu",
+      "CUDA_VISIBLE_DEVICES": null,
+      "XLA_FLAGS": null
+    }
+  },
+  "controller_equivalence": [
+    {
+      "dtype": "float32",
+      "controller": "i",
+      "equivalent": false,
+      "tinydiffeq_accepted": 6,
+      "diffrax_accepted": 6,
+      "max_mesh_difference": 0.034743309020996094
+    },
+    {
+      "dtype": "float32",
+      "controller": "pi",
+      "equivalent": false,
+      "tinydiffeq_accepted": 10,
+      "diffrax_accepted": 10,
+      "max_mesh_difference": 0.2317500114440918
+    },
+    {
+      "dtype": "float64",
+      "controller": "i",
+      "equivalent": false,
+      "tinydiffeq_accepted": 6,
+      "diffrax_accepted": 6,
+      "max_mesh_difference": 0.029213448092207273
+    },
+    {
+      "dtype": "float64",
+      "controller": "pi",
+      "equivalent": false,
+      "tinydiffeq_accepted": 10,
+      "diffrax_accepted": 10,
+      "max_mesh_difference": 0.35917940036977924
+    }
+  ],
+  "results": [
+    {
+      "median_seconds": 1.1924030275167752e-05,
+      "iqr_seconds": 2.6749805215331435e-07,
+      "samples_seconds": [
+        1.1923147951620194e-05,
+        1.1924030275167752e-05,
+        1.2458144055926823e-05
+      ],
+      "iterations_per_sample": 4096,
+      "compile_seconds": 0.0334556601010263,
+      "first_execute_seconds": 0.0001817119773477316,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 0.004251303033937837,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.346753121353686e-05,
+      "iqr_seconds": 1.867783794295974e-07,
+      "samples_seconds": [
+        4.351289157966676e-05,
+        4.346753121353686e-05,
+        4.313933482080756e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.25542670697905123,
+      "first_execute_seconds": 0.00017877109348773956,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 0.004251303033937837,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.2084668242096086e-05,
+      "iqr_seconds": 7.27452231785719e-08,
+      "samples_seconds": [
+        1.2084668242096086e-05,
+        1.2208861789986258e-05,
+        1.2063371343629115e-05
+      ],
+      "iterations_per_sample": 4096,
+      "compile_seconds": 0.03264942090027034,
+      "first_execute_seconds": 0.0001787289511412382,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 3.1547655487962345e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.2876649407189689e-05,
+      "iqr_seconds": 1.1493528973005596e-07,
+      "samples_seconds": [
+        1.3027424301981227e-05,
+        1.2876649407189689e-05,
+        1.2797553722521116e-05
+      ],
+      "iterations_per_sample": 4096,
+      "compile_seconds": 0.049795016879215837,
+      "first_execute_seconds": 0.00018202094361186028,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 1.664649429411469e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.8827886530489195e-05,
+      "iqr_seconds": 7.390912060145638e-07,
+      "samples_seconds": [
+        4.82523155369563e-05,
+        4.8827886530489195e-05,
+        4.973049794898543e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.3130069440230727,
+      "first_execute_seconds": 0.00017420598305761814,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 1.7453331002670325e-09,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.6358935113203188e-05,
+      "iqr_seconds": 1.028749920806149e-07,
+      "samples_seconds": [
+        1.6555408137719496e-05,
+        1.6358935113203188e-05,
+        1.6349658153558266e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.060427369084209204,
+      "first_execute_seconds": 0.00020266114734113216,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": 7.07630623397737e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.7930284154062974e-05,
+      "iqr_seconds": 1.8636532104210346e-06,
+      "samples_seconds": [
+        4.9819366040537716e-05,
+        4.7930284154062974e-05,
+        4.609205961969565e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.3284815330989659,
+      "first_execute_seconds": 0.0001910871360450983,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 6.8676899772635025e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.7287638684138074e-05,
+      "iqr_seconds": 1.4071684972805087e-07,
+      "samples_seconds": [
+        1.7369076658724225e-05,
+        1.7287638684138074e-05,
+        1.7087642959268123e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.065129314083606,
+      "first_execute_seconds": 0.000191875034943223,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "ok": true
+      },
+      "absolute_error": 2.3667324600129547e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.266751963972638e-05,
+      "iqr_seconds": 3.175167421431979e-06,
+      "samples_seconds": [
+        5.300639941197005e-05,
+        4.665606456910609e-05,
+        5.266751963972638e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.2871125910896808,
+      "first_execute_seconds": 0.0001979009248316288,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 8.76616340628189e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.3277394524920965e-05,
+      "iqr_seconds": 4.040376893499342e-06,
+      "samples_seconds": [
+        4.8899518560574506e-05,
+        4.3277394524920965e-05,
+        4.081876477357582e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.05643265810795128,
+      "first_execute_seconds": 0.0002602271270006895,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00010210413074673852,
+      "iqr_seconds": 6.751495220669312e-07,
+      "samples_seconds": [
+        0.00010155384143217816,
+        0.00010290414047631202,
+        0.00010210413074673852
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.23136264691129327,
+      "first_execute_seconds": 0.0002483201678842306,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0005336944523151033,
+      "iqr_seconds": 2.600770312710665e-05,
+      "samples_seconds": [
+        0.0005336944523151033,
+        0.0005291868146741763,
+        0.0005812022209283896
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.07917401404120028,
+      "first_execute_seconds": 0.0007174410857260227,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0017300397812505253,
+      "iqr_seconds": 3.416854815441184e-05,
+      "samples_seconds": [
+        0.0017300397812505253,
+        0.0017889816881506704,
+        0.0017206445918418467
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.12781286099925637,
+      "first_execute_seconds": 0.001913905842229724,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0005297461721056607,
+      "iqr_seconds": 6.730437235091813e-06,
+      "samples_seconds": [
+        0.0005361173753044568,
+        0.0005297461721056607,
+        0.0005226565008342732
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.3220588890835643,
+      "first_execute_seconds": 0.0007082708179950714,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 9.674214243204915e-05,
+      "iqr_seconds": 8.653797067381674e-06,
+      "samples_seconds": [
+        9.674214243204915e-05,
+        9.535126537230099e-05,
+        0.00011265885950706434
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.13110451609827578,
+      "first_execute_seconds": 0.00036323978565633297,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 7.438827151418081e-05,
+      "iqr_seconds": 1.7016304809658322e-07,
+      "samples_seconds": [
+        7.456834964614245e-05,
+        7.438827151418081e-05,
+        7.422802354994928e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.351502682082355,
+      "first_execute_seconds": 0.0002639379817992449,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00021556952287937747,
+      "iqr_seconds": 3.217123321519466e-06,
+      "samples_seconds": [
+        0.0002106286174239358,
+        0.00021556952287937747,
+        0.00021706286406697473
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.14940735208801925,
+      "first_execute_seconds": 0.0004721039440482855,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 7,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 8.850685344441445e-05,
+      "iqr_seconds": 5.071904070064193e-07,
+      "samples_seconds": [
+        8.850685344441445e-05,
+        8.822346080705756e-05,
+        8.92378416210704e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3650813139975071,
+      "first_execute_seconds": 0.000437441049143672,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 7,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00052709140436491,
+      "iqr_seconds": 3.6121855373494327e-06,
+      "samples_seconds": [
+        0.0005342419208318461,
+        0.0005270175497571472,
+        0.00052709140436491
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.33858171198517084,
+      "first_execute_seconds": 0.0009152349084615707,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00010741147843873478,
+      "iqr_seconds": 1.625884806344402e-06,
+      "samples_seconds": [
+        0.00010741147843873478,
+        0.00010689588862078381,
+        0.00011014765823347261
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.2519590798765421,
+      "first_execute_seconds": 0.00044269394129514694,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00026776179583976045,
+      "iqr_seconds": 2.1723155441577546e-05,
+      "samples_seconds": [
+        0.0002469218052283395,
+        0.00026776179583976045,
+        0.0002903681161114946
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.23426081403158605,
+      "first_execute_seconds": 0.0006034830585122108,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006295749044511467,
+      "iqr_seconds": 1.3735560060013086e-05,
+      "samples_seconds": [
+        0.0006167145802464802,
+        0.0006295749044511467,
+        0.0006441857003665064
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.4853065009228885,
+      "first_execute_seconds": 0.0009869791101664305,
+      "library": "diffrax",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.01338157372083515,
+      "iqr_seconds": 0.003765791771002114,
+      "samples_seconds": [
+        0.01946820504963398,
+        0.01338157372083515,
+        0.011936621507629752
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.30568055901676416,
+      "first_execute_seconds": 0.012099935207515955,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.8065413087242632e-05,
+      "iqr_seconds": 1.7003108609969786e-06,
+      "samples_seconds": [
+        1.8065413087242632e-05,
+        1.9040169036088628e-05,
+        1.563954731409467e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.057165600126609206,
+      "first_execute_seconds": 0.00026722694747149944,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 0.004251303033937837,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.062284958512464e-05,
+      "iqr_seconds": 9.870823646451754e-06,
+      "samples_seconds": [
+        7.012416108409525e-05,
+        5.062284958512464e-05,
+        5.038251379119174e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.2548341038636863,
+      "first_execute_seconds": 0.00018333503976464272,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 0.004251303033937837,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.570973881825921e-05,
+      "iqr_seconds": 1.460107682760281e-06,
+      "samples_seconds": [
+        1.570973881825921e-05,
+        1.852124557899515e-05,
+        1.5601030213474587e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.04521303088404238,
+      "first_execute_seconds": 0.00019623292610049248,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 3.1547655487962345e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.92559184597485e-05,
+      "iqr_seconds": 1.8749262267192535e-06,
+      "samples_seconds": [
+        2.136805755981186e-05,
+        1.7618205106373352e-05,
+        1.92559184597485e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.07566426903940737,
+      "first_execute_seconds": 0.00019801617600023746,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 1.664649429411469e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.5836599585745716e-05,
+      "iqr_seconds": 5.120459150020906e-06,
+      "samples_seconds": [
+        5.5836599585745716e-05,
+        6.566891033799038e-05,
+        5.542799203794857e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.329659272916615,
+      "first_execute_seconds": 0.0002213488332927227,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 1.7453331002670325e-09,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.0720330553558597e-05,
+      "iqr_seconds": 1.1814411777777423e-06,
+      "samples_seconds": [
+        2.2667415578325745e-05,
+        2.030453322277026e-05,
+        2.0720330553558597e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.08986926195211709,
+      "first_execute_seconds": 0.0002105841413140297,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": 7.07630623397737e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.658010923070833e-05,
+      "iqr_seconds": 8.484078080073232e-06,
+      "samples_seconds": [
+        7.101643655005319e-05,
+        5.658010923070833e-05,
+        5.404828038990672e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.34774924884550273,
+      "first_execute_seconds": 0.00024170777760446072,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 6.8676899772635025e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.2362188474289724e-05,
+      "iqr_seconds": 2.0794135480173281e-07,
+      "samples_seconds": [
+        2.251632315619645e-05,
+        2.2362188474289724e-05,
+        2.2100440446592984e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.11718054488301277,
+      "first_execute_seconds": 0.00023554288782179356,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "ok": true
+      },
+      "absolute_error": 2.3667324600129547e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 6.15941348769411e-05,
+      "iqr_seconds": 5.586724682871136e-06,
+      "samples_seconds": [
+        6.15941348769411e-05,
+        7.273840446941904e-05,
+        6.156495510367677e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3676906041800976,
+      "first_execute_seconds": 0.00026092189364135265,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 8.76616340628189e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 7.161961320889532e-05,
+      "iqr_seconds": 7.70215933698637e-06,
+      "samples_seconds": [
+        8.202931667256053e-05,
+        7.161961320889532e-05,
+        6.662499799858779e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.07161332597024739,
+      "first_execute_seconds": 0.0002276841551065445,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00013283074986247811,
+      "iqr_seconds": 9.135405889537651e-06,
+      "samples_seconds": [
+        0.00013217382456787163,
+        0.00013283074986247811,
+        0.00015044463634694694
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.38576701493002474,
+      "first_execute_seconds": 0.00031101307831704617,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0010361767781432718,
+      "iqr_seconds": 1.2475764378905296e-05,
+      "samples_seconds": [
+        0.0010528567509027198,
+        0.0010279052221449092,
+        0.0010361767781432718
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.11475809896364808,
+      "first_execute_seconds": 0.0018800359684973955,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0043742720590671524,
+      "iqr_seconds": 0.0005916228765272535,
+      "samples_seconds": [
+        0.0043742720590671524,
+        0.004657475627027452,
+        0.003474229873972945
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.1763765790965408,
+      "first_execute_seconds": 0.003675897838547826,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0010206838451267686,
+      "iqr_seconds": 9.152053826255724e-05,
+      "samples_seconds": [
+        0.0008426294225500897,
+        0.0010256704990752041,
+        0.0010206838451267686
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.38370719202794135,
+      "first_execute_seconds": 0.0010359690058976412,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00034416501694067847,
+      "iqr_seconds": 5.905493708269205e-06,
+      "samples_seconds": [
+        0.00035163358734280337,
+        0.00034416501694067847,
+        0.00033982259992626496
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.19955896702595055,
+      "first_execute_seconds": 0.0005702911876142025,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 9.68075214586861e-05,
+      "iqr_seconds": 1.7845896536528016e-05,
+      "samples_seconds": [
+        9.004080447994056e-05,
+        9.68075214586861e-05,
+        0.0001257325975529966
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.39954505604691803,
+      "first_execute_seconds": 0.0003063289914280176,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00043597121111815795,
+      "iqr_seconds": 5.287598014547257e-05,
+      "samples_seconds": [
+        0.000359644149284577,
+        0.00043597121111815795,
+        0.00046539610957552213
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.20276649994775653,
+      "first_execute_seconds": 0.0006169760599732399,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 7,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00010989675865857862,
+      "iqr_seconds": 1.7591173673281446e-07,
+      "samples_seconds": [
+        0.00010989675865857862,
+        0.00010986475808749674,
+        0.00011021658156096237
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.3942062850110233,
+      "first_execute_seconds": 0.00034128292463719845,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 7,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0008558144509152044,
+      "iqr_seconds": 6.0737998865079135e-05,
+      "samples_seconds": [
+        0.0008536371278751176,
+        0.0009751131256052759,
+        0.0008558144509152044
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.37170433392748237,
+      "first_execute_seconds": 0.001212693052366376,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00016662926555000013,
+      "iqr_seconds": 4.88690830025007e-06,
+      "samples_seconds": [
+        0.0001575161404616665,
+        0.00016728995706216665,
+        0.00016662926555000013
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.4180946710985154,
+      "first_execute_seconds": 0.0005404481198638678,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00024903520170482807,
+      "iqr_seconds": 3.037140231754165e-06,
+      "samples_seconds": [
+        0.00024903520170482807,
+        0.0002489057897037128,
+        0.00025498007016722113
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.17127862898632884,
+      "first_execute_seconds": 0.0005130420904606581,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006896497179695871,
+      "iqr_seconds": 4.613086275639944e-06,
+      "samples_seconds": [
+        0.0006896497179695871,
+        0.0006912962671776768,
+        0.0006820700946263969
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.6373852209653705,
+      "first_execute_seconds": 0.0011728580575436354,
+      "library": "diffrax",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.023249952937476337,
+      "iqr_seconds": 0.0040930783143267035,
+      "samples_seconds": [
+        0.017876719473861158,
+        0.026062876102514565,
+        0.023249952937476337
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.47712897905148566,
+      "first_execute_seconds": 0.03421055409125984,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.7102221136156004e-05,
+      "iqr_seconds": 7.034726650090306e-07,
+      "samples_seconds": [
+        1.7102221136156004e-05,
+        1.8206881804871955e-05,
+        1.6799936474853894e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.0828267962206155,
+      "first_execute_seconds": 0.0002489278558641672,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 0.004251303033937837,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00021706579263991443,
+      "iqr_seconds": 1.1029310371668544e-06,
+      "samples_seconds": [
+        0.00021706579263991443,
+        0.0002180734918511007,
+        0.000215867629776767
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.5862754657864571,
+      "first_execute_seconds": 0.0004970990121364594,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 0.004251303033937837,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.764602836828999e-05,
+      "iqr_seconds": 1.5918283224891638e-07,
+      "samples_seconds": [
+        1.7943014086085896e-05,
+        1.764602836828999e-05,
+        1.7624648421588063e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.11895961104892194,
+      "first_execute_seconds": 0.00024381489492952824,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 3.1547655487962345e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.8776090769279108e-05,
+      "iqr_seconds": 2.1050902887509437e-07,
+      "samples_seconds": [
+        1.8845088902708085e-05,
+        1.8776090769279108e-05,
+        1.8424070844957896e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.1540382611565292,
+      "first_execute_seconds": 0.0002636970020830631,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 1.664649429411469e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0002949263362097554,
+      "iqr_seconds": 5.545031854126137e-06,
+      "samples_seconds": [
+        0.0002949263362097554,
+        0.00029341637491597794,
+        0.0003045064386242302
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.9618174349889159,
+      "first_execute_seconds": 0.0006531819235533476,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 1.7453331002670325e-09,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.7708574179996504e-05,
+      "iqr_seconds": 1.188310648103652e-06,
+      "samples_seconds": [
+        2.7708574179996504e-05,
+        2.7666283131111413e-05,
+        3.0042904427318717e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.1715119439177215,
+      "first_execute_seconds": 0.0003878460265696049,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": 7.07630623397737e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 9.087745320357499e-05,
+      "iqr_seconds": 1.27889979921747e-05,
+      "samples_seconds": [
+        0.00011537382806636742,
+        9.087745320357499e-05,
+        8.979583208201802e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 1.014490659814328,
+      "first_execute_seconds": 0.0004634528886526823,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 6.8676899772635025e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 3.327758213345078e-05,
+      "iqr_seconds": 3.3222963793377858e-06,
+      "samples_seconds": [
+        3.6259151329431916e-05,
+        2.9614558570756344e-05,
+        3.327758213345078e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.173051554011181,
+      "first_execute_seconds": 0.0002888671588152647,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "ok": true
+      },
+      "absolute_error": 2.3667324600129547e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00011110590821772348,
+      "iqr_seconds": 2.1388691493484657e-06,
+      "samples_seconds": [
+        0.00010818662121891975,
+        0.00011246435951761669,
+        0.00011110590821772348
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 1.0808671230915934,
+      "first_execute_seconds": 0.0004858418833464384,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 8.76616340628189e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0001296202926823753,
+      "iqr_seconds": 1.788682811820763e-05,
+      "samples_seconds": [
+        0.00012530993353720987,
+        0.00016108358977362514,
+        0.0001296202926823753
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.11835183785296977,
+      "first_execute_seconds": 0.0003611969295889139,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.002329617927898653,
+      "iqr_seconds": 0.0003409481869312003,
+      "samples_seconds": [
+        0.002329617927898653,
+        0.0019237081869505346,
+        0.0026056045608129352
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.6277907670009881,
+      "first_execute_seconds": 0.002845718991011381,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0011623867467278615,
+      "iqr_seconds": 4.500063369050622e-06,
+      "samples_seconds": [
+        0.0011695492794387974,
+        0.0011623867467278615,
+        0.0011605491527006961
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.19670897512696683,
+      "first_execute_seconds": 0.0014322209171950817,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0025122829974861816,
+      "iqr_seconds": 5.5155003792606294e-05,
+      "samples_seconds": [
+        0.0025122829974861816,
+        0.0026001955702668056,
+        0.002489885562681593
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.3351386468857527,
+      "first_execute_seconds": 0.0028629268053919077,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.004803158983122557,
+      "iqr_seconds": 0.000697425872203894,
+      "samples_seconds": [
+        0.006127779866801575,
+        0.004803158983122557,
+        0.004732928122393787
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 1.3137884619645774,
+      "first_execute_seconds": 0.0052418268751353025,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006447098749049474,
+      "iqr_seconds": 9.423007213626988e-06,
+      "samples_seconds": [
+        0.0006433731723518576,
+        0.0006447098749049474,
+        0.0006622191867791116
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.3583157630637288,
+      "first_execute_seconds": 0.0009702839888632298,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0002744980938587105,
+      "iqr_seconds": 3.830907780866255e-05,
+      "samples_seconds": [
+        0.0002998336522068712,
+        0.0002232154965895461,
+        0.0002744980938587105
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 1.2545013818889856,
+      "first_execute_seconds": 0.0007639739196747541,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.001022029624436982,
+      "iqr_seconds": 0.00022360743787430692,
+      "samples_seconds": [
+        0.0011508689858601429,
+        0.001022029624436982,
+        0.000703654110111529
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.3700072900392115,
+      "first_execute_seconds": 0.0011194569524377584,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 7,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0003549367957020877,
+      "iqr_seconds": 2.7861379749083426e-05,
+      "samples_seconds": [
+        0.0003549367957020877,
+        0.0003534448733262252,
+        0.00040916763282439206
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 1.2500607168767601,
+      "first_execute_seconds": 0.000900093000382185,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 7,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0009698345966171473,
+      "iqr_seconds": 3.016481059603393e-06,
+      "samples_seconds": [
+        0.0009653442539274693,
+        0.000971377216046676,
+        0.0009698345966171473
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.572234220104292,
+      "first_execute_seconds": 0.0014850019942969084,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0022434613783843815,
+      "iqr_seconds": 0.00019040677580051124,
+      "samples_seconds": [
+        0.002086781751131639,
+        0.0022434613783843815,
+        0.0024675953027326614
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.7554817588534206,
+      "first_execute_seconds": 0.0026626710314303637,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00025989405366999563,
+      "iqr_seconds": 3.5190196285839193e-06,
+      "samples_seconds": [
+        0.00026666014855436515,
+        0.00025989405366999563,
+        0.0002596221092971973
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.15818998403847218,
+      "first_execute_seconds": 0.0005171748343855143,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0012114505880163051,
+      "iqr_seconds": 0.00010561278031673282,
+      "samples_seconds": [
+        0.0012025330361211672,
+        0.0012114505880163051,
+        0.0014137585967546329
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 1.0109447939321399,
+      "first_execute_seconds": 0.001825228100642562,
+      "library": "diffrax",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.01996865146793425,
+      "iqr_seconds": 0.002247735217679292,
+      "samples_seconds": [
+        0.022930603474378586,
+        0.018435133039020002,
+        0.01996865146793425
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.5050422821659595,
+      "first_execute_seconds": 0.018575968919321895,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.1885925573551503e-05,
+      "iqr_seconds": 1.1205625582988432e-07,
+      "samples_seconds": [
+        1.1885925573551503e-05,
+        1.1863344752782723e-05,
+        1.2087457264442492e-05
+      ],
+      "iterations_per_sample": 4096,
+      "compile_seconds": 0.041898803086951375,
+      "first_execute_seconds": 0.00018366286531090736,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 0.004251250758137648,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.748021478917508e-05,
+      "iqr_seconds": 7.902573315732297e-07,
+      "samples_seconds": [
+        4.713135740530561e-05,
+        4.871187206845207e-05,
+        4.748021478917508e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.31462792004458606,
+      "first_execute_seconds": 0.0001671279314905405,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 0.004251250758137648,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.2593967312568566e-05,
+      "iqr_seconds": 7.344303298850718e-07,
+      "samples_seconds": [
+        1.404173758601246e-05,
+        1.2593967312568566e-05,
+        1.2572876926242316e-05
+      ],
+      "iterations_per_sample": 4096,
+      "compile_seconds": 0.03735265810973942,
+      "first_execute_seconds": 0.00019210600294172764,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 2.2078716632734086e-09,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.3553290330037271e-05,
+      "iqr_seconds": 6.595263926101325e-07,
+      "samples_seconds": [
+        1.3553290330037271e-05,
+        1.4450148228206672e-05,
+        1.3131095442986407e-05
+      ],
+      "iterations_per_sample": 4096,
+      "compile_seconds": 0.05766495200805366,
+      "first_execute_seconds": 0.00021262792870402336,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 4.118927421359331e-13,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.845961711907876e-05,
+      "iqr_seconds": 9.91198817246186e-07,
+      "samples_seconds": [
+        5.021435754315462e-05,
+        4.823195990866225e-05,
+        4.845961711907876e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.3292706869542599,
+      "first_execute_seconds": 0.00017053307965397835,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 4.119204977115487e-13,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.6566493172831542e-05,
+      "iqr_seconds": 2.1044953086857277e-06,
+      "samples_seconds": [
+        1.6566493172831542e-05,
+        1.6464555756101618e-05,
+        2.0673546373473073e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.06643503508530557,
+      "first_execute_seconds": 0.00021238415502011776,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": 6.71332101220834e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.2671990260932944e-05,
+      "iqr_seconds": 8.582104555898695e-07,
+      "samples_seconds": [
+        5.244972362561384e-05,
+        5.416614453679358e-05,
+        5.2671990260932944e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.33410345390439034,
+      "first_execute_seconds": 0.00020095892250537872,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 6.919127782445411e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.7211596173183352e-05,
+      "iqr_seconds": 9.041383464136743e-08,
+      "samples_seconds": [
+        1.7211596173183352e-05,
+        1.7233100606972585e-05,
+        1.705227293768985e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.07040261616930366,
+      "first_execute_seconds": 0.00023508700542151928,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 14,
+        "ok": true
+      },
+      "absolute_error": 3.0186562693934604e-09,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 5.5039868129824754e-05,
+      "iqr_seconds": 2.1071220999147044e-06,
+      "samples_seconds": [
+        5.425080848908692e-05,
+        5.846505268891633e-05,
+        5.5039868129824754e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.33292255201376975,
+      "first_execute_seconds": 0.0001982350368052721,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 14,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 3.0569021203241675e-09,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 1.8382980897513335e-05,
+      "iqr_seconds": 1.2052568081344361e-06,
+      "samples_seconds": [
+        2.0739447222695162e-05,
+        1.8382980897513335e-05,
+        1.832893360642629e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.07243555109016597,
+      "first_execute_seconds": 0.0002311530988663435,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "ok": true
+      },
+      "absolute_error": 7.435813367817623e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 7.256285562107223e-05,
+      "iqr_seconds": 7.644306606380269e-06,
+      "samples_seconds": [
+        7.561198435723782e-05,
+        7.256285562107223e-05,
+        6.032337114447728e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3348991801030934,
+      "first_execute_seconds": 0.00022143987007439137,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 7.095862694650457e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.910726325604628e-05,
+      "iqr_seconds": 3.2464760693073913e-06,
+      "samples_seconds": [
+        1.910726325604628e-05,
+        1.8863003901969932e-05,
+        2.5355956040584715e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.07049409998580813,
+      "first_execute_seconds": 0.00022430019453167915,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 20,
+        "ok": true
+      },
+      "absolute_error": 4.4280298872045876e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 5.9734667956945486e-05,
+      "iqr_seconds": 8.99610768101411e-08,
+      "samples_seconds": [
+        5.9734667956945486e-05,
+        5.9581298501143465e-05,
+        5.976122065476375e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3243443251121789,
+      "first_execute_seconds": 0.0002505758311599493,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 19,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 5.106664813236961e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 4.8159903371924884e-05,
+      "iqr_seconds": 2.4055370886344463e-06,
+      "samples_seconds": [
+        5.056953023085953e-05,
+        4.8159903371924884e-05,
+        4.5758456053590635e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.06269423104822636,
+      "first_execute_seconds": 0.00022779498249292374,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0001068514625330863,
+      "iqr_seconds": 5.631341082334984e-08,
+      "samples_seconds": [
+        0.00010695249784475891,
+        0.00010683987102311221,
+        0.0001068514625330863
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.2503316099755466,
+      "first_execute_seconds": 0.00027598091401159763,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006614148587686941,
+      "iqr_seconds": 7.900516357040033e-05,
+      "samples_seconds": [
+        0.0007230701412481721,
+        0.0006614148587686941,
+        0.0005650598141073715
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.09336834284476936,
+      "first_execute_seconds": 0.0007459891494363546,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.001850711923907511,
+      "iqr_seconds": 1.8151906260754913e-05,
+      "samples_seconds": [
+        0.0018813896167557687,
+        0.001850711923907511,
+        0.0018450858042342588
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.12508790101855993,
+      "first_execute_seconds": 0.0020828580018132925,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006383037325576879,
+      "iqr_seconds": 1.1150259524583817e-06,
+      "samples_seconds": [
+        0.0006405184722098056,
+        0.0006383037325576879,
+        0.0006382884203048889
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.32964220200665295,
+      "first_execute_seconds": 0.0008444050326943398,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00011743778122763615,
+      "iqr_seconds": 1.1705074030032847e-06,
+      "samples_seconds": [
+        0.00011925683156732703,
+        0.00011743778122763615,
+        0.00011691581676132046
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.12761763879097998,
+      "first_execute_seconds": 0.0003603440709412098,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 7.729757999186404e-05,
+      "iqr_seconds": 4.3516411096788943e-07,
+      "samples_seconds": [
+        7.812808826201945e-05,
+        7.729757999186404e-05,
+        7.725776004008367e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.33409338910132647,
+      "first_execute_seconds": 0.00027139484882354736,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00012589663674589247,
+      "iqr_seconds": 5.358077942219097e-06,
+      "samples_seconds": [
+        0.00011881777390954085,
+        0.00012589663674589247,
+        0.00012953392979397904
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.1294390819966793,
+      "first_execute_seconds": 0.00037205591797828674,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 7.953225394885521e-05,
+      "iqr_seconds": 3.908212420355994e-07,
+      "samples_seconds": [
+        7.961789833643707e-05,
+        7.953225394885521e-05,
+        7.883625585236587e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3371036620810628,
+      "first_execute_seconds": 0.000269297044724226,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.00023778409376973286,
+      "iqr_seconds": 8.890347089618444e-07,
+      "samples_seconds": [
+        0.00023810839047655463,
+        0.00023778409376973286,
+        0.00023633032105863094
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.13867798214778304,
+      "first_execute_seconds": 0.0005154469981789589,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 9.339743155578617e-05,
+      "iqr_seconds": 1.819191766117001e-07,
+      "samples_seconds": [
+        9.340896713183611e-05,
+        9.339743155578617e-05,
+        9.304512877861271e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.34548622579313815,
+      "first_execute_seconds": 0.00029753497801721096,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00024688344637979753,
+      "iqr_seconds": 1.4904881027177908e-06,
+      "samples_seconds": [
+        0.00024756999300734606,
+        0.00024688344637979753,
+        0.0002445890168019105
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.13469229894690216,
+      "first_execute_seconds": 0.0005114329978823662,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 8,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.00010811650190589717,
+      "iqr_seconds": 1.4711326912220102e-07,
+      "samples_seconds": [
+        0.00010835355442395667,
+        0.00010811650190589717,
+        0.00010805932788571226
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3453791639767587,
+      "first_execute_seconds": 0.00031975400634109974,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 8,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0008576387008361053,
+      "iqr_seconds": 5.871883331565186e-06,
+      "samples_seconds": [
+        0.0008677988589624874,
+        0.0008576387008361053,
+        0.0008560550922993571
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.20527390879578888,
+      "first_execute_seconds": 0.0011959741823375225,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00013036339078098536,
+      "iqr_seconds": 1.255314600712154e-06,
+      "samples_seconds": [
+        0.00013243528883322142,
+        0.00013036339078098536,
+        0.0001299246596317971
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.2564758490771055,
+      "first_execute_seconds": 0.00046138116158545017,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0001329144652117975,
+      "iqr_seconds": 2.0832485461141914e-06,
+      "samples_seconds": [
+        0.00013418265280051855,
+        0.0001329144652117975,
+        0.00013001615570829017
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.25103667099028826,
+      "first_execute_seconds": 0.00045209890231490135,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0002890055075113196,
+      "iqr_seconds": 4.192836058791727e-06,
+      "samples_seconds": [
+        0.0002836317271430744,
+        0.0002890055075113196,
+        0.00029201739926065784
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.1598743931390345,
+      "first_execute_seconds": 0.0005817711353302002,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006527221557917073,
+      "iqr_seconds": 1.6996309568639845e-06,
+      "samples_seconds": [
+        0.0006506228455691598,
+        0.0006527221557917073,
+        0.0006540221074828878
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.45190470293164253,
+      "first_execute_seconds": 0.0010593400802463293,
+      "library": "diffrax",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.018384192022494972,
+      "iqr_seconds": 4.346715286374092e-06,
+      "samples_seconds": [
+        0.018387288437224925,
+        0.018378595006652176,
+        0.018384192022494972
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.29329026886262,
+      "first_execute_seconds": 0.01854097400791943,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.483209416619502e-05,
+      "iqr_seconds": 7.095042064975132e-08,
+      "samples_seconds": [
+        1.483209416619502e-05,
+        1.484969573084527e-05,
+        1.4707794889545767e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.03739921492524445,
+      "first_execute_seconds": 0.0001874400768429041,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 0.004251250758137648,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 4.847037689614808e-05,
+      "iqr_seconds": 8.456254363409244e-08,
+      "samples_seconds": [
+        4.853132327298226e-05,
+        4.836219818571408e-05,
+        4.847037689614808e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.22812222293578088,
+      "first_execute_seconds": 0.0001828530803322792,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 0.004251250758137648,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.5419758369716874e-05,
+      "iqr_seconds": 3.6306374795458396e-07,
+      "samples_seconds": [
+        1.5419758369716874e-05,
+        1.5595615764141257e-05,
+        1.486948826823209e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.045185843016952276,
+      "first_execute_seconds": 0.0002005149144679308,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 2.2078716632734086e-09,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.5684812069594045e-05,
+      "iqr_seconds": 2.638069531712972e-07,
+      "samples_seconds": [
+        1.6030038636927202e-05,
+        1.5684812069594045e-05,
+        1.5502424730584607e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.07651944295503199,
+      "first_execute_seconds": 0.00021206913515925407,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 4.118927421359331e-13,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 7.017727557467879e-05,
+      "iqr_seconds": 1.8186324268754106e-07,
+      "samples_seconds": [
+        7.051413876979495e-05,
+        7.015041228441987e-05,
+        7.017727557467879e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3179289661347866,
+      "first_execute_seconds": 0.0002560368739068508,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 4.119204977115487e-13,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.06430054277007e-05,
+      "iqr_seconds": 3.1865965866018087e-07,
+      "samples_seconds": [
+        2.118403813256009e-05,
+        2.06430054277007e-05,
+        2.054671881523973e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.08843284915201366,
+      "first_execute_seconds": 0.00023647211492061615,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": 6.71332101220834e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.4262075309452484e-05,
+      "iqr_seconds": 2.701600578802754e-07,
+      "samples_seconds": [
+        5.473675673783873e-05,
+        5.4262075309452484e-05,
+        5.419643662207818e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.33801015303470194,
+      "first_execute_seconds": 0.000252522062510252,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 6.919127782445411e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.0688262225121434e-05,
+      "iqr_seconds": 3.579269787223893e-07,
+      "samples_seconds": [
+        2.1262245127218193e-05,
+        2.0546391169773415e-05,
+        2.0688262225121434e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.0902954488992691,
+      "first_execute_seconds": 0.00024034990929067135,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 14,
+        "ok": true
+      },
+      "absolute_error": 3.0186562693934604e-09,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 5.775413183073397e-05,
+      "iqr_seconds": 2.530990741433925e-07,
+      "samples_seconds": [
+        5.781666891380155e-05,
+        5.775413183073397e-05,
+        5.7310470765514765e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.3347144580911845,
+      "first_execute_seconds": 0.0002602750901132822,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 14,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 3.0569021203241675e-09,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 2.1588466779576265e-05,
+      "iqr_seconds": 5.941626568528591e-08,
+      "samples_seconds": [
+        2.1656014155269077e-05,
+        2.1588466779576265e-05,
+        2.1537181623898505e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.0952813751064241,
+      "first_execute_seconds": 0.0002566950861364603,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "ok": true
+      },
+      "absolute_error": 7.435813367817623e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 5.695599315913569e-05,
+      "iqr_seconds": 1.6597141438978724e-08,
+      "samples_seconds": [
+        5.695599315913569e-05,
+        5.696578114111617e-05,
+        5.693258685823821e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.3415214749984443,
+      "first_execute_seconds": 0.0002682709600776434,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 7.095862694650457e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.2389128389477264e-05,
+      "iqr_seconds": 1.3719358094022027e-07,
+      "samples_seconds": [
+        2.2612914563069353e-05,
+        2.2389128389477264e-05,
+        2.2338527401188912e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.09534164308570325,
+      "first_execute_seconds": 0.00024667801335453987,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 20,
+        "ok": true
+      },
+      "absolute_error": 4.4280298872045876e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 6.158472251627245e-05,
+      "iqr_seconds": 5.428705662779976e-08,
+      "samples_seconds": [
+        6.166798220874625e-05,
+        6.155940809549065e-05,
+        6.158472251627245e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.7092686970718205,
+      "first_execute_seconds": 0.00028109713457524776,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 19,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 5.106664813236961e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 6.642809330514865e-05,
+      "iqr_seconds": 1.5944124243105762e-07,
+      "samples_seconds": [
+        6.626961931033293e-05,
+        6.658850179519504e-05,
+        6.642809330514865e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.06989577692002058,
+      "first_execute_seconds": 0.0002935039810836315,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00014053081667952938,
+      "iqr_seconds": 3.17218746204162e-06,
+      "samples_seconds": [
+        0.0001456488280382473,
+        0.00013930445311416406,
+        0.00014053081667952938
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.264459480997175,
+      "first_execute_seconds": 0.00035213096998631954,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0010667849055607803,
+      "iqr_seconds": 2.182623211410828e-05,
+      "samples_seconds": [
+        0.0010667849055607803,
+        0.0010823681514011696,
+        0.001038715687172953
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.10074967797845602,
+      "first_execute_seconds": 0.0012901220470666885,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0036740541108883917,
+      "iqr_seconds": 7.291449583135545e-05,
+      "samples_seconds": [
+        0.003774298500502482,
+        0.0036740541108883917,
+        0.003628469508839771
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.16869798093102872,
+      "first_execute_seconds": 0.003966235090047121,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0011299021280137822,
+      "iqr_seconds": 3.6938046832801774e-05,
+      "samples_seconds": [
+        0.001179444690933451,
+        0.0011299021280137822,
+        0.0011055685972678475
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.3551669269800186,
+      "first_execute_seconds": 0.001466372050344944,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00034492710256017745,
+      "iqr_seconds": 4.169663952779956e-06,
+      "samples_seconds": [
+        0.00035195271084376145,
+        0.00034361338293820154,
+        0.00034492710256017745
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.18252990813925862,
+      "first_execute_seconds": 0.0006405250169336796,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 9.884286737360526e-05,
+      "iqr_seconds": 1.6355349998775637e-06,
+      "samples_seconds": [
+        0.00010091086323882337,
+        9.884286737360526e-05,
+        9.763979323906824e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.38917391700670123,
+      "first_execute_seconds": 0.0003626111429184675,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00034124779631383717,
+      "iqr_seconds": 9.610703273210675e-07,
+      "samples_seconds": [
+        0.00034298281207156833,
+        0.00034124779631383717,
+        0.0003410606714169262
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.19166126800701022,
+      "first_execute_seconds": 0.0006509311497211456,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 9.858276371232932e-05,
+      "iqr_seconds": 1.329344740952365e-07,
+      "samples_seconds": [
+        9.860476347967051e-05,
+        9.858276371232932e-05,
+        9.833889453148004e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.3844179739244282,
+      "first_execute_seconds": 0.00037179491482675076,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0004395432806632016,
+      "iqr_seconds": 2.163512363040354e-06,
+      "samples_seconds": [
+        0.00043658690628944896,
+        0.00044091393101552967,
+        0.0004395432806632016
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.1975504569709301,
+      "first_execute_seconds": 0.0007096459157764912,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0001248134803972789,
+      "iqr_seconds": 4.523853476712247e-06,
+      "samples_seconds": [
+        0.00012223952762724366,
+        0.0001248134803972789,
+        0.00013128723458066816
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.39425707003101707,
+      "first_execute_seconds": 0.0004446101374924183,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.000471510171337286,
+      "iqr_seconds": 1.5015702956588939e-06,
+      "samples_seconds": [
+        0.00047335079580079764,
+        0.000471510171337286,
+        0.00047034765520947985
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.19623828190378845,
+      "first_execute_seconds": 0.0007595550268888474,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 8,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.00013716216744796839,
+      "iqr_seconds": 2.0847578525717836e-06,
+      "samples_seconds": [
+        0.00014043481678527314,
+        0.00013716216744796839,
+        0.00013626530108012957
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.38775631599128246,
+      "first_execute_seconds": 0.0004110701847821474,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 8,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0011952959685004316,
+      "iqr_seconds": 5.9812518884427845e-06,
+      "samples_seconds": [
+        0.0011991570936515927,
+        0.0011952959685004316,
+        0.0011871945898747072
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.333990914048627,
+      "first_execute_seconds": 0.0016200460959225893,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00016671161392878275,
+      "iqr_seconds": 7.820040082151536e-07,
+      "samples_seconds": [
+        0.0001679016759226215,
+        0.0001663376679061912,
+        0.00016671161392878275
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.4225233099423349,
+      "first_execute_seconds": 0.0006103857886046171,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00017716254296828993,
+      "iqr_seconds": 1.6849944586283527e-06,
+      "samples_seconds": [
+        0.0001791080976545345,
+        0.00017716254296828993,
+        0.0001757381087372778
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.43389645498245955,
+      "first_execute_seconds": 0.0005933230277150869,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0002937571243819548,
+      "iqr_seconds": 6.774839675927069e-06,
+      "samples_seconds": [
+        0.0002937571243819548,
+        0.00030516195329255424,
+        0.0002916122739407001
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.15778849204070866,
+      "first_execute_seconds": 0.0007363830227404833,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0007163783739088103,
+      "iqr_seconds": 2.696360752452165e-06,
+      "samples_seconds": [
+        0.0007150271849241108,
+        0.0007163783739088103,
+        0.0007204199064290151
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.5068073908332735,
+      "first_execute_seconds": 0.001147422008216381,
+      "library": "diffrax",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.024574291543103755,
+      "iqr_seconds": 2.23587267100811e-05,
+      "samples_seconds": [
+        0.02453886449802667,
+        0.024574291543103755,
+        0.02458358195144683
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.4350115598645061,
+      "first_execute_seconds": 0.02533722296357155,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.7309139593635336e-05,
+      "iqr_seconds": 8.062403367148363e-08,
+      "samples_seconds": [
+        1.7384272496201447e-05,
+        1.7309139593635336e-05,
+        1.722302442885848e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.08780514006502926,
+      "first_execute_seconds": 0.00026456289924681187,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 0.004251250758137648,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0002222093780801515,
+      "iqr_seconds": 1.2710779628832825e-06,
+      "samples_seconds": [
+        0.00022442536283051595,
+        0.00022188320690474939,
+        0.0002222093780801515
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.9852366771083325,
+      "first_execute_seconds": 0.0005856470670551062,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 0.004251250758137648,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.8432871570439602e-05,
+      "iqr_seconds": 7.71245822761557e-09,
+      "samples_seconds": [
+        1.8432871570439602e-05,
+        1.843154188918561e-05,
+        1.844696680564084e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.10218934714794159,
+      "first_execute_seconds": 0.00027412502095103264,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 2.2078716632734086e-09,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 1.9240105871176638e-05,
+      "iqr_seconds": 3.352849375914957e-07,
+      "samples_seconds": [
+        1.9854264678542677e-05,
+        1.9240105871176638e-05,
+        1.9183694803359685e-05
+      ],
+      "iterations_per_sample": 2048,
+      "compile_seconds": 0.15005479683168232,
+      "first_execute_seconds": 0.00029247114434838295,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 4.118927421359331e-13,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0003161835866194451,
+      "iqr_seconds": 5.131287252879702e-07,
+      "samples_seconds": [
+        0.0003161835866194451,
+        0.0003158838444505818,
+        0.00031691010190115776
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.9138749579433352,
+      "first_execute_seconds": 0.000767566030845046,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 4.119204977115487e-13,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.887161622311396e-05,
+      "iqr_seconds": 2.1452490273077274e-07,
+      "samples_seconds": [
+        2.9183705009927507e-05,
+        2.8754655204465962e-05,
+        2.887161622311396e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.16745150298811495,
+      "first_execute_seconds": 0.0003245621919631958,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": 6.71332101220834e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 9.335305867352872e-05,
+      "iqr_seconds": 2.22715698328102e-07,
+      "samples_seconds": [
+        9.378128106618533e-05,
+        9.333584966952913e-05,
+        9.335305867352872e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.9849073279183358,
+      "first_execute_seconds": 0.0005756739992648363,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 6.919127782445411e-06,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 2.9395330102488515e-05,
+      "iqr_seconds": 4.847992158829584e-07,
+      "samples_seconds": [
+        3.0002942366991192e-05,
+        2.9395330102488515e-05,
+        2.9033343935225275e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.16780486004427075,
+      "first_execute_seconds": 0.0003280721139162779,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 14,
+        "ok": true
+      },
+      "absolute_error": 3.0186562693934604e-09,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.00012038717977702618,
+      "iqr_seconds": 1.5130081010283902e-07,
+      "samples_seconds": [
+        0.00012035725012538023,
+        0.00012038717977702618,
+        0.00012065985174558591
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.9800392410252243,
+      "first_execute_seconds": 0.0005963060539215803,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 14,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 3.0569021203241675e-09,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 3.02853857192531e-05,
+      "iqr_seconds": 5.257217026155558e-07,
+      "samples_seconds": [
+        3.0645822334918194e-05,
+        3.02853857192531e-05,
+        2.9594378929687082e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.17249728203751147,
+      "first_execute_seconds": 0.0003276530187577009,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "ok": true
+      },
+      "absolute_error": 7.435813367817623e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00010841617950063664,
+      "iqr_seconds": 1.372959559375886e-07,
+      "samples_seconds": [
+        0.00010830495511982008,
+        0.00010857954703169526,
+        0.00010841617950063664
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.9859623059164733,
+      "first_execute_seconds": 0.0005985388997942209,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 10,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 7.095862694650457e-08,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 3.058549691559165e-05,
+      "iqr_seconds": 3.126708634226816e-07,
+      "samples_seconds": [
+        3.112852732556348e-05,
+        3.058549691559165e-05,
+        3.050318559871812e-05
+      ],
+      "iterations_per_sample": 1024,
+      "compile_seconds": 0.1771650139708072,
+      "first_execute_seconds": 0.00032760086469352245,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 20,
+        "ok": true
+      },
+      "absolute_error": 4.4280298872045876e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.00014151763662084704,
+      "iqr_seconds": 1.723023615340935e-06,
+      "samples_seconds": [
+        0.0001443356213712832,
+        0.00014088957414060133,
+        0.00014151763662084704
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.9762727089691907,
+      "first_execute_seconds": 0.0006236580666154623,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 19,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": 5.106664813236961e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0001197265619339305,
+      "iqr_seconds": 2.6433790480950847e-06,
+      "samples_seconds": [
+        0.00012257276193849975,
+        0.0001197265619339305,
+        0.00011728600384230958
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.11974793090485036,
+      "first_execute_seconds": 0.00038274703547358513,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0021646469976985827,
+      "iqr_seconds": 7.887793617555872e-05,
+      "samples_seconds": [
+        0.0021217762550804764,
+        0.0021646469976985827,
+        0.002279532127431594
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.5772392489016056,
+      "first_execute_seconds": 0.002920866943895817,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "euler",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0012587345263455063,
+      "iqr_seconds": 1.1808046110672876e-05,
+      "samples_seconds": [
+        0.001266336752451025,
+        0.0012587345263455063,
+        0.0012427206602296792
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.1966232149861753,
+      "first_execute_seconds": 0.0015395660884678364,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.002992537061800249,
+      "iqr_seconds": 9.749623131938279e-06,
+      "samples_seconds": [
+        0.0030007071181898937,
+        0.002992537061800249,
+        0.002981207871926017
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.3353470389265567,
+      "first_execute_seconds": 0.00338001293130219,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00592609285376966,
+      "iqr_seconds": 9.683948883321136e-05,
+      "samples_seconds": [
+        0.0058157680032309145,
+        0.00592609285376966,
+        0.006009446980897337
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.9972690620925277,
+      "first_execute_seconds": 0.006214586086571217,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0007086410150805023,
+      "iqr_seconds": 4.2731153371278197e-07,
+      "samples_seconds": [
+        0.0007088294223649427,
+        0.0007079747992975172,
+        0.0007086410150805023
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.8884127100463957,
+      "first_execute_seconds": 0.0010701008141040802,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00025471773369645234,
+      "iqr_seconds": 3.3996411730186082e-06,
+      "samples_seconds": [
+        0.00025832738356257323,
+        0.00025471773369645234,
+        0.000251528101216536
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 1.0825631560292095,
+      "first_execute_seconds": 0.0009606080129742622,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006997839991527144,
+      "iqr_seconds": 7.676562745473348e-06,
+      "samples_seconds": [
+        0.0007132685641408898,
+        0.0006979154386499431,
+        0.0006997839991527144
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.34285175800323486,
+      "first_execute_seconds": 0.0010484938975423574,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0002499495767551707,
+      "iqr_seconds": 3.4094136935891584e-06,
+      "samples_seconds": [
+        0.0002543409755162429,
+        0.0002499495767551707,
+        0.0002475221481290646
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 1.0825226919259876,
+      "first_execute_seconds": 0.0009451978839933872,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0007897355790191796,
+      "iqr_seconds": 1.3825774658471346e-06,
+      "samples_seconds": [
+        0.0007916523281892296,
+        0.0007888871732575353,
+        0.0007897355790191796
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.3466046969406307,
+      "first_execute_seconds": 0.0012049449142068624,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00033945067843887955,
+      "iqr_seconds": 1.0099449355038814e-05,
+      "samples_seconds": [
+        0.00033945067843887955,
+        0.00035464585198496934,
+        0.0003344469532748917
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 1.0835928509477526,
+      "first_execute_seconds": 0.0011288870591670275,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 6,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0008070096882875077,
+      "iqr_seconds": 1.9329461792949587e-05,
+      "samples_seconds": [
+        0.0008401440463785548,
+        0.0008014851227926556,
+        0.0008070096882875077
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.35475036897696555,
+      "first_execute_seconds": 0.0011754750739783049,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 8,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0004001781780971214,
+      "iqr_seconds": 1.0455873962200712e-05,
+      "samples_seconds": [
+        0.000414971460486413,
+        0.00039405971256201155,
+        0.0004001781780971214
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 1.1136257469188422,
+      "first_execute_seconds": 0.0011448271106928587,
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "pi",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 8,
+        "rejected_steps": 0,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0012560202812892385,
+      "iqr_seconds": 1.2170967238489538e-05,
+      "samples_seconds": [
+        0.0012764759667334147,
+        0.0012560202812892385,
+        0.0012521340322564356
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.49161335709504783,
+      "first_execute_seconds": 0.001928828889504075,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0018224646773887798,
+      "iqr_seconds": 3.888859646394849e-05,
+      "samples_seconds": [
+        0.0018984933121828362,
+        0.0018207161192549393,
+        0.0018224646773887798
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.6831830779556185,
+      "first_execute_seconds": 0.002999903867021203,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0018359423775109462,
+      "iqr_seconds": 2.0125466107856482e-05,
+      "samples_seconds": [
+        0.001849991560447961,
+        0.0018097406282322481,
+        0.0018359423775109462
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.6989092330913991,
+      "first_execute_seconds": 0.003083219053223729,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.00029562383679149207,
+      "iqr_seconds": 1.2406799214659259e-06,
+      "samples_seconds": [
+        0.00029808762519678567,
+        0.00029562383679149207,
+        0.0002956062653538538
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.1697228590492159,
+      "first_execute_seconds": 0.0006284720730036497,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.001195431817905046,
+      "iqr_seconds": 1.0370797099312767e-05,
+      "samples_seconds": [
+        0.001195431817905046,
+        0.0011855094417114742,
+        0.0012062510359100997
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.6471554040908813,
+      "first_execute_seconds": 0.0019936540629714727,
+      "library": "diffrax",
+      "case": {
+        "equation": "sde_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.02476351149380207,
+      "iqr_seconds": 0.00014217005809769034,
+      "samples_seconds": [
+        0.024675210937857628,
+        0.02495955105405301,
+        0.02476351149380207
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.5026972908526659,
+      "first_execute_seconds": 0.02578419982455671,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    }
+  ],
+  "unavailable": [
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent explicit projected SDAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent explicit projected SDAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent explicit projected SDAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent explicit projected SDAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent explicit projected SDAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no public classic RK4 solver"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "sdae_ensemble",
+        "size": 1,
+        "method": "em",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 256
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent explicit projected SDAE interface"
+    }
+  ]
+}

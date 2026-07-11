@@ -1,20 +1,28 @@
 # tinydiffeq
 
-`tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE/DAE/SDAE
-integrators for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
-proportional-integral step-size control, fixed-step Euler–Maruyama for Itô
-SDEs, and nonstiff semi-explicit index-1 deterministic and stochastic DAEs.
-Time integration runs
-inside one bounded `lax.scan` with static shapes, and every solve is
+`tinydiffeq` is a deliberately tiny set of ODE/SDE/DAE/SDAE integrators and
+finite-state Markov simulators for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
+proportional-integral step-size control, linearly implicit Rodas5P for stiff
+ODEs and index-1 DAEs, and fixed-step Euler–Maruyama for Itô SDEs and SDAEs.
+Time integration uses bounded `lax.scan` loops with static shapes, and every solve is
 differentiable in **both** forward and reverse mode — including
 reverse-over-forward, the pattern a Levenberg–Marquardt optimizer with
 geodesic acceleration needs when it differentiates through a rollout.
+Finite-state DTMC/CTMC simulation is primal-only and offers chronological scan
+and associative parallel-prefix methods. Fixed-chain probability forecasts use
+binary matrix powers for DTMC endpoints, dense exponentials for small CTMCs, or
+fixed or adaptive matrix-free Arnoldi/Krylov actions over array or pytree
+probabilities; see
+[Markov Chains](markov_chains.md). The same backends solve general fixed
+homogeneous linear systems; see [Linear Exponential Solves](exponential.md).
 
-It is a jvp/vjp-friendly subset of
-[diffrax](https://docs.kidger.site/diffrax/). **Use diffrax instead if you
-need any of:**
+Rodas5P follows SciML's
+[`OrdinaryDiffEqRosenbrock`](https://github.com/SciML/OrdinaryDiffEq.jl/tree/master/lib/OrdinaryDiffEqRosenbrock)
+implementation and Steinebach's published method. **Use SciML or
+[diffrax](https://docs.kidger.site/diffrax/) instead if you need any of:**
 
-- stiff or fully implicit solvers, or higher-index DAEs
+- general mass matrices, fully implicit solvers, or higher-index DAEs
+- sparse/Krylov linear solves and preconditioners inside general ODE/DAE stages
 - full derivative-term PID step-size control
 - events, root-finding, or backward-time integration
 - dense output / continuous interpolation objects
@@ -140,5 +148,6 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
 
 Read next: [Static Shapes](static_shapes.md) for the bounded-scan design and
 `SaveAt`, [Adaptive Stepping and AD](adaptive_ad.md) for what is and is not
-differentiated, [DAEs](dae.md), [SDEs](sde.md), [SDAEs](sdae.md), and the
-[API Reference](api.md).
+differentiated, [Rodas5P](rodas5p.md) for the SciML-derived linearly implicit
+method, [DAEs](dae.md), [SDEs](sde.md), [SDAEs](sdae.md), and the [API
+Reference](api.md).

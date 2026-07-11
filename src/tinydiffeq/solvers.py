@@ -68,6 +68,9 @@ class Euler:
         x_1 = project(add_scaled(x, (dt, k_1)))
         return x_1, None, None
 
+    def step_fixed(self, g, t, x, dt, f_0, project):
+        return self.step(g, t, x, dt, f_0, project)
+
 
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
@@ -84,9 +87,18 @@ class RK4:
         k_3 = g(add_scaled(x, (0.5 * dt, k_2)), t + 0.5 * dt)
         k_4 = g(add_scaled(x, (dt, k_3)), t + dt)
         x_1 = project(
-            add_scaled(x, (dt / 6.0, weighted_sum((k_1, k_2, k_3, k_4), (1, 2, 2, 1))))
+            add_scaled(
+                x,
+                (dt / 6.0, k_1),
+                (dt / 3.0, k_2),
+                (dt / 3.0, k_3),
+                (dt / 6.0, k_4),
+            )
         )
         return x_1, None, None
+
+    def step_fixed(self, g, t, x, dt, f_0, project):
+        return self.step(g, t, x, dt, f_0, project)
 
 
 @jax.tree_util.register_dataclass
@@ -104,7 +116,7 @@ class Tsit5:
     fsal = True
     has_error_estimate = True
 
-    def step(self, g, t, x, dt, f_0, project):
+    def _step(self, g, t, x, dt, f_0, project, *, need_error):
         k_1 = g(x, t) if f_0 is None else f_0
         k_2 = g(add_scaled(x, (dt * A_21, k_1)), t + C_2 * dt)
         k_3 = g(
@@ -148,14 +160,47 @@ class Tsit5:
             )
         )
         k_7 = g(x_1, t + C_7 * dt)
-        err = jax.tree.map(
-            lambda value: dt * value,
-            weighted_sum(
-                (k_1, k_2, k_3, k_4, k_5, k_6, k_7),
-                (E_1, E_2, E_3, E_4, E_5, E_6, E_7),
-            ),
-        )
+        if need_error:
+            err = jax.tree.map(
+                lambda value: dt * value,
+                weighted_sum(
+                    (k_1, k_2, k_3, k_4, k_5, k_6, k_7),
+                    (E_1, E_2, E_3, E_4, E_5, E_6, E_7),
+                ),
+            )
+        else:
+            err = None
         return x_1, k_7, err
+
+    def step(self, g, t, x, dt, f_0, project):
+        return self._step(g, t, x, dt, f_0, project, need_error=True)
+
+    def step_fixed(self, g, t, x, dt, f_0, project):
+        """Take a fixed step without constructing the unused embedded error."""
+        return self._step(g, t, x, dt, f_0, project, need_error=False)
+
+
+@jax.tree_util.register_dataclass
+@dataclass(frozen=True)
+class Rodas5P:
+    """Fifth-order Rodas5P Rosenbrock--Wanner method.
+
+    Rodas5P is an eight-stage, linearly implicit method with an embedded
+    error estimate and a stiff-aware fourth-order continuous extension. It is
+    supported by :func:`tinydiffeq.solve_ode` and
+    :func:`tinydiffeq.solve_semi_explicit_dae`; both use one dense LU
+    factorization per attempted step and reuse it across all stages.
+
+    The implementation follows Steinebach (2023) and SciML's
+    ``OrdinaryDiffEqRosenbrock.Rodas5P`` implementation:
+
+    - https://doi.org/10.1007/s10543-023-00967-x
+    - https://github.com/SciML/OrdinaryDiffEq.jl/tree/master/lib/OrdinaryDiffEqRosenbrock
+    """
+
+    order = 5
+    fsal = False
+    has_error_estimate = True
 
 
 @jax.tree_util.register_dataclass

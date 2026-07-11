@@ -1,0 +1,1528 @@
+{
+  "metadata": {
+    "backend": "cpu",
+    "devices": [
+      "cpu:0"
+    ],
+    "jax": "0.10.2",
+    "diffrax": "0.7.2",
+    "tinydiffeq_git": "23fa371742eef93055269807e10d74d403a6b0d9",
+    "python": "3.13.13",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "quick": true,
+    "x64_enabled": true,
+    "environment": {
+      "JAX_PLATFORMS": "cpu",
+      "CUDA_VISIBLE_DEVICES": null,
+      "XLA_FLAGS": null
+    }
+  },
+  "controller_equivalence": [
+    {
+      "dtype": "float32",
+      "controller": "i",
+      "equivalent": false,
+      "tinydiffeq_accepted": 6,
+      "diffrax_accepted": 6,
+      "max_mesh_difference": 0.034743309020996094
+    },
+    {
+      "dtype": "float32",
+      "controller": "pi",
+      "equivalent": false,
+      "tinydiffeq_accepted": 10,
+      "diffrax_accepted": 10,
+      "max_mesh_difference": 0.2317500114440918
+    },
+    {
+      "dtype": "float64",
+      "controller": "i",
+      "equivalent": false,
+      "tinydiffeq_accepted": 6,
+      "diffrax_accepted": 6,
+      "max_mesh_difference": 0.029213448092207273
+    },
+    {
+      "dtype": "float64",
+      "controller": "pi",
+      "equivalent": false,
+      "tinydiffeq_accepted": 10,
+      "diffrax_accepted": 10,
+      "max_mesh_difference": 0.35917940036977924
+    }
+  ],
+  "results": [
+    {
+      "median_seconds": 0.0003599398987716995,
+      "iqr_seconds": 1.5611770322720986e-05,
+      "samples_seconds": [
+        0.0003855753911921056,
+        0.0003599398987716995,
+        0.0003543518505466636
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.283833981025964,
+      "first_execute_seconds": 0.0006691219750791788,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 6.424952644357163e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 8.414219746555318e-05,
+      "iqr_seconds": 8.511581199854845e-07,
+      "samples_seconds": [
+        8.55241269164253e-05,
+        8.414219746555318e-05,
+        8.382181067645433e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.21351765398867428,
+      "first_execute_seconds": 0.0003573691938072443,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 5,
+        "ok": true
+      },
+      "absolute_error": 9.703208107003647e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0853744549676776,
+      "iqr_seconds": 1.580757088959217e-05,
+      "samples_seconds": [
+        0.08540131594054401,
+        0.08536970079876482,
+        0.0853744549676776
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.29703336604870856,
+      "first_execute_seconds": 0.0867601300124079,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0027604330534813926,
+      "iqr_seconds": 1.7965307051781565e-05,
+      "samples_seconds": [
+        0.0027604330534813926,
+        0.0027290409489069134,
+        0.0027649715630104765
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.27754427888430655,
+      "first_execute_seconds": 0.0032912970054894686,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0006717273281537928,
+      "iqr_seconds": 2.614631739561446e-06,
+      "samples_seconds": [
+        0.0006692251117783599,
+        0.0006717273281537928,
+        0.0006744543752574828
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.30114345578476787,
+      "first_execute_seconds": 0.0009389899205416441,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 6.424952644357163e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00012266813700989587,
+      "iqr_seconds": 5.469569259730633e-07,
+      "samples_seconds": [
+        0.0001226960039275582,
+        0.00012266813700989587,
+        0.00012160209007561207
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.29655398498289287,
+      "first_execute_seconds": 0.0004891289863735437,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 5,
+        "ok": true
+      },
+      "absolute_error": 9.703208107003647e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.11480766907334328,
+      "iqr_seconds": 0.0006377998506650329,
+      "samples_seconds": [
+        0.11511895479634404,
+        0.11384335509501398,
+        0.11480766907334328
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.43893304211087525,
+      "first_execute_seconds": 0.11817962699569762,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0040483674965798855,
+      "iqr_seconds": 1.053657615557313e-05,
+      "samples_seconds": [
+        0.004033378732856363,
+        0.0040483674965798855,
+        0.004054451885167509
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.4376416669692844,
+      "first_execute_seconds": 0.0044665418099612,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0007232997959363274,
+      "iqr_seconds": 3.6202090996084735e-06,
+      "samples_seconds": [
+        0.0007243114814627916,
+        0.0007170710632635746,
+        0.0007232997959363274
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.5270791170187294,
+      "first_execute_seconds": 0.001104238210245967,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 6.424952644357163e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0016916634995141067,
+      "iqr_seconds": 1.013763903756626e-05,
+      "samples_seconds": [
+        0.0016966023104032502,
+        0.0016763270323281176,
+        0.0016916634995141067
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.5308949858881533,
+      "first_execute_seconds": 0.0022419369779527187,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.10000000149011612,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 5,
+        "ok": true
+      },
+      "absolute_error": 9.703208107003647e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.12371699907816947,
+      "iqr_seconds": 0.0013654798967763782,
+      "samples_seconds": [
+        0.12108177901245654,
+        0.12371699907816947,
+        0.12381273880600929
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.7276172069832683,
+      "first_execute_seconds": 0.1198127418756485,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05777834984473884,
+      "iqr_seconds": 0.0032100429525598884,
+      "samples_seconds": [
+        0.05777834984473884,
+        0.06414344999939203,
+        0.057723364094272256
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.7468450609594584,
+      "first_execute_seconds": 0.04467881913296878,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.009999999776482582,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00035925793781643733,
+      "iqr_seconds": 3.6562414607033134e-07,
+      "samples_seconds": [
+        0.0003585554386518197,
+        0.00035925793781643733,
+        0.0003592866869439604
+      ],
+      "iterations_per_sample": 128,
+      "compile_seconds": 0.20881616603583097,
+      "first_execute_seconds": 0.0006697620265185833,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 9.159339953157541e-16,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 8.868531995176454e-05,
+      "iqr_seconds": 1.193925527331885e-07,
+      "samples_seconds": [
+        8.876525771484012e-05,
+        8.868531995176454e-05,
+        8.852647260937374e-05
+      ],
+      "iterations_per_sample": 512,
+      "compile_seconds": 0.19711096701212227,
+      "first_execute_seconds": 0.0003613040316849947,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 5,
+        "ok": true
+      },
+      "absolute_error": 1.660904930811391e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00012435898042895133,
+      "iqr_seconds": 2.1322339307516813e-06,
+      "samples_seconds": [
+        0.00012468665227061138,
+        0.00012435898042895133,
+        0.00012042218440910801
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.19147645100019872,
+      "first_execute_seconds": 0.0004002428613603115,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 11,
+        "ok": true
+      },
+      "absolute_error": 1.8722123851233619e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.11707251402549446,
+      "iqr_seconds": 0.0009818824473768473,
+      "samples_seconds": [
+        0.11707251402549446,
+        0.11572317010723054,
+        0.11768693500198424
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.303780993912369,
+      "first_execute_seconds": 0.1162629819009453,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.003825779858743772,
+      "iqr_seconds": 1.9728002371266484e-05,
+      "samples_seconds": [
+        0.003825779858743772,
+        0.003805496235145256,
+        0.003844952239887789
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.3041910780593753,
+      "first_execute_seconds": 0.004310928052291274,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0035381538182264194,
+      "iqr_seconds": 6.6494030761532485e-06,
+      "samples_seconds": [
+        0.0035381538182264194,
+        0.003550624125637114,
+        0.0035373253194848076
+      ],
+      "iterations_per_sample": 16,
+      "compile_seconds": 0.2990991098340601,
+      "first_execute_seconds": 0.00433603092096746,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0007102518757164944,
+      "iqr_seconds": 2.473772838129662e-06,
+      "samples_seconds": [
+        0.0007066598918754607,
+        0.0007116074375517201,
+        0.0007102518757164944
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.32462630001828074,
+      "first_execute_seconds": 0.0010674300137907267,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 9.159339953157541e-16,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0001263687654500245,
+      "iqr_seconds": 1.7806755749916192e-06,
+      "samples_seconds": [
+        0.00012637712825380731,
+        0.0001263687654500245,
+        0.00012281577710382408
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.29958243714645505,
+      "first_execute_seconds": 0.00045668589882552624,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 5,
+        "ok": true
+      },
+      "absolute_error": 1.660904930811391e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00018668158554646652,
+      "iqr_seconds": 3.2940397431957535e-07,
+      "samples_seconds": [
+        0.0001872058555818512,
+        0.00018654704763321206,
+        0.00018668158554646652
+      ],
+      "iterations_per_sample": 256,
+      "compile_seconds": 0.2950323820114136,
+      "first_execute_seconds": 0.0005684120114892721,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 11,
+        "ok": true
+      },
+      "absolute_error": 1.8722123851233619e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.18036517407745123,
+      "iqr_seconds": 0.00021276890765875578,
+      "samples_seconds": [
+        0.1802581341471523,
+        0.18068367196246982,
+        0.18036517407745123
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.44093375699594617,
+      "first_execute_seconds": 0.1822089240886271,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.006016512023052201,
+      "iqr_seconds": 0.00023930981114972383,
+      "samples_seconds": [
+        0.006016512023052201,
+        0.006306660245172679,
+        0.005828040622873232
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.45441396720707417,
+      "first_execute_seconds": 0.006867546122521162,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.006298158754361793,
+      "iqr_seconds": 0.0001180378021672368,
+      "samples_seconds": [
+        0.0063600330031476915,
+        0.006298158754361793,
+        0.006123957398813218
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.4552667059469968,
+      "first_execute_seconds": 0.007060057017952204,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0007467348768841475,
+      "iqr_seconds": 7.318234565900639e-06,
+      "samples_seconds": [
+        0.0007358347029366996,
+        0.0007467348768841475,
+        0.0007504711720685009
+      ],
+      "iterations_per_sample": 64,
+      "compile_seconds": 0.6059440220706165,
+      "first_execute_seconds": 0.0011394789908081293,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.15625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": 9.159339953157541e-16,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0017434414694434963,
+      "iqr_seconds": 3.975361323682591e-05,
+      "samples_seconds": [
+        0.0017933254421222955,
+        0.0017138182156486437,
+        0.0017434414694434963
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.5478352748323232,
+      "first_execute_seconds": 0.0021106849890202284,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 5,
+        "ok": true
+      },
+      "absolute_error": 1.660904930811391e-07,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.0018553304980741814,
+      "iqr_seconds": 2.6426936528878286e-05,
+      "samples_seconds": [
+        0.00181719347165199,
+        0.0018553304980741814,
+        0.0018700473447097465
+      ],
+      "iterations_per_sample": 32,
+      "compile_seconds": 0.5371977498289198,
+      "first_execute_seconds": 0.002118610078468919,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.1,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 11,
+        "ok": true
+      },
+      "absolute_error": 1.8722123851233619e-10,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.191493296995759,
+      "iqr_seconds": 0.0022305494640022516,
+      "samples_seconds": [
+        0.191493296995759,
+        0.1888264250010252,
+        0.1932875239290297
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.7220494339708239,
+      "first_execute_seconds": 0.1953187680337578,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.0078125,
+      "max_steps": 128,
+      "stats": {
+        "accepted_steps": 128,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.10269639501348138,
+      "iqr_seconds": 0.0012799330288544297,
+      "samples_seconds": [
+        0.10269418195821345,
+        0.10269639501348138,
+        0.10525404801592231
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.73203249508515,
+      "first_execute_seconds": 0.09038273617625237,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.09841887187212706,
+      "iqr_seconds": 0.0016326081240549684,
+      "samples_seconds": [
+        0.09638955094851553,
+        0.09965476719662547,
+        0.09841887187212706
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.81418348220177,
+      "first_execute_seconds": 0.09688653890043497,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.01,
+      "max_steps": 512,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    }
+  ],
+  "unavailable": [
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "Diffrax has no Rodas5P implementation"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "ode_vector",
+        "size": 256,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "Diffrax has no Rodas5P implementation"
+    }
+  ]
+}

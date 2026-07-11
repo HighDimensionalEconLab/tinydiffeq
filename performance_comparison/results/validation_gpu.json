@@ -1,0 +1,87 @@
+{
+  "backend": "gpu",
+  "ode": [
+    {
+      "equation": "ode_scalar",
+      "method": "euler",
+      "dtype": "float32",
+      "max_endpoint_difference": 0.0
+    },
+    {
+      "equation": "ode_scalar",
+      "method": "tsit5",
+      "dtype": "float32",
+      "max_endpoint_difference": 4.470348358154297e-08
+    },
+    {
+      "equation": "ode_vector",
+      "method": "euler",
+      "dtype": "float32",
+      "max_endpoint_difference": 0.0
+    },
+    {
+      "equation": "ode_vector",
+      "method": "tsit5",
+      "dtype": "float32",
+      "max_endpoint_difference": 0.0
+    },
+    {
+      "equation": "ode_scalar",
+      "method": "euler",
+      "dtype": "float64",
+      "max_endpoint_difference": 0.0
+    },
+    {
+      "equation": "ode_scalar",
+      "method": "tsit5",
+      "dtype": "float64",
+      "max_endpoint_difference": 2.7755575615628914e-17
+    },
+    {
+      "equation": "ode_vector",
+      "method": "euler",
+      "dtype": "float64",
+      "max_endpoint_difference": 0.0
+    },
+    {
+      "equation": "ode_vector",
+      "method": "tsit5",
+      "dtype": "float64",
+      "max_endpoint_difference": 0.0
+    }
+  ],
+  "dae": [
+    {
+      "dtype": "float32",
+      "method": "tsit5",
+      "max_constraint_residual": 0.0
+    },
+    {
+      "dtype": "float32",
+      "method": "rodas5p",
+      "max_constraint_residual": 5.960464477539063e-08
+    },
+    {
+      "dtype": "float64",
+      "method": "tsit5",
+      "max_constraint_residual": 3.341771304121721e-14
+    },
+    {
+      "dtype": "float64",
+      "method": "rodas5p",
+      "max_constraint_residual": 1.1102230246251565e-16
+    }
+  ],
+  "stochastic": [
+    {
+      "dtype": "float32",
+      "max_sde_cross_library_difference": 4.172325134277344e-07,
+      "independent_paths": 256
+    },
+    {
+      "dtype": "float64",
+      "max_sde_cross_library_difference": 8.881784197001252e-16,
+      "independent_paths": 256
+    }
+  ]
+}

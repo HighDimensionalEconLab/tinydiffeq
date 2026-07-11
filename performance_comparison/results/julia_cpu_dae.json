@@ -1,0 +1,981 @@
+{
+    "unavailable": [
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}}, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}, 1}}, ::ReverseDiff.TrackedReal{Float32, Float32, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}}, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}, 1}}, ::ReverseDiff.TrackedReal{Float32, Float32, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "none",
+                "size": 32,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}}, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}, 1}}, ::ReverseDiff.TrackedReal{Float32, Float32, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}}, ReverseDiff.TrackedReal{Float32, Float32, ReverseDiff.TrackedArray{Float32, Float32, 1, Vector{Float32}, Vector{Float32}}}, 1}}, ::ReverseDiff.TrackedReal{Float32, Float32, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}}, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}, 1}}, ::ReverseDiff.TrackedReal{Float64, Float64, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}}, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}, 1}}, ::ReverseDiff.TrackedReal{Float64, Float64, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 1.0e-7,
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}}, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}, 1}}, ::ReverseDiff.TrackedReal{Float64, Float64, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "none",
+                "size": 32,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}}, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}, 1}}, ::ReverseDiff.TrackedReal{Float64, Float64, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}}, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}, 1}}, ::ReverseDiff.TrackedReal{Float64, Float64, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 1.0e-7,
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "reason": "First call to automatic differentiation for time gradient\nfailed. This means that the user `f` function is not compatible\nwith automatic differentiation. Methods to fix this include:\n\n1. Turn off automatic differentiation (e.g. Rosenbrock23() becomes\n   Rosenbrock23(autodiff=AutoFiniteDiff())). More details can be found at\n   https://docs.sciml.ai/DiffEqDocs/stable/features/performance_overloads/\n2. Improving the compatibility of `f` with ForwardDiff.jl automatic\n   differentiation (using tools like PreallocationTools.jl). More details\n   can be found at https://docs.sciml.ai/DiffEqDocs/stable/basics/faq/#Autodifferentiation-and-Dual-Numbers\n3. Defining analytical Jacobians and time gradients. More details can be\n   found at https://docs.sciml.ai/DiffEqDocs/stable/types/ode_types/#SciMLBase.ODEFunction\n\nNote 1: this failure occurred inside of the time gradient function. These\ntime gradients are only required by Rosenbrock methods (`Rosenbrock23`,\n`Rodas4`, etc.) and are done by automatic differentiation w.r.t. the\nargument `t`. If your function is compatible with automatic differentiation\nw.r.t. `u`, i.e. for Jacobian generation, another way to work around this\nissue is to switch to a non-Rosenbrock method.\n\nNote 2: turning off automatic differentiation tends to have a very minimal\nperformance impact (for this use case, because it's forward mode for a\nsquare Jacobian. This is different from optimization gradient scenarios).\nHowever, one should be careful as some methods are more sensitive to\naccurate gradients than others. Specifically, Rodas methods like `Rodas4`\nand `Rodas5P` require accurate Jacobians in order to have good convergence,\nwhile many other methods like BDF (`QNDF`, `FBDF`), SDIRK (`KenCarp4`),\nand Rosenbrock-W (`Rosenbrock23`) do not. Thus if using an algorithm which\nis sensitive to autodiff and solving at a low tolerance, please change the\nalgorithm as well.\n\nMethodError: convert(::Type{ForwardDiff.Dual{ForwardDiff.Tag{DiffEqBase.OrdinaryDiffEqTag, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}}, ReverseDiff.TrackedReal{Float64, Float64, ReverseDiff.TrackedArray{Float64, Float64, 1, Vector{Float64}, Vector{Float64}}}, 1}}, ::ReverseDiff.TrackedReal{Float64, Float64, Nothing}) is ambiguous.\n\nCandidates:\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, x::Number) where {T, V, N}\n    @ ForwardDiff ~/.julia/packages/ForwardDiff/4J2wz/src/dual.jl:465\n  convert(::Type{R}, t::T) where {R<:Real, T<:ReverseDiff.TrackedReal}\n    @ ReverseDiff ~/.julia/packages/ReverseDiff/XfRVo/src/tracked.jl:260\n\nPossible fix, define\n  convert(::Type{ForwardDiff.Dual{T, V, N}}, ::T) where {N, V, T, T<:ReverseDiff.TrackedReal}\n"
+        }
+    ],
+    "controller_equivalence": [
+    ],
+    "metadata": {
+        "backend": "cpu",
+        "julia": "1.12.6",
+        "packages": {
+            "StochasticDiffEq": "7.1.1",
+            "SciMLSensitivity": "7.113.0",
+            "SciMLBase": "3.31.0"
+        },
+        "threads": 1,
+        "platform": "x86_64-linux-gnu",
+        "quick": true,
+        "blas_threads": 1
+    },
+    "results": [
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.694000000000001e-6,
+            "median_seconds": 9.4025e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.076256204,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.076256204,
+            "samples_seconds": [
+                9.3831e-5,
+                9.3851e-5,
+                9.3907e-5,
+                9.4025e-5,
+                9.5413e-5,
+                9.5733e-5,
+                0.000114598
+            ],
+            "allocations": 235,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 12336
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.1324999999999997e-6,
+            "median_seconds": 1.246e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 4.7976e-5,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 4.7976e-5,
+            "samples_seconds": [
+                1.2116e-5,
+                1.2316e-5,
+                1.2367e-5,
+                1.246e-5,
+                1.2553e-5,
+                1.4395e-5,
+                1.5363e-5
+            ],
+            "allocations": 177,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9552
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "none",
+                "size": 32,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 5.963999999999796e-6,
+            "median_seconds": 0.00249109,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.008178577,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.008178577,
+            "samples_seconds": [
+                0.002480085,
+                0.002483573,
+                0.002490304,
+                0.00249109,
+                0.002491652,
+                0.002494153,
+                0.002498527
+            ],
+            "allocations": 240,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 71816
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.5515000000000043e-6,
+            "median_seconds": 0.000281943,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 0.000405409,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.000405409,
+            "samples_seconds": [
+                0.000279604,
+                0.000281069,
+                0.000281213,
+                0.000281943,
+                0.000282171,
+                0.000285214,
+                0.000316377
+            ],
+            "allocations": 183,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 69080
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 9.91350000000002e-6,
+            "median_seconds": 0.000365632,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.173839484,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.173839484,
+            "samples_seconds": [
+                0.000360019,
+                0.000360725,
+                0.000362552,
+                0.000365632,
+                0.000365835,
+                0.000377269,
+                0.000396997
+            ],
+            "allocations": 16789,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 952416
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.7649999999999913e-6,
+            "median_seconds": 3.9256e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 0.000102737,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.000102737,
+            "samples_seconds": [
+                3.6345e-5,
+                3.7178e-5,
+                3.7583e-5,
+                3.9256e-5,
+                3.9934e-5,
+                4.0357e-5,
+                4.151e-5
+            ],
+            "allocations": 1767,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 99584
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "none",
+                "size": 32,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 5.512050000000025e-5,
+            "median_seconds": 0.004100536,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.004497117,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.004497117,
+            "samples_seconds": [
+                0.004075928,
+                0.004092746,
+                0.004098168,
+                0.004100536,
+                0.004148729,
+                0.004152426,
+                0.004232969
+            ],
+            "allocations": 417,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 220992
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 8.351500000000037e-6,
+            "median_seconds": 0.00043538,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 0.000522973,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.000522973,
+            "samples_seconds": [
+                0.000401394,
+                0.000422967,
+                0.000433623,
+                0.00043538,
+                0.000435477,
+                0.000437816,
+                0.000440289
+            ],
+            "allocations": 243,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 199648
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 8.964999999999939e-7,
+            "median_seconds": 8.9897e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.070771155,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.070771155,
+            "samples_seconds": [
+                8.9359e-5,
+                8.9402e-5,
+                8.9883e-5,
+                8.9897e-5,
+                9.0533e-5,
+                9.0545e-5,
+                9.2718e-5
+            ],
+            "allocations": 207,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 11952
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 6.192000000000008e-7,
+            "median_seconds": 7.8868e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 1.5373e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 1.5373e-5,
+            "samples_seconds": [
+                7.535e-6,
+                7.5768e-6,
+                7.622399999999999e-6,
+                7.8868e-6,
+                8.1176e-6,
+                8.32e-6,
+                8.350600000000001e-6
+            ],
+            "allocations": 146,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9024
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.5983333333333387e-7,
+            "median_seconds": 1.0301666666666667e-5,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 2.0672e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 2.0672e-5,
+            "samples_seconds": [
+                8.853666666666666e-6,
+                9.982666666666667e-6,
+                1.0243333333333334e-5,
+                1.0301666666666667e-5,
+                1.0324e-5,
+                1.0421666666666665e-5,
+                1.0915333333333334e-5
+            ],
+            "allocations": 148,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9120
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "none",
+                "size": 32,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 6.707549999999994e-5,
+            "median_seconds": 0.002885634,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.003145662,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.003145662,
+            "samples_seconds": [
+                0.00280564,
+                0.002831463,
+                0.002841916,
+                0.002885634,
+                0.00290358,
+                0.00290395,
+                0.002973716
+            ],
+            "allocations": 210,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 127768
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.603000000000002e-6,
+            "median_seconds": 0.000163348,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.000224047,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.000224047,
+            "samples_seconds": [
+                0.000159623,
+                0.000161508,
+                0.000162645,
+                0.000163348,
+                0.000164209,
+                0.00016515,
+                0.000169337
+            ],
+            "allocations": 149,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 124840
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 3.6144999999999906e-6,
+            "median_seconds": 0.000230884,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.000367638,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.000367638,
+            "samples_seconds": [
+                0.000227397,
+                0.00022747,
+                0.000227579,
+                0.000230884,
+                0.000231105,
+                0.000231173,
+                0.000234433
+            ],
+            "allocations": 151,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 124936
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 2.919499999999998e-6,
+            "median_seconds": 0.000236351,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.141458541,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.141458541,
+            "samples_seconds": [
+                0.000232946,
+                0.000233959,
+                0.000234248,
+                0.000236351,
+                0.000236734,
+                0.000237312,
+                0.000238197
+            ],
+            "allocations": 16759,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1027104
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 3.7750000000000104e-7,
+            "median_seconds": 1.4176e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 2.2847e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 2.2847e-5,
+            "samples_seconds": [
+                1.3846e-5,
+                1.3989e-5,
+                1.4112e-5,
+                1.4176e-5,
+                1.4406e-5,
+                1.445e-5,
+                1.6767e-5
+            ],
+            "allocations": 960,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 58912
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.550000000000001e-7,
+            "median_seconds": 2.1367e-5,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 3.0609e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 3.0609e-5,
+            "samples_seconds": [
+                2.1086e-5,
+                2.117e-5,
+                2.1325e-5,
+                2.1367e-5,
+                2.137e-5,
+                2.1635e-5,
+                2.2838e-5
+            ],
+            "allocations": 1478,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 90656
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "none",
+                "size": 32,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0.00011803749999999939,
+            "median_seconds": 0.005983948,
+            "rtol": 0.0001,
+            "dt_0": 0.015625,
+            "first_execute_seconds": 0.006183368,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.006183368,
+            "samples_seconds": [
+                0.005954175,
+                0.00596405,
+                0.005977661,
+                0.005983948,
+                0.005994363,
+                0.006183423,
+                0.006199885
+            ],
+            "allocations": 390,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 421064
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.6289999999999777e-6,
+            "median_seconds": 0.000370193,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.000499405,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.000499405,
+            "samples_seconds": [
+                0.000366538,
+                0.00036837,
+                0.000369353,
+                0.000370193,
+                0.000371428,
+                0.000371553,
+                0.00040226
+            ],
+            "allocations": 207,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 383000
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_vector",
+                "controller": "native",
+                "size": 32,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 4.6214999999999624e-6,
+            "median_seconds": 0.000556641,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.000735375,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.000735375,
+            "samples_seconds": [
+                0.000550404,
+                0.000554112,
+                0.000554117,
+                0.000556641,
+                0.000557727,
+                0.000559745,
+                0.0005621
+            ],
+            "allocations": 213,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 384248
+        }
+    ]
+}

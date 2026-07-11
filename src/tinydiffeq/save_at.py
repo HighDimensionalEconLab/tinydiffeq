@@ -10,12 +10,13 @@ class SaveAt:
     """What ``solve_ode``/``solve_sde`` return. Exactly one mode must be set.
 
     - ``t_1=True``: the endpoint only (the default in the solve functions).
-    - ``ts=grid``: cubic-Hermite interpolation of the internal steps onto a
-      fixed, sorted query grid in ``[t_0, t_1]``. Output shape is
+    - ``ts=grid``: dense interpolation of the internal steps onto a fixed,
+      sorted query grid in ``[t_0, t_1]``. Explicit methods use cubic Hermite;
+      Rodas5P uses its stiff-aware fourth-order extension. Output shape is
       ``(len(ts), ...)`` regardless of how many internal steps the controller
       takes, so changing curvature never changes shapes or recompiles.
       ``ts`` is a data leaf; a different grid of the same length retraces
-      nothing. ODE and deterministic DAE only.
+      nothing. ODE, deterministic DAE, and linear exponential solves only.
     - ``steps=True``: the initial state and accepted internal steps as a
       chronological prefix of a ``max_steps + 1`` buffer. Rejected attempts
       are omitted. ``fill="last"`` (default) pads the tail with the final

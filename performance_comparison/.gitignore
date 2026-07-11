@@ -1,0 +1,4 @@
+python/.venv/
+julia/.CondaPkg/
+julia/LocalPreferences.toml
+results/*_quick.json

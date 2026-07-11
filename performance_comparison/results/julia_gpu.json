@@ -1,0 +1,63 @@
+{
+    "unavailable": [
+    ],
+    "controller_equivalence": [
+    ],
+    "metadata": {
+        "backend": "cuda",
+        "julia": "1.12.6",
+        "packages": {
+            "CUDA": "6.2.1",
+            "DiffEqGPU": "3.15.2"
+        },
+        "device": "CUDACore.CuDevice(0)",
+        "quick": true
+    },
+    "results": [
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.6897500000000046e-5,
+            "median_seconds": 0.0014225835,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 11.392402396,
+            "warmup_value_type": "SciMLBase.EnsembleSolution{Float32, 3, Vector{SciMLBase.RODESolution{Float32, 2, SubArray{SVector{1, Float32}, 1, Matrix{SVector{1, Float32}}, Tuple{UnitRange{Int64}, Int64}, true}, Nothing, Nothing, SubArray{Float32, 1, Matrix{Float32}, Tuple{UnitRange{Int64}, Int64}, true}, Nothing, Nothing, SDEProblem{SVector{1, Float32}, Tuple{Float32, Float32}, false, SVector{2, Float32}, Nothing, SciMLBase.SDEFunction{false, SciMLBase.AutoSpecialize, var\"#drift#make_run##0\"{Float32}, var\"#diffusion#make_run##1\"{Float32}, LinearAlgebra.UniformScaling{Bool}, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, typeof(SciMLBase.DEFAULT_OBSERVED), Nothing, Nothing, Nothing}, var\"#diffusion#make_run##1\"{Float32}, Base.Pairs{Symbol, Union{}, Nothing, @NamedTuple{}}, Nothing}, GPUEM, SciMLBase.LinearInterpolation{SubArray{Float32, 1, Matrix{Float32}, Tuple{UnitRange{Int64}, Int64}, true}, SubArray{SVector{1, Float32}, 1, Matrix{SVector{1, Float32}}, Tuple{UnitRange{Int64}, Int64}, true}}, Nothing, Nothing, Nothing}}}",
+            "compile_seconds": 11.392402396,
+            "samples_seconds": [
+                0.001413886,
+                0.00141521,
+                0.001420866,
+                0.001421008,
+                0.001421464,
+                0.001422376,
+                0.001422791,
+                0.001424275,
+                0.001432431,
+                0.001454187,
+                0.001585572,
+                0.001591515
+            ],
+            "allocations": 11875,
+            "max_steps": 128,
+            "tolerance_name": "common",
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 628832
+        }
+    ]
+}

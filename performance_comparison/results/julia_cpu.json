@@ -1,0 +1,2437 @@
+{
+    "unavailable": [
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float32, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float32, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float32, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float32, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float64, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float64, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float64, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float64, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "rtol": 1.0e-7,
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "reason": "MethodError: no method matching similar(::Float64, ::Tuple{Int64})\nThe function `similar` exists, but no method is defined for this combination of argument types.\n\nClosest candidates are:\n  similar(!Matched::Type{<:Base.CodeUnits{T}}, ::NTuple{N, Int64} where N) where T\n   @ Base strings/basic.jl:813\n  similar(!Matched::Type{A}, ::Tuple{Int64, Vararg{Int64}}) where A<:StaticArraysCore.StaticArray\n   @ StaticArrays ~/.julia/packages/StaticArrays/0cEwi/src/abstractarray.jl:153\n  similar(!Matched::Type{<:StructArrays.StructArray{T, N, C}}, ::NTuple{N, Int64} where N) where {T, N, C}\n   @ StructArrays ~/.julia/packages/StructArrays/fvsNe/src/structarray.jl:295\n  ...\n"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        }
+    ],
+    "controller_equivalence": [
+    ],
+    "metadata": {
+        "backend": "cpu",
+        "julia": "1.12.6",
+        "packages": {
+            "StochasticDiffEq": "7.1.1",
+            "SciMLSensitivity": "7.113.0",
+            "SciMLBase": "3.31.0"
+        },
+        "threads": 1,
+        "platform": "x86_64-linux-gnu",
+        "quick": true,
+        "blas_threads": 1
+    },
+    "results": [
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.3338888888888844e-7,
+            "median_seconds": 2.6238888888888886e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 1.4139e-5,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 1.4139e-5,
+            "samples_seconds": [
+                2.4955555555555555e-6,
+                2.5031111111111112e-6,
+                2.6183333333333334e-6,
+                2.6238888888888886e-6,
+                2.6775555555555556e-6,
+                2.7106666666666663e-6,
+                3.228e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1632
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.2361111111111139e-7,
+            "median_seconds": 2.8983333333333337e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 6.639e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 6.639e-6,
+            "samples_seconds": [
+                2.7864444444444445e-6,
+                2.8175555555555555e-6,
+                2.8373333333333333e-6,
+                2.8983333333333337e-6,
+                2.9241111111111115e-6,
+                2.978e-6,
+                3.0426666666666667e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1632
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 5.856249999999966e-8,
+            "median_seconds": 3.316375e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 7.016e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 7.016e-6,
+            "samples_seconds": [
+                3.2385e-6,
+                3.261375e-6,
+                3.30675e-6,
+                3.316375e-6,
+                3.3225e-6,
+                3.36275e-6,
+                3.692625e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1664
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 9.680000000000007e-8,
+            "median_seconds": 1.1620999999999999e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.10000000149011612,
+            "first_execute_seconds": 2.935e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 2.935e-6,
+            "samples_seconds": [
+                1.0765e-6,
+                1.0877e-6,
+                1.1603e-6,
+                1.1620999999999999e-6,
+                1.193e-6,
+                1.2486e-6,
+                1.2896e-6
+            ],
+            "allocations": 27,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1664
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 2.60500000000002e-7,
+            "median_seconds": 4.8275e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.013136305,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.013136305,
+            "samples_seconds": [
+                4.8065e-5,
+                4.8089e-5,
+                4.8267e-5,
+                4.8275e-5,
+                4.8297e-5,
+                4.858e-5,
+                4.8694e-5
+            ],
+            "allocations": 44,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9720
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 4.920000000000217e-7,
+            "median_seconds": 0.000136959,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.000159716,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.000159716,
+            "samples_seconds": [
+                0.000136599,
+                0.000136737,
+                0.000136775,
+                0.000136959,
+                0.000137094,
+                0.000137402,
+                0.000138461
+            ],
+            "allocations": 52,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 14248
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 3.620000000000077e-7,
+            "median_seconds": 0.00020214,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.000221463,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.000221463,
+            "samples_seconds": [
+                0.000201775,
+                0.00020187,
+                0.000202006,
+                0.00020214,
+                0.000202272,
+                0.000202328,
+                0.000235604
+            ],
+            "allocations": 59,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 17624
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.0510000000000006e-6,
+            "median_seconds": 1.4808e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.009999999776482582,
+            "first_execute_seconds": 1.6948e-5,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 1.6948e-5,
+            "samples_seconds": [
+                1.3259e-5,
+                1.4015e-5,
+                1.4667e-5,
+                1.4808e-5,
+                1.5024e-5,
+                1.576e-5,
+                1.6057e-5
+            ],
+            "allocations": 59,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 17624
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 4.349999999999984e-7,
+            "median_seconds": 1.2179e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 0.076886621,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.076886621,
+            "samples_seconds": [
+                1.2038e-5,
+                1.2123e-5,
+                1.2134e-5,
+                1.2179e-5,
+                1.2305e-5,
+                1.2822e-5,
+                1.2895e-5
+            ],
+            "allocations": 177,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9552
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 3.1939999999997665e-6,
+            "median_seconds": 0.002654903,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.951007106,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.951007106,
+            "samples_seconds": [
+                0.002650438,
+                0.002654753,
+                0.002654885,
+                0.002654903,
+                0.00265788,
+                0.002658146,
+                0.00266153
+            ],
+            "allocations": 24608,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1399120
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.0927777777777796e-7,
+            "median_seconds": 2.7291111111111113e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 6.5e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 6.5e-6,
+            "samples_seconds": [
+                2.5812222222222224e-6,
+                2.5947777777777777e-6,
+                2.6666666666666664e-6,
+                2.7291111111111113e-6,
+                2.737555555555556e-6,
+                2.742444444444444e-6,
+                2.804444444444444e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1680
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 9.044444444444484e-8,
+            "median_seconds": 2.9022222222222223e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 6.35e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 6.35e-6,
+            "samples_seconds": [
+                2.8156666666666666e-6,
+                2.8502222222222222e-6,
+                2.8566666666666667e-6,
+                2.9022222222222223e-6,
+                2.9411111111111115e-6,
+                2.9466666666666667e-6,
+                2.961222222222222e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1680
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 3.468749999999983e-8,
+            "median_seconds": 3.194875e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 6.701e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 6.701e-6,
+            "samples_seconds": [
+                3.135125e-6,
+                3.14475e-6,
+                3.184125e-6,
+                3.194875e-6,
+                3.197875e-6,
+                3.200375e-6,
+                3.20425e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1712
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.5300000000000006e-7,
+            "median_seconds": 1.3704e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.10000000149011612,
+            "first_execute_seconds": 2.545e-6,
+            "warmup_value_type": "Float32",
+            "compile_seconds": 2.545e-6,
+            "samples_seconds": [
+                1.212e-6,
+                1.2837999999999999e-6,
+                1.3092e-6,
+                1.3704e-6,
+                1.4431e-6,
+                1.4559000000000001e-6,
+                1.5666e-6
+            ],
+            "allocations": 27,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1712
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 2.4949999999999143e-7,
+            "median_seconds": 5.9012e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.01717948,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.01717948,
+            "samples_seconds": [
+                5.8599e-5,
+                5.8616e-5,
+                5.8981e-5,
+                5.9012e-5,
+                5.9031e-5,
+                5.9065e-5,
+                5.9832e-5
+            ],
+            "allocations": 56,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 19960
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 7.560000000000314e-7,
+            "median_seconds": 0.000172794,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.017359951,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.017359951,
+            "samples_seconds": [
+                0.000172235,
+                0.000172371,
+                0.000172555,
+                0.000172794,
+                0.000172808,
+                0.00017363,
+                0.00017776
+            ],
+            "allocations": 68,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 28488
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.1014999999999961e-6,
+            "median_seconds": 0.000283328,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.017448471,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.017448471,
+            "samples_seconds": [
+                0.000282443,
+                0.000282547,
+                0.000282937,
+                0.000283328,
+                0.000283739,
+                0.000283948,
+                0.00028496
+            ],
+            "allocations": 78,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 34864
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 3.6400000000000194e-7,
+            "median_seconds": 2.0484e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.009999999776482582,
+            "first_execute_seconds": 2.5091e-5,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 2.5091e-5,
+            "samples_seconds": [
+                2.0205e-5,
+                2.0261e-5,
+                2.0277e-5,
+                2.0484e-5,
+                2.0615e-5,
+                2.0651e-5,
+                2.0901e-5
+            ],
+            "allocations": 78,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 34864
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 4.302000000000007e-6,
+            "median_seconds": 4.62e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 0.177216912,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.177216912,
+            "samples_seconds": [
+                4.0662e-5,
+                4.3724e-5,
+                4.4043e-5,
+                4.62e-5,
+                4.744e-5,
+                4.8931e-5,
+                5.0328e-5
+            ],
+            "allocations": 1767,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 99584
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0.0003400219999999954,
+            "median_seconds": 0.086404946,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 11.790121806,
+            "warmup_value_type": "@NamedTuple{val::Float32, grad::Tuple{Vector{Float32}}}",
+            "compile_seconds": 11.790121806,
+            "samples_seconds": [
+                0.086295435,
+                0.086404946,
+                0.086975479
+            ],
+            "allocations": 1095581,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 42983216
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0,
+            "median_seconds": 0.332241307,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 3.317706049,
+            "warmup_value_type": "@NamedTuple{val::Float32, grad::Tuple{Vector{Float32}}}",
+            "compile_seconds": 3.317706049,
+            "samples_seconds": [
+                0.332241307
+            ],
+            "allocations": 4257453,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 166346464
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0,
+            "median_seconds": 0.514212404,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 3.331313871,
+            "warmup_value_type": "@NamedTuple{val::Float32, grad::Tuple{Vector{Float32}}}",
+            "compile_seconds": 3.331313871,
+            "samples_seconds": [
+                0.514212404
+            ],
+            "allocations": 6365371,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 248586080
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 0.00011893600000000004,
+            "median_seconds": 0.026490375,
+            "rtol": 0.0001,
+            "dt_0": 0.009999999776482582,
+            "first_execute_seconds": 0.02901226,
+            "warmup_value_type": "@NamedTuple{val::Float32, grad::Tuple{Vector{Float32}}}",
+            "compile_seconds": 0.02901226,
+            "samples_seconds": [
+                0.026419007,
+                0.02642876,
+                0.026431482,
+                0.026490375,
+                0.02654676,
+                0.026551354,
+                0.026620232
+            ],
+            "allocations": 338085,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 13444288
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 9.49000000000002e-6,
+            "median_seconds": 0.003780248,
+            "rtol": 0.0001,
+            "dt_0": 0.05000000074505806,
+            "first_execute_seconds": 14.803996609,
+            "warmup_value_type": "@NamedTuple{val::Float32, grad::Tuple{Vector{Float32}}}",
+            "compile_seconds": 14.803996609,
+            "samples_seconds": [
+                0.00377451,
+                0.003775396,
+                0.003778398,
+                0.003780248,
+                0.003783869,
+                0.003788905,
+                0.003863133
+            ],
+            "allocations": 33209,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1569624
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.1788888888888876e-7,
+            "median_seconds": 2.6678888888888885e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 1.7335e-5,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 1.7335e-5,
+            "samples_seconds": [
+                2.518777777777778e-6,
+                2.545444444444444e-6,
+                2.5897777777777778e-6,
+                2.6678888888888885e-6,
+                2.679e-6,
+                2.692e-6,
+                2.9865555555555555e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1872
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 8.677777777777776e-8,
+            "median_seconds": 2.9501111111111113e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 1.4036e-5,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 1.4036e-5,
+            "samples_seconds": [
+                2.8595555555555557e-6,
+                2.8893333333333334e-6,
+                2.9053333333333334e-6,
+                2.9501111111111113e-6,
+                2.9655555555555556e-6,
+                3.0026666666666667e-6,
+                3.1214444444444443e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1872
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 7.587499999999993e-8,
+            "median_seconds": 3.3975e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 1.1081e-5,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 1.1081e-5,
+            "samples_seconds": [
+                3.31775e-6,
+                3.34575e-6,
+                3.389375e-6,
+                3.3975e-6,
+                3.411125e-6,
+                3.47575e-6,
+                3.673125e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1904
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 8.929999999999993e-8,
+            "median_seconds": 1.2545e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.1,
+            "first_execute_seconds": 4.981e-6,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 4.981e-6,
+            "samples_seconds": [
+                1.1704e-6,
+                1.1875e-6,
+                1.238e-6,
+                1.2545e-6,
+                1.2915999999999998e-6,
+                1.3125e-6,
+                1.4125e-6
+            ],
+            "allocations": 27,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1904
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 5.474999999999977e-8,
+            "median_seconds": 2.1595e-6,
+            "rtol": 1.0e-7,
+            "dt_0": 0.1,
+            "first_execute_seconds": 3.476e-6,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 3.476e-6,
+            "samples_seconds": [
+                2.0846e-6,
+                2.086e-6,
+                2.1468000000000004e-6,
+                2.1595e-6,
+                2.169e-6,
+                2.1733e-6,
+                2.1844e-6
+            ],
+            "allocations": 27,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1904
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 2.64500000000004e-7,
+            "median_seconds": 5.39e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.011846829,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.011846829,
+            "samples_seconds": [
+                5.3561e-5,
+                5.3799e-5,
+                5.3827e-5,
+                5.39e-5,
+                5.4009e-5,
+                5.4146e-5,
+                5.5671e-5
+            ],
+            "allocations": 51,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 16944
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.111499999999991e-6,
+            "median_seconds": 0.000146243,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.000176049,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.000176049,
+            "samples_seconds": [
+                0.000145863,
+                0.000146123,
+                0.000146181,
+                0.000146243,
+                0.000146755,
+                0.000147772,
+                0.000147834
+            ],
+            "allocations": 63,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 25472
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 6.894999999999872e-7,
+            "median_seconds": 0.00022264,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.00025333,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.00025333,
+            "samples_seconds": [
+                0.000221754,
+                0.000221931,
+                0.000222268,
+                0.00022264,
+                0.000222678,
+                0.0002229,
+                0.000224119
+            ],
+            "allocations": 73,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 31880
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.2833333333333182e-7,
+            "median_seconds": 8.891333333333334e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.01,
+            "first_execute_seconds": 1.2961e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 1.2961e-5,
+            "samples_seconds": [
+                8.811333333333333e-6,
+                8.824e-6,
+                8.833333333333334e-6,
+                8.891333333333334e-6,
+                8.901333333333334e-6,
+                9.012666666666666e-6,
+                9.031666666666667e-6
+            ],
+            "allocations": 73,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 31880
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.5795000000000007e-6,
+            "median_seconds": 1.9536e-5,
+            "rtol": 1.0e-7,
+            "dt_0": 0.01,
+            "first_execute_seconds": 1.8414e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 1.8414e-5,
+            "samples_seconds": [
+                1.8523e-5,
+                1.8913e-5,
+                1.9344e-5,
+                1.9536e-5,
+                2.0111e-5,
+                2.1305e-5,
+                2.1565e-5
+            ],
+            "allocations": 73,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 31880
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.1410000000000116e-7,
+            "median_seconds": 7.4e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.071322029,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.071322029,
+            "samples_seconds": [
+                7.2296e-6,
+                7.3484e-6,
+                7.3922e-6,
+                7.4e-6,
+                7.4646000000000005e-6,
+                7.5042e-6,
+                7.5298e-6
+            ],
+            "allocations": 146,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9024
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 3.9599999999999926e-7,
+            "median_seconds": 9.431e-6,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 2.2104e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 2.2104e-5,
+            "samples_seconds": [
+                9.297e-6,
+                9.304e-6,
+                9.421e-6,
+                9.431e-6,
+                9.74e-6,
+                9.777e-6,
+                1.0204e-5
+            ],
+            "allocations": 148,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 9120
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 3.277999999999788e-6,
+            "median_seconds": 0.002768096,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.911642415,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.911642415,
+            "samples_seconds": [
+                0.002750779,
+                0.002764694,
+                0.002766635,
+                0.002768096,
+                0.002768821,
+                0.002769064,
+                0.00283748
+            ],
+            "allocations": 24609,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1510728
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 5.011111111111116e-8,
+            "median_seconds": 2.6516666666666665e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 1.0523e-5,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 1.0523e-5,
+            "samples_seconds": [
+                2.498e-6,
+                2.624777777777778e-6,
+                2.6476666666666667e-6,
+                2.6516666666666665e-6,
+                2.675777777777778e-6,
+                2.6968888888888885e-6,
+                2.7015555555555557e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1968
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 8.622222222222254e-8,
+            "median_seconds": 3.018222222222222e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 6.974e-6,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 6.974e-6,
+            "samples_seconds": [
+                2.9143333333333336e-6,
+                2.957e-6,
+                2.9853333333333334e-6,
+                3.018222222222222e-6,
+                3.0253333333333335e-6,
+                3.0894444444444444e-6,
+                3.158222222222222e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1968
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 9.887499999999996e-8,
+            "median_seconds": 3.538625e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.15625,
+            "first_execute_seconds": 8.416e-6,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 8.416e-6,
+            "samples_seconds": [
+                3.2975e-6,
+                3.36375e-6,
+                3.526125e-6,
+                3.538625e-6,
+                3.54125e-6,
+                3.546375e-6,
+                3.61725e-6
+            ],
+            "allocations": 27,
+            "max_steps": 64,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 2048
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 5.249999999999992e-8,
+            "median_seconds": 1.3739e-6,
+            "rtol": 0.0001,
+            "dt_0": 0.1,
+            "first_execute_seconds": 4.939e-6,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 4.939e-6,
+            "samples_seconds": [
+                1.2897000000000001e-6,
+                1.3446e-6,
+                1.3534e-6,
+                1.3739e-6,
+                1.3806e-6,
+                1.4224000000000001e-6,
+                1.5827000000000001e-6
+            ],
+            "allocations": 27,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 2048
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 5.972222222222245e-8,
+            "median_seconds": 2.456777777777778e-6,
+            "rtol": 1.0e-7,
+            "dt_0": 0.1,
+            "first_execute_seconds": 3.649e-6,
+            "warmup_value_type": "Float64",
+            "compile_seconds": 3.649e-6,
+            "samples_seconds": [
+                2.3867777777777778e-6,
+                2.4416666666666664e-6,
+                2.4485555555555558e-6,
+                2.456777777777778e-6,
+                2.488222222222222e-6,
+                2.5214444444444445e-6,
+                2.6043333333333336e-6
+            ],
+            "allocations": 27,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 2048
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 3.659999999999894e-7,
+            "median_seconds": 8.6564e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.017020782,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.017020782,
+            "samples_seconds": [
+                8.6254e-5,
+                8.6306e-5,
+                8.6431e-5,
+                8.6564e-5,
+                8.6705e-5,
+                8.6764e-5,
+                8.8332e-5
+            ],
+            "allocations": 57,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 37568
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.0579999999999617e-6,
+            "median_seconds": 0.00028035,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.017127911,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.017127911,
+            "samples_seconds": [
+                0.000278692,
+                0.000279151,
+                0.000280069,
+                0.00028035,
+                0.000280447,
+                0.000280889,
+                0.000281552
+            ],
+            "allocations": 69,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 54288
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 2.1609999999999815e-6,
+            "median_seconds": 0.000474382,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.017807295,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.017807295,
+            "samples_seconds": [
+                0.000471271,
+                0.000472202,
+                0.000473908,
+                0.000474382,
+                0.000474389,
+                0.000476043,
+                0.000476783
+            ],
+            "allocations": 79,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 66840
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.830000000000039e-7,
+            "median_seconds": 2.0654e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.01,
+            "first_execute_seconds": 2.4951e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 2.4951e-5,
+            "samples_seconds": [
+                2.0413e-5,
+                2.0499e-5,
+                2.0639e-5,
+                2.0654e-5,
+                2.0703e-5,
+                2.1001e-5,
+                2.1038e-5
+            ],
+            "allocations": 79,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 66840
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 5.72999999999996e-7,
+            "median_seconds": 3.5108e-5,
+            "rtol": 1.0e-7,
+            "dt_0": 0.01,
+            "first_execute_seconds": 3.968e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 3.968e-5,
+            "samples_seconds": [
+                3.5e-5,
+                3.5079e-5,
+                3.5094e-5,
+                3.5108e-5,
+                3.557e-5,
+                3.5749e-5,
+                3.7132e-5
+            ],
+            "allocations": 79,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 66840
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.4964999999999983e-6,
+            "median_seconds": 2.4158e-5,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.147814602,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.147814602,
+            "samples_seconds": [
+                2.2645e-5,
+                2.2906e-5,
+                2.3408e-5,
+                2.4158e-5,
+                2.4201e-5,
+                2.5106e-5,
+                2.8038e-5
+            ],
+            "allocations": 960,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 58912
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 2.109500000000004e-6,
+            "median_seconds": 3.6043e-5,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 4.5433e-5,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 4.5433e-5,
+            "samples_seconds": [
+                3.2873e-5,
+                3.399e-5,
+                3.5113e-5,
+                3.6043e-5,
+                3.6349e-5,
+                3.6973e-5,
+                3.7305e-5
+            ],
+            "allocations": 1478,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 90656
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "euler",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0.0006628335000000013,
+            "median_seconds": 0.081031303,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 9.37791121,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 9.37791121,
+            "samples_seconds": [
+                0.080508255,
+                0.081031303,
+                0.081833922
+            ],
+            "allocations": 1096084,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 49723856
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rk4",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0,
+            "median_seconds": 0.306788514,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 3.337375764,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 3.337375764,
+            "samples_seconds": [
+                0.306788514
+            ],
+            "allocations": 4258732,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 192737872
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "none",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0,
+            "median_seconds": 0.47682909,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 3.347440089,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 3.347440089,
+            "samples_seconds": [
+                0.47682909
+            ],
+            "allocations": 6367168,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 288078464
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 4.080700000000034e-5,
+            "median_seconds": 0.0138944,
+            "rtol": 0.0001,
+            "dt_0": 0.01,
+            "first_execute_seconds": 0.015308402,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 0.015308402,
+            "samples_seconds": [
+                0.01384956,
+                0.013854308,
+                0.013856668,
+                0.0138944,
+                0.013895359,
+                0.013897231,
+                0.014197927
+            ],
+            "allocations": 190170,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 8790496
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "tsit5",
+                "equation": "ode_vector",
+                "controller": "native",
+                "size": 256,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 0.00011499300000000073,
+            "median_seconds": 0.024684031,
+            "rtol": 1.0e-7,
+            "dt_0": 0.01,
+            "first_execute_seconds": 0.024633518,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 0.024633518,
+            "samples_seconds": [
+                0.024592971,
+                0.024626863,
+                0.024650789,
+                0.024684031,
+                0.024714087,
+                0.024793551,
+                0.024794695
+            ],
+            "allocations": 338418,
+            "max_steps": 512,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 15493408
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.2829499999999529e-5,
+            "median_seconds": 0.003162282,
+            "rtol": 0.0001,
+            "dt_0": 0.05,
+            "first_execute_seconds": 14.255672491,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 14.255672491,
+            "samples_seconds": [
+                0.003159459,
+                0.003159512,
+                0.00316152,
+                0.003162282,
+                0.003173252,
+                0.003173439,
+                0.003244162
+            ],
+            "allocations": 31783,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1537480
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "rodas5p",
+                "equation": "dae_scalar",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "adaptive"
+            },
+            "iqr_seconds": 1.5514999999998932e-5,
+            "median_seconds": 0.004035066,
+            "rtol": 1.0e-7,
+            "dt_0": 0.05,
+            "first_execute_seconds": 0.004414776,
+            "warmup_value_type": "@NamedTuple{val::Float64, grad::Tuple{Vector{Float64}}}",
+            "compile_seconds": 0.004414776,
+            "samples_seconds": [
+                0.00402682,
+                0.004030991,
+                0.00403446,
+                0.004035066,
+                0.004037899,
+                0.004058582,
+                0.004069098
+            ],
+            "allocations": 43081,
+            "max_steps": 256,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "precision",
+            "atol": 1.0e-9,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1988376
+        }
+    ]
+}

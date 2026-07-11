@@ -2,8 +2,10 @@
 
 JAX jits fixed-shape programs. An adaptive integrator is naturally
 dynamic — the number of steps depends on the data — so something must give.
-tinydiffeq's answer is a **bounded scan**: `solve_ode` always runs one
-`lax.scan` of exactly `max_steps` iterations, whatever the controller does.
+tinydiffeq's answer is a **bounded scan**: `solve_ode` always provides exactly
+`max_steps` static attempt slots, whatever the controller does. Adaptive
+attempts are grouped into small nested-scan chunks so a completed solve skips
+whole padded chunks instead of visiting every unused attempt individually.
 
 Each iteration attempts one step:
 
@@ -17,19 +19,17 @@ The raw internal scan buffer contains repeated rows for rejected and frozen
 iterations. That buffer is an implementation detail used by interpolation;
 step output compacts it into accepted rows plus tail padding.
 
-The scan loop itself always has `max_steps` iterations, preserving static
-shapes and reverse-mode AD. A scalar `lax.cond` nevertheless keeps the
-expensive vector-field, solver-stage, and controller computations out of the
-frozen tail, so a scalar solve's compute cost follows its attempted steps plus
-cheap loop overhead. Under `vmap`, JAX may turn each lane's conditional into
-selection; batched work can therefore continue until the slowest lane
+The bounded loops always contain `max_steps` attempt slots, preserving static
+shapes and reverse-mode AD. Chunk-level and attempt-level `lax.cond` branches
+keep the expensive vector-field, solver-stage, and controller computations
+out of the frozen tail. Under `vmap`, JAX may turn each lane's conditional
+into selection; batched work can therefore continue until the slowest lane
 finishes.
 
-Fixed-step and adaptive integration share this single code path:
-`ConstantStepSize` accepts every attempt, so `dt_0 = (t_1 - t_0)/n` with
-`max_steps = n` reproduces a fixed grid exactly. The conditional has modest
-overhead for very cheap solves whose budget is already exact; it pays off
-when the budget has a padded tail or the vector field is expensive.
+Fixed-step integration uses a smaller specialized scan without adaptive
+controller or embedded-error work. `ConstantStepSize` accepts every attempt,
+so `dt_0 = (t_1 - t_0)/n` with `max_steps = n` reproduces a fixed grid
+exactly.
 
 If the budget runs out before `t_1`, `sol.ok` is `False` and the outputs hold
 the reached prefix. The package never poisons values; the caller decides:
@@ -50,7 +50,7 @@ state.
 ### `SaveAt(ts=grid)` — interpolation onto a fixed grid
 
 This is the answer to "adaptive steps vs static shapes". Internal steps
-adapt freely; the output is cubic-Hermite interpolation onto your fixed
+adapt freely; the output is dense interpolation onto your fixed
 query grid, so each output leaf has shape
 `(len(grid),) + corresponding_input_leaf.shape` **regardless of how many
 steps the controller took**. Changing tolerances, initial conditions,
@@ -99,19 +99,20 @@ gather; it performs no sorting.
 
 ODE, SDE, and DAE states may be arbitrary JAX pytrees, including registered
 dataclasses. Each state contains at least one nonempty real floating array,
-and all leaves use one dtype. Solver arithmetic is mapped directly
-over leaves: states are not flattened or concatenated inside a time step.
-Consequently, a single-array state retains the array execution path; the
-pytree structure is resolved while tracing. A change to leaf values with the
-same shapes and structure reuses a compilation, while changing the treedef or
-a leaf shape requires a new compilation.
+and all leaves use one dtype. Explicit and stochastic solver arithmetic maps
+directly over leaves, so a single-array state retains its array execution
+path. Rodas5P temporarily ravels the state because its dense Jacobian and LU
+factorization couple all coordinates, then reconstructs the original pytree
+at every public boundary. In every case the structure is resolved while
+tracing. Changing leaf values with unchanged shapes and structure reuses a
+compilation; changing the treedef or a leaf shape requires a new compilation.
 
 For every multi-row `SaveAt` mode the leading row dimension is added to each
 leaf independently. `sol.accepted` is one shared mask for all leaves.
 
 ## Why one compilation, precisely
 
-- The scan length `max_steps` is static; nothing else about the loop depends
+- The attempt budget `max_steps` is static; nothing else about the loop depends
   on data shapes.
 - Tolerances and PI coefficients (`IController(...)` / `PIController(...)`),
   `dt_0`, `t_0`, `t_1`, `x_0`,

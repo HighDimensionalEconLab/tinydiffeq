@@ -1,0 +1,394 @@
+{
+    "unavailable": [
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "ArgumentError: range(0.8, stop=1.2, length=1): endpoints differ"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 16384,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 16384,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "ArgumentError: range(0.8, stop=1.2, length=1): endpoints differ"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 16384,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 16384,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise ensemble derivative not enabled in this suite"
+        }
+    ],
+    "controller_equivalence": [
+    ],
+    "metadata": {
+        "backend": "cpu",
+        "julia": "1.12.6",
+        "packages": {
+            "StochasticDiffEq": "7.1.1",
+            "SciMLSensitivity": "7.113.0",
+            "SciMLBase": "3.31.0"
+        },
+        "threads": 1,
+        "platform": "x86_64-linux-gnu",
+        "quick": true,
+        "blas_threads": 1
+    },
+    "results": [
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.198450000000021e-5,
+            "median_seconds": 0.003104404,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 1.131219973,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 1.131219973,
+            "samples_seconds": [
+                0.003098518,
+                0.003099709,
+                0.003103568,
+                0.003104404,
+                0.003108191,
+                0.003119055,
+                0.003186983
+            ],
+            "allocations": 24608,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1399120
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 16384,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0.011020099499999991,
+            "median_seconds": 0.2095458395,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.264273526,
+            "warmup_value_type": "Vector{Float32}",
+            "compile_seconds": 0.264273526,
+            "samples_seconds": [
+                0.19852574,
+                0.220565939
+            ],
+            "allocations": 1572897,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 89457976
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 1.0905500000000026e-5,
+            "median_seconds": 0.003035095,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.932609933,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.932609933,
+            "samples_seconds": [
+                0.003025163,
+                0.00302993,
+                0.003034185,
+                0.003035095,
+                0.003039117,
+                0.003046809,
+                0.003051071
+            ],
+            "allocations": 24609,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 1510728
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 16384,
+                "method": "em",
+                "equation": "sde_ensemble",
+                "controller": "none",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0,
+            "median_seconds": 0.201151645,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 0.202170311,
+            "warmup_value_type": "Vector{Float64}",
+            "compile_seconds": 0.202170311,
+            "samples_seconds": [
+                0.201151645
+            ],
+            "allocations": 1572897,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 96601416
+        }
+    ]
+}

@@ -1,0 +1,2998 @@
+{
+  "metadata": {
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "jax": "0.10.2",
+    "diffrax": "0.7.2",
+    "tinydiffeq_git": "23fa371742eef93055269807e10d74d403a6b0d9",
+    "python": "3.13.13",
+    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "quick": true,
+    "x64_enabled": true,
+    "environment": {
+      "JAX_PLATFORMS": "cuda",
+      "CUDA_VISIBLE_DEVICES": null,
+      "XLA_FLAGS": null
+    }
+  },
+  "controller_equivalence": [
+    {
+      "dtype": "float32",
+      "controller": "i",
+      "equivalent": false,
+      "tinydiffeq_accepted": 6,
+      "diffrax_accepted": 6,
+      "max_mesh_difference": 0.04265117645263672
+    },
+    {
+      "dtype": "float32",
+      "controller": "pi",
+      "equivalent": false,
+      "tinydiffeq_accepted": 10,
+      "diffrax_accepted": 10,
+      "max_mesh_difference": 0.06283247470855713
+    },
+    {
+      "dtype": "float64",
+      "controller": "i",
+      "equivalent": false,
+      "tinydiffeq_accepted": 6,
+      "diffrax_accepted": 6,
+      "max_mesh_difference": 0.029213448095818606
+    },
+    {
+      "dtype": "float64",
+      "controller": "pi",
+      "equivalent": false,
+      "tinydiffeq_accepted": 10,
+      "diffrax_accepted": 10,
+      "max_mesh_difference": 0.35917943174184686
+    }
+  ],
+  "results": [
+    {
+      "median_seconds": 0.03488998697139323,
+      "iqr_seconds": 0.00013476412277668715,
+      "samples_seconds": [
+        0.035016534151509404,
+        0.03474700590595603,
+        0.03488998697139323
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.3348049419000745,
+      "first_execute_seconds": 0.07559656584635377,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.01255413400940597,
+      "iqr_seconds": 2.3677595891058445e-05,
+      "samples_seconds": [
+        0.01255413400940597,
+        0.012580100214108825,
+        0.012532745022326708
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.4556570260319859,
+      "first_execute_seconds": 0.0192439709790051,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.007209866103949025,
+      "iqr_seconds": 2.6266381610184908e-05,
+      "samples_seconds": [
+        0.007188464485807344,
+        0.007240997249027714,
+        0.007209866103949025
+      ],
+      "iterations_per_sample": 8,
+      "compile_seconds": 0.4979327139444649,
+      "first_execute_seconds": 0.008581227855756879,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.010676341713406146,
+      "iqr_seconds": 3.9286649553105235e-05,
+      "samples_seconds": [
+        0.010654865473043174,
+        0.010676341713406146,
+        0.010733438772149384
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.45531648420728743,
+      "first_execute_seconds": 0.014479018049314618,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.06694533117115498,
+      "iqr_seconds": 0.00011147954501211643,
+      "samples_seconds": [
+        0.06684673996642232,
+        0.06706969905644655,
+        0.06694533117115498
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.41719411010853946,
+      "first_execute_seconds": 0.07432293496094644,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.021374940406531096,
+      "iqr_seconds": 9.461981244385242e-05,
+      "samples_seconds": [
+        0.021530343568883836,
+        0.021374940406531096,
+        0.02134110394399613
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.5124327749945223,
+      "first_execute_seconds": 0.022978481836616993,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.010261779767461121,
+      "iqr_seconds": 0.0002470356412231922,
+      "samples_seconds": [
+        0.010491119523067027,
+        0.010261779767461121,
+        0.009997048240620643
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.4696106230840087,
+      "first_execute_seconds": 0.011570649920031428,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.014437787467613816,
+      "iqr_seconds": 2.0211620721966028e-05,
+      "samples_seconds": [
+        0.014428690483327955,
+        0.014437787467613816,
+        0.014469113724771887
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.5104675691109151,
+      "first_execute_seconds": 0.018719019135460258,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.045840256148949265,
+      "iqr_seconds": 9.842193685472012e-05,
+      "samples_seconds": [
+        0.045840256148949265,
+        0.04566351813264191,
+        0.04586036200635135
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.4836184091400355,
+      "first_execute_seconds": 0.049442894058302045,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.021076684934087098,
+      "iqr_seconds": 2.5188259314745665e-05,
+      "samples_seconds": [
+        0.021076684934087098,
+        0.021106685511767864,
+        0.021056308993138373
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.7628637191373855,
+      "first_execute_seconds": 0.022609303006902337,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00961738225305453,
+      "iqr_seconds": 1.6173755284398794e-05,
+      "samples_seconds": [
+        0.00961738225305453,
+        0.009643244498874992,
+        0.009610896988306195
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.8015480521135032,
+      "first_execute_seconds": 0.011067447951063514,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.011539953236933798,
+      "iqr_seconds": 1.3320124708116055e-05,
+      "samples_seconds": [
+        0.01154148147907108,
+        0.011514841229654849,
+        0.011539953236933798
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.7633003699593246,
+      "first_execute_seconds": 0.016539241885766387,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.08874899591319263,
+      "iqr_seconds": 0.00022274511866271496,
+      "samples_seconds": [
+        0.08874899591319263,
+        0.08880163705907762,
+        0.08835614682175219
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.5825905269011855,
+      "first_execute_seconds": 0.09257252886891365,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.035112289944663644,
+      "iqr_seconds": 6.901496089994907e-05,
+      "samples_seconds": [
+        0.035034357104450464,
+        0.03517238702625036,
+        0.035112289944663644
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.8367109620012343,
+      "first_execute_seconds": 0.03694881801493466,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.009660314011853188,
+      "iqr_seconds": 2.0076229702681303e-05,
+      "samples_seconds": [
+        0.009671375504694879,
+        0.009631223045289516,
+        0.009660314011853188
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.8407652541063726,
+      "first_execute_seconds": 0.011773564852774143,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.016554113593883812,
+      "iqr_seconds": 5.166744813323021e-05,
+      "samples_seconds": [
+        0.016554113593883812,
+        0.01656847691629082,
+        0.01646514202002436
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.7727328608743846,
+      "first_execute_seconds": 0.021857807179912925,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.059270194033160806,
+      "iqr_seconds": 0.0001653220970183611,
+      "samples_seconds": [
+        0.05923197488300502,
+        0.059270194033160806,
+        0.059562619077041745
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.720562948146835,
+      "first_execute_seconds": 0.06471137097105384,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.03614250896498561,
+      "iqr_seconds": 1.0307412594556808e-05,
+      "samples_seconds": [
+        0.03614059300161898,
+        0.036161207826808095,
+        0.03614250896498561
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.2914030021056533,
+      "first_execute_seconds": 0.03937580087222159,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05369448708370328,
+      "iqr_seconds": 7.57761299610138e-05,
+      "samples_seconds": [
+        0.05369448708370328,
+        0.05380551912821829,
+        0.053653966868296266
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.2892845747992396,
+      "first_execute_seconds": 0.05677604698576033,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05960353999398649,
+      "iqr_seconds": 3.317208029329777e-05,
+      "samples_seconds": [
+        0.05966548318974674,
+        0.05959913902916014,
+        0.05960353999398649
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.0322876791469753,
+      "first_execute_seconds": 0.06612711795605719,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.10330595192499459,
+      "iqr_seconds": 0.00019224744755774736,
+      "samples_seconds": [
+        0.10348246293142438,
+        0.10330595192499459,
+        0.10309796803630888
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.8284532460384071,
+      "first_execute_seconds": 0.10931256297044456,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.044703237945213914,
+      "iqr_seconds": 5.740008782595396e-05,
+      "samples_seconds": [
+        0.044703237945213914,
+        0.04476797999814153,
+        0.04465317982248962
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.3555691388901323,
+      "first_execute_seconds": 0.048374527134001255,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05600754707120359,
+      "iqr_seconds": 0.00041625951416790485,
+      "samples_seconds": [
+        0.05600754707120359,
+        0.055864627938717604,
+        0.05669714696705341
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.350348699837923,
+      "first_execute_seconds": 0.06020517204888165,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 4,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.06930213700979948,
+      "iqr_seconds": 0.0002193234395235777,
+      "samples_seconds": [
+        0.06911397608928382,
+        0.06955262296833098,
+        0.06930213700979948
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.2224669910501689,
+      "first_execute_seconds": 0.07767212786711752,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05000000074505806,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.056591016007587314,
+      "iqr_seconds": 0.000588834984228015,
+      "samples_seconds": [
+        0.05750554893165827,
+        0.056591016007587314,
+        0.05632787896320224
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.31792852096259594,
+      "first_execute_seconds": 0.07705132197588682,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.01487529173027724,
+      "iqr_seconds": 0.00023909687297418714,
+      "samples_seconds": [
+        0.014909783785697073,
+        0.01487529173027724,
+        0.014431590039748698
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.43691723607480526,
+      "first_execute_seconds": 0.01665181014686823,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.008416872238740325,
+      "iqr_seconds": 5.278727621771395e-05,
+      "samples_seconds": [
+        0.008429536770563573,
+        0.008416872238740325,
+        0.008323962218128145
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.44039797596633434,
+      "first_execute_seconds": 0.010049465112388134,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.008404958236496896,
+      "iqr_seconds": 2.509501064196229e-05,
+      "samples_seconds": [
+        0.008451125235296786,
+        0.008404958236496896,
+        0.008400935214012861
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.5185273878742009,
+      "first_execute_seconds": 0.010160384001210332,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.012599363515619189,
+      "iqr_seconds": 1.7429498257115483e-05,
+      "samples_seconds": [
+        0.012599363515619189,
+        0.012615253741387278,
+        0.012580394744873047
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.4262734579388052,
+      "first_execute_seconds": 0.01671978901140392,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.012621899775695056,
+      "iqr_seconds": 7.0847454480826855e-06,
+      "samples_seconds": [
+        0.012621899775695056,
+        0.012628002732526511,
+        0.012613833241630346
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.42152372701093554,
+      "first_execute_seconds": 0.016649978002533317,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.33025374193675816,
+      "iqr_seconds": 0.00024365109857171774,
+      "samples_seconds": [
+        0.3302698361221701,
+        0.33025374193675816,
+        0.32978253392502666
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.36838036007247865,
+      "first_execute_seconds": 0.33670589816756546,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.028668147046118975,
+      "iqr_seconds": 0.0005551687791012228,
+      "samples_seconds": [
+        0.029026395990513265,
+        0.028668147046118975,
+        0.02791605843231082
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.5281118669081479,
+      "first_execute_seconds": 0.030768304131925106,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00798784225480631,
+      "iqr_seconds": 1.849263207986951e-05,
+      "samples_seconds": [
+        0.008012384758330882,
+        0.00798784225480631,
+        0.007975399494171143
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.5141588707920164,
+      "first_execute_seconds": 0.010001409100368619,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.00799389771418646,
+      "iqr_seconds": 1.1432741302996874e-05,
+      "samples_seconds": [
+        0.007984797994140536,
+        0.00800766347674653,
+        0.00799389771418646
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.4728700739797205,
+      "first_execute_seconds": 0.01071314886212349,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.03810486104339361,
+      "iqr_seconds": 3.344251308590174e-05,
+      "samples_seconds": [
+        0.03805350186303258,
+        0.03812038688920438,
+        0.03810486104339361
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.5385630410164595,
+      "first_execute_seconds": 0.04277294408529997,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.03810572298243642,
+      "iqr_seconds": 2.034206409007311e-05,
+      "samples_seconds": [
+        0.03810931206680834,
+        0.03810572298243642,
+        0.0380686279386282
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.48597533511929214,
+      "first_execute_seconds": 0.04258670215494931,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.06837653811089694,
+      "iqr_seconds": 0.00012637849431484938,
+      "samples_seconds": [
+        0.06828454602509737,
+        0.06853730301372707,
+        0.06837653811089694
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.4874372810591012,
+      "first_execute_seconds": 0.07255441998131573,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.02471477957442403,
+      "iqr_seconds": 1.6250996850430965e-05,
+      "samples_seconds": [
+        0.02471477957442403,
+        0.024735682411119342,
+        0.02470318041741848
+      ],
+      "iterations_per_sample": 2,
+      "compile_seconds": 0.685915436130017,
+      "first_execute_seconds": 0.02644006093032658,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.008653059776406735,
+      "iqr_seconds": 1.192462514154613e-05,
+      "samples_seconds": [
+        0.008654497505631298,
+        0.008630648255348206,
+        0.008653059776406735
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.8327158608008176,
+      "first_execute_seconds": 0.010514446068555117,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.008644522225949913,
+      "iqr_seconds": 5.813752068206668e-06,
+      "samples_seconds": [
+        0.008644522225949913,
+        0.008637281716801226,
+        0.00864890922093764
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.7174564218148589,
+      "first_execute_seconds": 0.010612864047288895,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.011653666500933468,
+      "iqr_seconds": 8.989154594019055e-06,
+      "samples_seconds": [
+        0.011653666500933468,
+        0.011664431542158127,
+        0.011646453232970089
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.6580611488316208,
+      "first_execute_seconds": 0.016987228067591786,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.011528060480486602,
+      "iqr_seconds": 4.822813207283616e-05,
+      "samples_seconds": [
+        0.011528060480486602,
+        0.011605995998252183,
+        0.011509539734106511
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.6491059549152851,
+      "first_execute_seconds": 0.01686624507419765,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.35742407687939703,
+      "iqr_seconds": 0.00026320747565478086,
+      "samples_seconds": [
+        0.35792946396395564,
+        0.35742407687939703,
+        0.3574030490126461
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.5987974039744586,
+      "first_execute_seconds": 0.3639136019628495,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.04791531106457114,
+      "iqr_seconds": 5.66054368391633e-05,
+      "samples_seconds": [
+        0.04791531106457114,
+        0.04799705999903381,
+        0.04788384912535548
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.7531365230679512,
+      "first_execute_seconds": 0.04979312606155872,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.011015831783879548,
+      "iqr_seconds": 3.0083523597568274e-05,
+      "samples_seconds": [
+        0.011015831783879548,
+        0.01099607750074938,
+        0.011056244547944516
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.9025045579764992,
+      "first_execute_seconds": 0.013534521916881204,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.01097602245863527,
+      "iqr_seconds": 0.00010724549065344036,
+      "samples_seconds": [
+        0.01097602245863527,
+        0.010970855772029608,
+        0.01118534675333649
+      ],
+      "iterations_per_sample": 4,
+      "compile_seconds": 0.7779346460010856,
+      "first_execute_seconds": 0.013509186916053295,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.03851117310114205,
+      "iqr_seconds": 4.862796049565077e-05,
+      "samples_seconds": [
+        0.038567889016121626,
+        0.03851117310114205,
+        0.038470633095130324
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.8467649559024721,
+      "first_execute_seconds": 0.04466655803844333,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.038490658858790994,
+      "iqr_seconds": 3.965490031987429e-05,
+      "samples_seconds": [
+        0.038566910894587636,
+        0.03848760109394789,
+        0.038490658858790994
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.7919542600866407,
+      "first_execute_seconds": 0.04441871796734631,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.08514230605214834,
+      "iqr_seconds": 9.469152428209782e-05,
+      "samples_seconds": [
+        0.08502075099386275,
+        0.08514230605214834,
+        0.08521013404242694
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.6932539448607713,
+      "first_execute_seconds": 0.09066044702194631,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.04383751004934311,
+      "iqr_seconds": 0.00022901163902133703,
+      "samples_seconds": [
+        0.0437189529184252,
+        0.04383751004934311,
+        0.044176976196467876
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.2403518420178443,
+      "first_execute_seconds": 0.04758067615330219,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.054441077867522836,
+      "iqr_seconds": 2.9222574084997177e-05,
+      "samples_seconds": [
+        0.054484840016812086,
+        0.05442639486864209,
+        0.054441077867522836
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.1702593942172825,
+      "first_execute_seconds": 0.058587776962667704,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05495360097847879,
+      "iqr_seconds": 8.252356201410294e-05,
+      "samples_seconds": [
+        0.05495360097847879,
+        0.054884765995666385,
+        0.05504981311969459
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.202573571819812,
+      "first_execute_seconds": 0.0587566529866308,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.062329295091331005,
+      "iqr_seconds": 3.216054756194353e-05,
+      "samples_seconds": [
+        0.06238707108423114,
+        0.06232274998910725,
+        0.062329295091331005
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.0237933229655027,
+      "first_execute_seconds": 0.06997417798265815,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.06286625983193517,
+      "iqr_seconds": 0.00013656041119247675,
+      "samples_seconds": [
+        0.06272798008285463,
+        0.06286625983193517,
+        0.06300110090523958
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.178134516114369,
+      "first_execute_seconds": 0.06990211014635861,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.3670082918833941,
+      "iqr_seconds": 0.00012616347521543503,
+      "samples_seconds": [
+        0.3670082918833941,
+        0.36713962303474545,
+        0.3668872960843146
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 0.8782560110557824,
+      "first_execute_seconds": 0.37627084786072373,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.06515414197929204,
+      "iqr_seconds": 0.00017042690888047218,
+      "samples_seconds": [
+        0.06502898316830397,
+        0.06515414197929204,
+        0.06536983698606491
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.1980794928967953,
+      "first_execute_seconds": 0.06914312206208706,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.015625,
+      "max_steps": 64,
+      "stats": {
+        "accepted_steps": 64,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05704356008209288,
+      "iqr_seconds": 0.0002639044541865587,
+      "samples_seconds": [
+        0.05654663103632629,
+        0.05707443994469941,
+        0.05704356008209288
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.2589769940823317,
+      "first_execute_seconds": 0.0607275350484997,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.05682729301042855,
+      "iqr_seconds": 0.00026788306422531605,
+      "samples_seconds": [
+        0.05682729301042855,
+        0.05669463495723903,
+        0.057230401085689664
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.366500434000045,
+      "first_execute_seconds": 0.0620602248236537,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    },
+    {
+      "median_seconds": 0.0939888849388808,
+      "iqr_seconds": 6.640295032411814e-05,
+      "samples_seconds": [
+        0.0939637990668416,
+        0.09409660496748984,
+        0.0939888849388808
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.269578553037718,
+      "first_execute_seconds": 0.10325463209301233,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "common"
+    },
+    {
+      "median_seconds": 0.09484014101326466,
+      "iqr_seconds": 0.0003712800098583102,
+      "samples_seconds": [
+        0.0951299350708723,
+        0.09438737505115569,
+        0.09484014101326466
+      ],
+      "iterations_per_sample": 1,
+      "compile_seconds": 1.2691560669336468,
+      "first_execute_seconds": 0.10348589206114411,
+      "library": "tinydiffeq",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "dt_0": 0.05,
+      "max_steps": 256,
+      "stats": {
+        "accepted_steps": 3,
+        "ok": true
+      },
+      "absolute_error": null,
+      "tolerance_name": "precision"
+    }
+  ],
+  "unavailable": [
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float32",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "primal",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "jvp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_scalar",
+        "size": 1,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rk4",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "fixed",
+        "controller": "none",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "rodas5p",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 0.0001,
+      "atol": 1e-06,
+      "reason": "no equivalent semi-explicit DAE interface"
+    },
+    {
+      "library": "diffrax",
+      "case": {
+        "equation": "dae_vector",
+        "size": 32,
+        "method": "tsit5",
+        "stepping": "adaptive",
+        "controller": "i",
+        "dtype": "float64",
+        "transform": "vjp",
+        "batch": 1
+      },
+      "rtol": 1e-07,
+      "atol": 1e-09,
+      "reason": "no equivalent semi-explicit DAE interface"
+    }
+  ]
+}

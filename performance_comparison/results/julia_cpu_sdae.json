@@ -1,0 +1,261 @@
+{
+    "unavailable": [
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "ArgumentError: range(0.8, stop=1.2, length=1): endpoints differ"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 1,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "ArgumentError: range(0.8, stop=1.2, length=1): endpoints differ"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "jvp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 1,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        },
+        {
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "vjp",
+                "stepping": "fixed"
+            },
+            "rtol": 0.0001,
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "reason": "SciML pathwise SDAE ensemble derivative not enabled in this suite"
+        }
+    ],
+    "controller_equivalence": [
+    ],
+    "metadata": {
+        "backend": "cpu",
+        "julia": "1.12.6",
+        "packages": {
+            "StochasticDiffEq": "7.1.1",
+            "SciMLSensitivity": "7.113.0",
+            "SciMLBase": "3.31.0"
+        },
+        "threads": 1,
+        "platform": "x86_64-linux-gnu",
+        "quick": true,
+        "blas_threads": 1
+    },
+    "results": [
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float32",
+                "batch": 256,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 0.000501827500000003,
+            "median_seconds": 0.018950752,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 5.278892924,
+            "warmup_value_type": "Vector{Vector{Float32}}",
+            "compile_seconds": 5.278892924,
+            "samples_seconds": [
+                0.018771213,
+                0.018797034,
+                0.018820417,
+                0.018950752,
+                0.019125725,
+                0.019495381,
+                0.019830655
+            ],
+            "allocations": 57122,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 3087784
+        },
+        {
+            "iterations_per_sample": 1,
+            "case": {
+                "dtype": "float64",
+                "batch": 256,
+                "method": "implicit_em",
+                "equation": "sdae_ensemble",
+                "controller": "native",
+                "size": 1,
+                "transform": "primal",
+                "stepping": "fixed"
+            },
+            "iqr_seconds": 5.787349999999969e-5,
+            "median_seconds": 0.018247619,
+            "rtol": 0.0001,
+            "dt_0": 0.0078125,
+            "first_execute_seconds": 2.196907209,
+            "warmup_value_type": "Vector{Vector{Float64}}",
+            "compile_seconds": 2.196907209,
+            "samples_seconds": [
+                0.018220996,
+                0.01822343,
+                0.018239428,
+                0.018247619,
+                0.018286211,
+                0.018292394,
+                0.018299588
+            ],
+            "allocations": 52514,
+            "max_steps": 128,
+            "stats": {
+                "ok": true
+            },
+            "type_inferred": true,
+            "tolerance_name": "common",
+            "atol": 1.0e-6,
+            "library": "sciml",
+            "absolute_error": null,
+            "memory_bytes": 3116456
+        }
+    ]
+}

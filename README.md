@@ -8,22 +8,42 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Tiny differentiable ODE/SDE/DAE/SDAE solvers for JAX: fixed-step Euler/RK4,
-adaptive Tsit5 with integral or proportional-integral step-size control,
-Euler–Maruyama for Itô SDEs, and nonstiff semi-explicit index-1 deterministic
-and stochastic DAEs.
-One bounded `lax.scan` of exactly `max_steps` iterations serves fixed and
+adaptive Tsit5, linearly implicit Rodas5P for stiff ODEs and index-1 DAEs,
+and Euler–Maruyama for Itô SDEs and semi-explicit index-1 SDAEs. The package
+also includes primal, vmap-friendly finite-state DTMC and CTMC simulators with
+sequential and associative parallel-prefix execution. Deterministic probability
+forecasts are differentiable in the initial mass and include DTMC matrix powers,
+dense CTMC exponentials, and matrix-free Arnoldi/Krylov actions over probability
+pytrees. The same dense and matrix-free backends are available directly through
+`solve_linear_ode` for any fixed homogeneous linear array or pytree operator;
+`jvp_linear_ode` and `vjp_linear_ode` apply the exact initial-state tangent and
+adjoint exponential actions without differentiating Arnoldi orthogonalization.
+Bounded `lax.scan` loops provide exactly `max_steps` attempt slots for fixed and
 adaptive stepping, so shapes are static, nothing recompiles as tolerances or
 curvature change, and every solve is differentiable in **both** forward and
 reverse mode — including reverse-over-forward, the pattern a
 Levenberg–Marquardt optimizer with geodesic acceleration needs when it
-differentiates through a rollout. After a solve reaches its horizon, a
-`lax.cond` skips solver and controller work during the padded scan tail.
+differentiates through a rollout. Adaptive attempts are grouped into static
+chunks, allowing one `lax.cond` to
+skip solver and controller work for an entire padded chunk.
 
-This is a deliberately small, jvp/vjp-friendly subset of
-[diffrax](https://docs.kidger.site/diffrax/). Use diffrax if you need stiff
-or fully implicit solvers, higher-index DAEs, full
-derivative-term PID control, events, continuous interpolation objects, or
-checkpointed/backsolve adjoints. The DAE algebraic solve uses `nlls-gram`.
+This is a deliberately small, jvp/vjp-friendly package. Rodas5P is a JAX
+adaptation of Steinebach's method and follows SciML's
+[`OrdinaryDiffEqRosenbrock`](https://github.com/SciML/OrdinaryDiffEq.jl/tree/master/lib/OrdinaryDiffEqRosenbrock)
+implementation. Use [diffrax](https://docs.kidger.site/diffrax/) or
+[SciML](https://docs.sciml.ai/DiffEqDocs/stable/) if you need general mass
+matrices, fully implicit or higher-index DAEs, events, continuous solution
+objects, sparse/Krylov linear solvers for ODE/DAE stages, or specialized
+adjoints. Initial DAE
+consistency and explicit DAE stages use `nlls-gram`.
+
+The linear exponential-action API follows SciML
+[`ExponentialUtilities.expv`](https://docs.sciml.ai/ExponentialUtilities/stable/expv/).
+It includes fixed and residual-controlled adaptive matrix-free time slicing;
+the latter keeps the Krylov dimension static for predictable JAX compilation.
+SciML's
+[`ExponentialIntegrators.jl`](https://docs.sciml.ai/ExponentialIntegrators/stable/)
+is the reference for the broader nonlinear exponential-integrator family.
 
 ## Install
 
@@ -88,8 +108,9 @@ last accepted state by default; `sol.accepted` distinguishes data from
 padding. Rejected attempts never appear in the returned trajectory.
 
 `SaveAt(ts=...)` also accepts a Python sequence. These are observation times:
-the adaptive controller still chooses its own internal mesh, and cubic
-Hermite interpolation evaluates the solution at every requested point.
+the adaptive controller still chooses its own internal mesh. Explicit methods
+use cubic Hermite interpolation; Rodas5P uses its published stiff-aware
+fourth-order continuous extension.
 
 ## Semi-explicit DAEs
 
@@ -97,7 +118,7 @@ For a square index-1 system `dy/dt = f(y, z, t, args, p)` and
 `0 = g(y, z, t, args, p)`:
 
 ```python
-from tinydiffeq import IController, Tsit5, solve_semi_explicit_dae
+from tinydiffeq import IController, Rodas5P, Tsit5, solve_semi_explicit_dae
 
 
 def dae_f(y, z, t, args, p):
@@ -115,13 +136,23 @@ dae_sol = solve_semi_explicit_dae(
     controller=IController(), max_steps=128, has_aux=True,
 )
 print(dae_sol.ys, dae_sol.zs, dae_sol.aux["flow"])
+
+# One initial nonlinear consistency solve, then linear Rodas5P stages.
+stiff_dae_sol = solve_semi_explicit_dae(
+    dae_f, dae_g, Rodas5P(), 0.0, 1.0,
+    jnp.asarray(1.0), jnp.asarray(0.5),
+    p=jnp.asarray(2.0), dt_0=0.1,
+    controller=IController(), max_steps=128, has_aux=True,
+)
 ```
 
-`z_0` is a guess and is made consistent automatically. Algebraic equations
-may return a floating aux pytree stored at every accepted node and
-Hermite-interpolated with `z` on requested deterministic grids. Algebraic
-roots use an implicitly differentiated square LM solve, so JVP, VJP, and
-reverse-over-forward propagate with respect to `y`, `t`, and `p`. See the
+`z_0` is a guess and is made consistent automatically. RK4 and Tsit5 restore
+the algebraic root at every stage. Rodas5P performs no nonlinear solves after
+initialization: it advances the corresponding block mass-matrix system using
+one reused LU factorization per attempt. Algebraic equations may return a
+floating aux pytree stored at every accepted node and interpolated on requested
+deterministic grids. JVP, VJP, and reverse-over-forward propagate through both
+implicit initialization and the time integrator. See the
 [DAE documentation](https://highdimensionaleconlab.github.io/tinydiffeq/dae/)
 for root controls, `SaveAt`, and scope limits.
 
@@ -148,7 +179,7 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
 
 The step-size controller is wrapped in `stop_gradient` (accept/reject is
 non-differentiable either way, and the error-ratio power blows up at exactly
-zero error); the states differentiate fully through the RK stages. See the
+zero error); the states differentiate fully through the solver stages. See the
 [docs](https://highdimensionaleconlab.github.io/tinydiffeq/) for the design
 contracts: static shapes and `SaveAt`, AD through adaptive stepping, SDE key
 semantics, and the package API.

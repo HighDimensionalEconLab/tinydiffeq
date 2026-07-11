@@ -45,7 +45,10 @@ nav:
   - Home: index.md
   - Static Shapes: static_shapes.md
   - Adaptive Stepping and AD: adaptive_ad.md
+  - Rodas5P: rodas5p.md
   - Semi-Explicit DAEs: dae.md
   - Semi-Explicit SDAEs: sdae.md
   - SDEs: sde.md
+  - Markov Chains: markov_chains.md
+  - Linear Exponential Solves: exponential.md
   - API Reference: api.md

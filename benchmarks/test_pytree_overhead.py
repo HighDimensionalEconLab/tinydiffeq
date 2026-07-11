@@ -11,6 +11,7 @@ from tinydiffeq import (
     RK4,
     EulerMaruyama,
     IController,
+    Rodas5P,
     Tsit5,
     solve_ode,
     solve_sde,
@@ -61,6 +62,19 @@ def make_solve(method, initial):
                 max_steps=64,
             ).xs
         )
+    if method == "rodas5p":
+        return lambda x: (
+            solve_ode(
+                lambda state: tree_map(lambda leaf: -0.2 * leaf, state),
+                Rodas5P(),
+                0.0,
+                1.0,
+                x,
+                dt_0=0.1,
+                controller=IController(),
+                max_steps=32,
+            ).xs
+        )
     if method == "em":
         return lambda x: (
             solve_sde(
@@ -104,7 +118,7 @@ def make_solve(method, initial):
         solve_semi_explicit_dae(
             lambda state, z: tree_map(lambda leaf: -0.2 * leaf, z),
             constraint,
-            Tsit5(),
+            Rodas5P() if method == "rodas5p_dae" else Tsit5(),
             0.0,
             1.0,
             y,
@@ -116,7 +130,10 @@ def make_solve(method, initial):
     )
 
 
-@pytest.mark.parametrize("method", ["rk4", "tsit5", "em", "dae", "sdae"])
+@pytest.mark.parametrize(
+    "method",
+    ["rk4", "tsit5", "rodas5p", "em", "dae", "rodas5p_dae", "sdae"],
+)
 @pytest.mark.parametrize("state_kind", ["scalar", "vector16", "tree16"])
 @pytest.mark.parametrize("transform", ["primal", "jvp", "vjp"])
 def test_steady_state(benchmark, method, state_kind, transform):

@@ -8,6 +8,7 @@ import numpy as np
 from jax.flatten_util import ravel_pytree
 from nlls_gram import LMStatus, SquareLevenbergMarquardt
 
+from tinydiffeq._rodas5p import rodas5p_step, rodas_dense_endpoint_derivatives
 from tinydiffeq._tree import (
     add_scaled,
     asarray_aux,
@@ -22,7 +23,11 @@ from tinydiffeq._tree import (
     zeros_like,
 )
 from tinydiffeq.controllers import ConstantStepSize
-from tinydiffeq.interpolation import hermite_interpolate
+from tinydiffeq.interpolation import (
+    hermite_interpolate,
+    hermite_interval_interpolate,
+    rodas_interpolate,
+)
 from tinydiffeq.save_at import SaveAt
 from tinydiffeq.solution import DAESolution
 from tinydiffeq.solvers import (
@@ -60,6 +65,7 @@ from tinydiffeq.solvers import (
     E_6,
     E_7,
     RK4,
+    Rodas5P,
     Tsit5,
 )
 
@@ -374,6 +380,331 @@ def _make_safe_aux_evaluator(auxiliary, aux_structure):
     return evaluate_aux
 
 
+def _solve_rodas5p_dae(
+    differential,
+    residual,
+    evaluate_aux,
+    t_0,
+    t_1,
+    y_0,
+    z_initial,
+    aux_initial,
+    initial_ok,
+    p,
+    failure_ad_reference,
+    dt_0,
+    save_at,
+    controller,
+    max_steps,
+    time_dtype,
+    z_dtype,
+    has_aux,
+):
+    """Integrate a semi-explicit index-1 DAE with native Rodas5P stages."""
+    positive_time_floor = jnp.asarray(jnp.finfo(time_dtype).tiny, time_dtype)
+    t_eps = 4.0 * jnp.finfo(time_dtype).eps * jnp.maximum(1.0, jnp.abs(t_1))
+    t_slack = max_steps * t_eps
+    y_flat, _ = ravel_pytree(y_0)
+    z_flat, _ = ravel_pytree(z_initial)
+    mass_diagonal = jnp.concatenate([jnp.ones_like(y_flat), jnp.zeros_like(z_flat)])
+    controller_state_initial = controller.init((y_0, z_initial))
+
+    def combined_field(state, t):
+        y, z = state
+        differential_value = differential(y, z, t)
+        residual_value, dtype = asarray_state(residual(y, z, t, p), "g(y, z, t)")
+        if dtype != z_dtype:
+            raise TypeError("g(y, z, t) must preserve the z dtype")
+        residual_flat, _ = ravel_pytree(residual_value)
+        if residual_flat.size != z_flat.size:
+            raise ValueError("g(y, z, t) must have the same flattened size as z")
+        return differential_value, residual_value
+
+    def identity(state):
+        return state
+
+    zero_dense = (
+        (zeros_like(y_0), zeros_like(z_initial)),
+        (zeros_like(y_0), zeros_like(z_initial)),
+        (zeros_like(y_0), zeros_like(z_initial)),
+    )
+    zero_aux_dot = zeros_like(aux_initial) if has_aux else None
+
+    def auxiliary_value_and_derivative(y, z, t, state_dot, active):
+        y_dot, z_dot = state_dot
+        (value, ok), (value_dot, _) = jax.jvp(
+            lambda y_value, z_value, t_value: evaluate_aux(
+                y_value,
+                z_value,
+                t_value,
+                p,
+                active,
+                failure_ad_reference,
+            ),
+            (y, z, t),
+            (y_dot, z_dot, jnp.ones_like(t)),
+        )
+        return value, ok, value_dot
+
+    def attempt_step(carry):
+        (
+            t,
+            y,
+            z,
+            aux,
+            dt,
+            reached,
+            failed,
+            num_accepted,
+            controller_state,
+        ) = carry
+        remaining = t_1 - t
+        h = jnp.where(
+            remaining <= dt + t_slack,
+            jnp.maximum(remaining, positive_time_floor),
+            dt,
+        )
+        state = (y, z)
+        candidate, err, dense, step_ok = rodas5p_step(
+            combined_field,
+            t,
+            state,
+            h,
+            mass_diagonal,
+            identity,
+        )
+        y_1, z_1 = candidate
+        control_err = where(step_ok, err, full_like(err, jnp.inf))
+        controller_accept, dt_next, controller_state_next = controller.adapt(
+            state,
+            candidate,
+            control_err,
+            h,
+            dt,
+            5,
+            controller_state,
+            t_1,
+        )
+        provisional_advance = controller_accept & step_ok & ~reached & ~failed
+
+        if has_aux:
+
+            def accepted_auxiliary():
+                if save_at.ts is None:
+                    aux_candidate, aux_ok = evaluate_aux(
+                        y_1,
+                        z_1,
+                        t + h,
+                        p,
+                        provisional_advance,
+                        failure_ad_reference,
+                    )
+                    return aux_candidate, aux_ok, zero_aux_dot, zero_aux_dot
+                left_dot, right_dot = rodas_dense_endpoint_derivatives(
+                    state, candidate, dense, h
+                )
+                _, _, aux_left_dot = auxiliary_value_and_derivative(
+                    y, z, t, left_dot, provisional_advance
+                )
+                aux_candidate, aux_ok, aux_right_dot = auxiliary_value_and_derivative(
+                    y_1, z_1, t + h, right_dot, provisional_advance
+                )
+                return aux_candidate, aux_ok, aux_left_dot, aux_right_dot
+
+            aux_candidate, aux_ok, aux_left_dot, aux_right_dot = jax.lax.cond(
+                provisional_advance,
+                accepted_auxiliary,
+                lambda: (aux, jnp.asarray(True), zero_aux_dot, zero_aux_dot),
+            )
+        else:
+            aux_candidate = None
+            aux_ok = jnp.asarray(True)
+            aux_left_dot = None
+            aux_right_dot = None
+
+        advance = provisional_advance & aux_ok
+        y_new = where(advance, y_1, y)
+        z_new = where(advance, z_1, z)
+        aux_new = where(advance, aux_candidate, aux) if has_aux else None
+        t_new = jnp.where(advance, t + h, t)
+        dt_new = jnp.where(reached | failed, dt, dt_next)
+        controller_state_new = jax.tree.map(
+            lambda old, new: jnp.where(step_ok, new, old),
+            controller_state,
+            controller_state_next,
+        )
+        if controller.uses_error_estimate:
+            failed_new = failed
+        else:
+            failed_new = failed | ~step_ok
+        failed_new = failed_new | (provisional_advance & ~aux_ok)
+        reached_new = reached | (t_new >= t_1 - t_eps)
+        num_new = num_accepted + advance.astype(jnp.int32)
+        carry_new = (
+            t_new,
+            y_new,
+            z_new,
+            aux_new,
+            dt_new,
+            reached_new,
+            failed_new,
+            num_new,
+            controller_state_new,
+        )
+        if save_at.t_1:
+            out = None
+        elif save_at.steps:
+            out = (t_new, y_new, z_new, aux_new, advance)
+        else:
+            out = (
+                t_new,
+                y_new,
+                z_new,
+                aux_new,
+                dense,
+                aux_left_dot,
+                aux_right_dot,
+                advance,
+            )
+        return carry_new, out
+
+    def skip_step(carry):
+        t, y, z, aux, _, _, _, _, _ = carry
+        if save_at.t_1:
+            out = None
+        elif save_at.steps:
+            out = (t, y, z, aux, jnp.asarray(False))
+        else:
+            out = (
+                t,
+                y,
+                z,
+                aux,
+                zero_dense,
+                zero_aux_dot,
+                zero_aux_dot,
+                jnp.asarray(False),
+            )
+        return carry, out
+
+    def body(carry, _):
+        return jax.lax.cond(carry[5] | carry[6], skip_step, attempt_step, carry)
+
+    carry_0 = (
+        t_0,
+        y_0,
+        z_initial,
+        aux_initial,
+        dt_0,
+        jnp.asarray(False),
+        ~initial_ok,
+        jnp.asarray(0, jnp.int32),
+        controller_state_initial,
+    )
+    (
+        (
+            t_final,
+            y_final,
+            z_final,
+            aux_final,
+            _,
+            reached,
+            failed,
+            num_accepted,
+            _,
+        ),
+        rows,
+    ) = jax.lax.scan(body, carry_0, None, length=max_steps)
+    integration_ok = reached & ~failed
+
+    if save_at.t_1:
+        return DAESolution(
+            ts=t_final,
+            ys=y_final,
+            zs=z_final,
+            ok=integration_ok,
+            num_accepted=num_accepted,
+            aux=aux_final,
+        )
+
+    if save_at.steps:
+        ts_s, ys_s, zs_s, aux_s, advance_s = rows
+    else:
+        (
+            ts_s,
+            ys_s,
+            zs_s,
+            aux_s,
+            dense_s,
+            aux_left_dots_s,
+            aux_right_dots_s,
+            advance_s,
+        ) = rows
+    all_times = jnp.concatenate([t_0[None], ts_s])
+    all_ys = prepend(y_0, ys_s)
+    all_zs = prepend(z_initial, zs_s)
+    all_aux = prepend(aux_initial, aux_s) if has_aux else None
+    raw_accepted = jnp.concatenate([jnp.ones((1,), bool), advance_s])
+
+    if save_at.steps:
+        output_size = max_steps + 1
+        accepted_indices = jnp.nonzero(raw_accepted, size=output_size, fill_value=0)[0]
+        compact_times = all_times[accepted_indices]
+        compact_ys = take(all_ys, accepted_indices)
+        compact_zs = take(all_zs, accepted_indices)
+        compact_aux = take(all_aux, accepted_indices) if has_aux else None
+        accepted = jnp.arange(output_size) <= num_accepted
+        last_time = compact_times[num_accepted]
+        last_y = take(compact_ys, num_accepted)
+        last_z = take(compact_zs, num_accepted)
+        last_aux = take(compact_aux, num_accepted) if has_aux else None
+        output_times = jnp.where(
+            accepted,
+            compact_times,
+            jnp.inf if save_at.fill == "inf" else last_time,
+        )
+        return DAESolution(
+            ts=output_times,
+            ys=fill_rows(compact_ys, accepted, last_y, save_at.fill),
+            zs=fill_rows(compact_zs, accepted, last_z, save_at.fill),
+            ok=integration_ok,
+            num_accepted=num_accepted,
+            accepted=accepted,
+            aux=(
+                fill_rows(compact_aux, accepted, last_aux, save_at.fill)
+                if has_aux
+                else None
+            ),
+        )
+
+    query_times = jnp.asarray(save_at.ts, time_dtype)
+    query_ys, query_zs = rodas_interpolate(
+        query_times,
+        all_times,
+        (all_ys, all_zs),
+        dense_s,
+    )
+    query_aux = (
+        hermite_interval_interpolate(
+            query_times,
+            all_times,
+            all_aux,
+            aux_left_dots_s,
+            aux_right_dots_s,
+        )
+        if has_aux
+        else None
+    )
+    return DAESolution(
+        ts=query_times,
+        ys=query_ys,
+        zs=query_zs,
+        ok=integration_ok,
+        num_accepted=num_accepted,
+        aux=query_aux,
+    )
+
+
 def solve_semi_explicit_dae(
     f,
     g,
@@ -393,7 +724,7 @@ def solve_semi_explicit_dae(
     failure_ad_reference=None,
     max_steps=4096,
 ):
-    """Integrate a nonstiff semi-explicit index-1 DAE.
+    """Integrate a semi-explicit index-1 DAE.
 
     The system is ``dy/dt = f(y, z, t, args, p)`` and
     ``0 = g(y, z, t, args, p)``, with a square nonsingular algebraic Jacobian
@@ -401,15 +732,20 @@ def solve_semi_explicit_dae(
     made consistent automatically, and its derivative is determined by the
     constraint rather than by the guess.
 
-    RK4 with a fixed controller and Tsit5 with either fixed or adaptive
-    control are supported. The outer ``max_steps`` is the bounded number of
-    attempted time steps; :class:`LMRootSolver.max_steps` separately bounds
-    each algebraic solve. Adaptive stage-root failures reject the attempted
-    time step and shrink it. A fixed-step failure terminates with ``ok=False``.
+    RK4 with fixed control, Tsit5 with fixed or adaptive control, and the
+    linearly implicit Rodas5P method with fixed or adaptive control are
+    supported. The outer ``max_steps`` bounds attempted time steps;
+    :class:`LMRootSolver.max_steps` separately bounds algebraic solves. RK4
+    and Tsit5 restore ``g=0`` at every stage. Rodas5P uses the root solver only
+    for initial consistency, then advances the block mass-matrix system with
+    reused linear solves; later ``z`` values satisfy the constraint to the
+    integration accuracy rather than the root tolerance.
 
     ``args`` is fixed data by convention. All differentiated model parameters
-    belong in ``p``; each converged root differentiates implicitly with
-    respect to ``(y, t, p)``, while a failed root has a zero tangent. With
+    belong in ``p``. Initial consistency and explicit-method roots
+    differentiate implicitly with respect to ``(y, t, p)``; Rodas5P then
+    differentiates its discrete Jacobians and uses implicit derivatives for
+    its linear solves. With
     ``has_aux=True``, ``g`` returns ``(residual, aux)``; the floating aux
     pytree is stored at accepted nodes and interpolated on requested grids.
     ``failure_ad_reference=(y, z, t, p)`` may provide a domain-safe point for
@@ -429,8 +765,8 @@ def solve_semi_explicit_dae(
         root_solver = LMRootSolver()
     if not isinstance(root_solver, LMRootSolver):
         raise TypeError("root_solver must be an LMRootSolver")
-    if not isinstance(solver, (RK4, Tsit5)):
-        raise TypeError("semi-explicit DAEs currently support RK4 and Tsit5")
+    if not isinstance(solver, (RK4, Tsit5, Rodas5P)):
+        raise TypeError("semi-explicit DAEs currently support RK4, Tsit5, and Rodas5P")
     if controller.uses_error_estimate and not solver.has_error_estimate:
         raise ValueError(
             f"{type(controller).__name__} needs an embedded error estimate, "
@@ -523,7 +859,6 @@ def solve_semi_explicit_dae(
         return z_dot, aux_dot
 
     z_initial, initial_root_ok = solve_root(y_0, t_0, z_0)
-    need_f = solver.fsal or (save_at.ts is not None)
     if has_aux:
         aux_initial, initial_aux_ok = evaluate_aux(
             y_0,
@@ -537,6 +872,30 @@ def solve_semi_explicit_dae(
     else:
         aux_initial = None
         initial_ok = initial_root_ok
+
+    if isinstance(solver, Rodas5P):
+        return _solve_rodas5p_dae(
+            differential,
+            residual,
+            evaluate_aux,
+            t_0,
+            t_1,
+            y_0,
+            z_initial,
+            aux_initial,
+            initial_ok,
+            p,
+            failure_ad_reference,
+            dt_0,
+            save_at,
+            controller,
+            max_steps,
+            time_dtype,
+            z_dtype,
+            has_aux,
+        )
+
+    need_f = solver.fsal or (save_at.ts is not None)
     f_initial = jax.lax.cond(
         initial_ok,
         lambda: differential(y_0, z_initial, t_0),

@@ -7,7 +7,7 @@ import jax
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
 class Solution:
-    """Result of ``solve_ode``/``solve_sde``.
+    """Result of ``solve_ode``/``solve_sde``/``solve_linear_ode``.
 
     - ``ts``/``xs``: times and states in the shape dictated by ``SaveAt`` —
       scalar/endpoint for ``t_1``; for multi-row modes, every state pytree leaf
@@ -36,11 +36,13 @@ class DAESolution:
 
     ``ts`` and ``ys`` follow the same :class:`tinydiffeq.SaveAt` shape
     contract as :class:`Solution`. ``zs`` holds algebraic states and ``aux``
-    holds the optional algebraic auxiliary-output pytree. Internal-step and
-    endpoint values are evaluated at converged roots. Requested observation
-    values are dense interpolants and need not satisfy the algebraic
-    constraint exactly. ``ok`` is true only when every required root converged
-    and the integration reached ``t_1``.
+    holds the optional algebraic auxiliary-output pytree. RK4/Tsit5
+    internal-step and endpoint values are evaluated at converged roots.
+    Rodas5P instead satisfies the algebraic equation to integration accuracy
+    after its initial consistency root. Requested values are dense
+    interpolants and need not satisfy the constraint exactly. ``ok`` is true
+    only when initialization and all required stage operations succeeded and
+    the integration reached ``t_1``.
     """
 
     ts: jax.Array
