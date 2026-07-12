@@ -181,8 +181,11 @@ def test_dae_dense_state_aux_jvp_vjp_and_reverse_over_forward():
     z_0 = jnp.sqrt(jnp.asarray(3.0))
 
     def run(rate):
+        def differential(y, z, t, args, p, algebraic_aux):
+            return p * z, algebraic_aux
+
         return solve_semi_explicit_dae(
-            lambda y, z, t, args, p: p * z,
+            differential,
             lambda y, z: (z**2 - y - 2.0, {"value": y + 2.0 * z}),
             Rodas5P(),
             0.0,
@@ -195,6 +198,7 @@ def test_dae_dense_state_aux_jvp_vjp_and_reverse_over_forward():
             max_steps=64,
             save_at=SaveAt(ts=grid),
             has_aux=True,
+            has_algebraic_aux=True,
         )
 
     def output(rate):
@@ -230,8 +234,12 @@ def test_aux_dense_interpolation_converges_without_query_time_roots():
     errors = []
     for n_steps in (2, 4, 8):
         grid = jnp.arange(2 * n_steps + 1) / (2 * n_steps)
+
+        def differential(y, z, t, args, p, algebraic_aux):
+            return -z, algebraic_aux
+
         sol = solve_semi_explicit_dae(
-            lambda y, z: -z,
+            differential,
             lambda y, z: (z - y, {"square": z**2}),
             Rodas5P(),
             0.0,
@@ -242,6 +250,7 @@ def test_aux_dense_interpolation_converges_without_query_time_roots():
             max_steps=n_steps,
             save_at=SaveAt(ts=grid),
             has_aux=True,
+            has_algebraic_aux=True,
         )
         errors.append(jnp.max(jnp.abs(sol.aux["square"] - jnp.exp(-2.0 * grid))))
     assert errors[0] / errors[1] > 10.0

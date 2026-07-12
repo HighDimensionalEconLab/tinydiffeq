@@ -24,11 +24,14 @@ sol = solve_sde(
 
 `drift` and `diffusion` follow the same `(x)`, `(x, t)`, `(x, t, args)`,
 `(x, t, args, p)` signature convention as `solve_ode`.
+The drift may return `(drift_value, saved_aux)`; diffusion remains value-only.
+Aux is stored at the same endpoint or fixed grid nodes and participates in
+pathwise JVP/VJP. See [Auxiliary Outputs](aux.md).
 
 ## The static-shape contract, honestly
 
 `n_steps` must be a static Python int. There is no adaptive SDE stepping in
-v1 — adaptivity for SDEs requires noise that can be *re-evaluated* on
+the current release — adaptivity for SDEs requires noise that can be *re-evaluated* on
 subdivided intervals (a Brownian-bridge / VirtualBrownianTree construction),
 so that a rejected step resamples consistently. That is diffrax territory
 for now; a roadmap issue sketches what it would take here.
@@ -76,7 +79,8 @@ comparing against an independently sampled exact solution measures nothing.
 ## SaveAt for SDEs
 
 `SaveAt(t_1=True)` (default) and `SaveAt(steps=True)` (`n_steps + 1` rows,
-all accepted) are supported. `SaveAt(ts=...)` **raises**: cubic Hermite
+or a padded accepted prefix after an aux failure) are supported.
+`SaveAt(ts=...)` **raises**: cubic Hermite
 interpolation assumes smooth trajectories and is simply wrong between the
 points of a rough path. Land your grid on the step boundaries instead by
 choosing `n_steps`.

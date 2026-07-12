@@ -10,7 +10,8 @@ accepted internal steps with fixed-shape padding. solve_sde is fixed-step
 Euler-Maruyama with presampled
 diagonal noise. solve_semi_explicit_dae handles index-1 systems with either
 root-restored explicit methods or the stiff Rodas5P mass-matrix formulation,
-plus optional aux output.
+plus differentiable saved differential-field aux and internal algebraic
+context.
 solve_semi_explicit_sdae applies fixed-step Euler-Maruyama to the reduced
 index-1 stochastic system. solve_linear_ode applies dense, fixed-Krylov, or
 adaptive matrix-free exponential actions to fixed homogeneous linear systems.

@@ -41,10 +41,12 @@ beneficial only when setup can be amortized.
 
 `test_aux_dense_output.py` separately measures the intentionally changed DAE
 grid-output path across accepted-step and query-grid counts, both with and
-without aux, plus batched adaptive interpolation. The no-aux cases can run
-against an older checkout for a direct cross-version comparison. Those
-results are re-baselined rather than held to the unchanged endpoint/steps
-array-path gate.
+without aux, plus batched adaptive interpolation. Every no-aux case is run
+both with auto-detection and with explicit `has_aux=False` /
+`has_algebraic_aux=False`; their post-compilation timings should agree because
+auto-detection is trace-time only. The no-aux cases can also run against an
+older checkout for a direct cross-version comparison. Those results are
+re-baselined rather than held to the unchanged endpoint/steps array-path gate.
 
 For changes to the state arithmetic, compare the JSON outputs before and
 after the change using `--benchmark-json=PATH`. Treat an array-path slowdown

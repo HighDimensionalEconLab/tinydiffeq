@@ -47,6 +47,7 @@ def make_solve(method, initial):
                 x,
                 dt_0=1 / 64,
                 max_steps=64,
+                has_aux=False,
             ).xs
         )
     if method == "tsit5":
@@ -60,6 +61,7 @@ def make_solve(method, initial):
                 dt_0=0.05,
                 controller=IController(),
                 max_steps=64,
+                has_aux=False,
             ).xs
         )
     if method == "rodas5p":
@@ -73,6 +75,7 @@ def make_solve(method, initial):
                 dt_0=0.1,
                 controller=IController(),
                 max_steps=32,
+                has_aux=False,
             ).xs
         )
     if method == "em":
@@ -86,6 +89,7 @@ def make_solve(method, initial):
                 x,
                 key=jax.random.key(7),
                 n_steps=64,
+                has_aux=False,
             ).xs
         )
 
@@ -111,6 +115,8 @@ def make_solve(method, initial):
                 z_0,
                 key=jax.random.key(7),
                 n_steps=64,
+                has_aux=False,
+                has_algebraic_aux=False,
             ).ys
         )
 
@@ -126,6 +132,8 @@ def make_solve(method, initial):
             dt_0=0.1,
             controller=IController(),
             max_steps=32,
+            has_aux=False,
+            has_algebraic_aux=False,
         ).ys
     )
 

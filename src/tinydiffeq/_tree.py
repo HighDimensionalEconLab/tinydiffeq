@@ -43,6 +43,46 @@ def asarray_aux(aux):
     return aux
 
 
+def asarray_context(context):
+    """Convert internal algebraic context to a nonempty JAX array pytree.
+
+    Context may mix boolean, integer, real, and complex leaves. Unlike saved
+    aux it is never interpolated, but every inexact leaf must be finite
+    because the context is consumed by a differential field.
+    """
+    try:
+        context = jax.tree.map(jnp.asarray, context)
+    except (TypeError, ValueError) as error:
+        raise TypeError(
+            "algebraic aux must be a pytree of ordinary array-like leaves"
+        ) from error
+    leaves = jax.tree.leaves(context)
+    if not leaves:
+        raise ValueError("algebraic aux must contain at least one array leaf")
+    for leaf in leaves:
+        if leaf.size == 0:
+            raise ValueError("algebraic aux leaves must not be empty")
+        if not (
+            jnp.issubdtype(leaf.dtype, jnp.bool_)
+            or jnp.issubdtype(leaf.dtype, jnp.integer)
+            or jnp.issubdtype(leaf.dtype, jnp.inexact)
+        ):
+            raise TypeError(
+                "algebraic aux leaves must have boolean, integer, real, or "
+                "complex dtypes"
+            )
+    return context
+
+
+def all_finite(tree):
+    """Return whether every inexact leaf is finite."""
+    finite = jnp.asarray(True)
+    for leaf in jax.tree.leaves(tree):
+        if jnp.issubdtype(leaf.dtype, jnp.inexact):
+            finite = finite & jnp.all(jnp.isfinite(leaf))
+    return finite
+
+
 def assert_same_structure(reference, value, name):
     if jax.tree.structure(reference) != jax.tree.structure(value):
         raise ValueError(f"{name} must have the same pytree structure as the state")
@@ -50,6 +90,18 @@ def assert_same_structure(reference, value, name):
 
 def zeros_like(tree):
     return jax.tree.map(jnp.zeros_like, tree)
+
+
+def zero_tangent(tree):
+    """Return a valid zero tangent, including float0 for discrete leaves."""
+
+    def zero(leaf):
+        leaf = jnp.asarray(leaf)
+        if not jnp.issubdtype(leaf.dtype, jnp.inexact):
+            return jnp.zeros(leaf.shape, jax.dtypes.float0)
+        return jnp.zeros_like(leaf)
+
+    return jax.tree.map(zero, tree)
 
 
 def where(condition, x, y):

@@ -47,24 +47,25 @@ from tinydiffeq import (
 
 
 def f(y, z, t, args, p):
-    return p * z
+    dy = p * z
+    return dy, {"flow": dy, "level": y + z}
 
 
 def g(y, z, t, args, p):
-    return z - y, {"flow": p * z, "level": y + z}
+    return z - y
 
 
 fixed = solve_semi_explicit_dae(
     f, g, RK4(), 0.0, 1.0,
     jnp.asarray(1.0), jnp.asarray(0.5),
-    p=jnp.asarray(2.0), dt_0=0.01, max_steps=100, has_aux=True,
+    p=jnp.asarray(2.0), dt_0=0.01, max_steps=100,
 )
 
 adaptive = solve_semi_explicit_dae(
     f, g, Tsit5(), 0.0, 1.0,
     jnp.asarray(1.0), jnp.asarray(0.5),
     p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128, has_aux=True,
+    controller=IController(), max_steps=128,
 )
 
 adaptive.aux["flow"]
@@ -73,7 +74,7 @@ linearly_implicit = solve_semi_explicit_dae(
     f, g, Rodas5P(), 0.0, 1.0,
     jnp.asarray(1.0), jnp.asarray(0.5),
     p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128, has_aux=True,
+    controller=IController(), max_steps=128,
 )
 ```
 
@@ -115,17 +116,26 @@ time derivative, LU factorization, and linear stage solves. `args` is fixed
 data; put every differentiated model quantity in `p`. JVP, VJP, `vmap`, and
 reverse-over-forward compose through the complete DAE solve.
 
-With `has_aux=True`, `g` returns `(residual, aux)`. Aux is a nonempty pytree
-of nonempty real floating arrays; different leaves may use different floating
-dtypes. It is never an input to the time integrator or nonlinear solver.
-tinydiffeq evaluates it once at the initial consistent root and once at each
-accepted endpoint. Ordinary JAX differentiation composes with either the
-root's implicit derivative or the Rodas5P stages, so aux tangents and
-cotangents include both direct dependence on `p` and indirect dependence
-through `z`.
-Every aux leaf must be finite. A nonfinite initial aux value sets `ok=False`
-and the bounded scan performs no stage or root work; a later nonfinite aux
-value terminates at the previous accepted node.
+The differential field may return `(dy, saved_aux)`. Saved aux is a nonempty
+pytree of nonempty real floating arrays; different leaves may use different
+floating dtypes. tinydiffeq evaluates it at required saved nodes. Ordinary JAX
+differentiation composes with either the root's implicit derivative or the
+Rodas5P stages, so aux tangents and cotangents include both direct dependence
+on `p` and indirect dependence through `z`.
+
+The algebraic function may instead or additionally return
+`(residual, algebraic_aux)`. In that case `f` takes
+`(y, z, t, args, p, algebraic_aux)`. This value is internal cached context:
+the nonlinear solver sees only the residual, and only differential-field
+saved aux appears in `sol.aux`. See [Auxiliary Outputs](aux.md) for the four
+supported combinations and flag behavior.
+
+Every saved aux leaf and every inexact algebraic-aux leaf must be finite.
+Invalid algebraic context at initialization sets `ok=False` before any
+time-step work. `SaveAt(steps=True)` and `SaveAt(ts=...)` check saved aux at
+the initial and accepted nodes, so an invalid value freezes the previous valid
+prefix. Endpoint mode evaluates saved aux only after integration; an invalid
+final value retains the endpoint state, returns zero aux, and sets `ok=False`.
 
 An adaptive stage-root or Rodas5P linear failure rejects the time-step attempt
 and asks the controller for a smaller step. A fixed-step failure terminates.
@@ -135,9 +145,10 @@ the linear solve, and aux at a failed initial root is a zero pytree of the
 declared shape. Callers that want to retain successful-lane JVPs/VJPs from a
 mixed-success `vmap` batch should pass
 `failure_ad_reference=(y_ref, z_ref, t_ref, p_ref)`, choosing a point where
-the residual and aux maps are finite and differentiable. Inactive lanes are
-linearized at that point before their tangents are zeroed. It never affects a
-successful lane or the primal solve. Without an explicit reference, an
+the residual, context, and saved-aux maps are finite and differentiable.
+Inactive lanes are linearized at that point before their tangents are zeroed.
+It never affects a successful lane or the primal solve. Without an explicit
+reference, an
 all-ones best-effort default is used; gradients of a batch containing failures
 are not guaranteed if the model is undefined there. A failed lane itself is
 never a valid solution.

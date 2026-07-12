@@ -13,11 +13,11 @@ from tinydiffeq import (
 MU, SIGMA, Y_0, T = 0.4, 0.3, 1.0, 1.0
 
 
-def drift(y, z, t, args, p):
-    return p["mu"] * z
+def drift(y, z, t, args, p, algebraic_aux):
+    return p["mu"] * z, algebraic_aux
 
 
-def diffusion(y, z, t, args, p):
+def diffusion(y, z, t, args, p, algebraic_aux):
     return p["sigma"] * z
 
 
@@ -46,6 +46,7 @@ def sdae(key, n_steps, *, save_at=None, y_0=Y_0, p=None):
         p=p,
         save_at=save_at,
         has_aux=True,
+        has_algebraic_aux=True,
     )
 
 
@@ -141,10 +142,11 @@ def test_sdae_pytree_states_and_aux():
     y_0 = {"a": jnp.asarray(1.0), "b": jnp.asarray([2.0, 3.0])}
     z_0 = (jnp.asarray(0.8), jnp.asarray([1.8, 2.8]))
 
-    def tree_drift(y, z):
-        return {"a": -0.1 * z[0], "b": -0.1 * z[1]}
+    def tree_drift(y, z, t, args, p, algebraic_aux):
+        value = {"a": -0.1 * z[0], "b": -0.1 * z[1]}
+        return value, algebraic_aux
 
-    def tree_diffusion(y, z):
+    def tree_diffusion(y, z, t, args, p, algebraic_aux):
         return jax.tree.map(lambda leaf: 0.05 * jnp.ones_like(leaf), y)
 
     def tree_constraint(y, z):
@@ -164,6 +166,7 @@ def test_sdae_pytree_states_and_aux():
         n_steps=8,
         save_at=SaveAt(steps=True),
         has_aux=True,
+        has_algebraic_aux=True,
     )
     assert bool(sol.ok)
     assert jax.tree.structure(sol.ys) == jax.tree.structure(y_0)
@@ -176,9 +179,15 @@ def test_sdae_root_failure_returns_consistent_prefix_and_padding():
     def failing_constraint(y, z, t):
         return z**2 + t - 0.1, {"z": z}
 
+    def differential(y, z, t, args, p, algebraic_aux):
+        return jnp.ones_like(y), algebraic_aux
+
+    def stochastic(y, z, t, args, p, algebraic_aux):
+        return jnp.zeros_like(y)
+
     sol = solve_semi_explicit_sdae(
-        lambda y, z: jnp.ones_like(y),
-        lambda y, z: jnp.zeros_like(y),
+        differential,
+        stochastic,
         failing_constraint,
         EulerMaruyama(),
         0.0,
@@ -189,6 +198,7 @@ def test_sdae_root_failure_returns_consistent_prefix_and_padding():
         n_steps=4,
         save_at=SaveAt(steps=True),
         has_aux=True,
+        has_algebraic_aux=True,
     )
     assert not bool(sol.ok)
     assert int(sol.accepted.sum()) == int(sol.num_accepted) + 1
@@ -205,9 +215,15 @@ def test_sdae_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity)
     z_0 = jnp.asarray([1.0, 0.0])
 
     def one_lane(y, z, p):
+        def zero_drift(y, z, t, args, p, algebraic_aux):
+            return jnp.zeros_like(y), algebraic_aux
+
+        def zero_diffusion(y, z, t, args, p, algebraic_aux):
+            return jnp.zeros_like(y)
+
         return solve_semi_explicit_sdae(
-            lambda y, z: jnp.zeros_like(y),
-            lambda y, z: jnp.zeros_like(y),
+            zero_drift,
+            zero_diffusion,
             lambda y, z, t, args, p: (
                 z**2 - y - p,
                 {"off_domain": p * jnp.sqrt(y)},
@@ -222,6 +238,7 @@ def test_sdae_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity)
             n_steps=1,
             save_at=save_at,
             has_aux=True,
+            has_algebraic_aux=True,
             failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
         )
 
@@ -244,9 +261,15 @@ def test_sdae_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity)
 
 
 def test_sdae_nonfinite_initial_aux_fails_without_time_steps():
+    def bad_drift(y, z, t, args, p, algebraic_aux):
+        return jnp.full_like(y, jnp.nan), algebraic_aux
+
+    def bad_diffusion(y, z, t, args, p, algebraic_aux):
+        return jnp.full_like(y, jnp.nan)
+
     sol = solve_semi_explicit_sdae(
-        lambda y, z: jnp.full_like(y, jnp.nan),
-        lambda y, z: jnp.full_like(y, jnp.nan),
+        bad_drift,
+        bad_diffusion,
         lambda y, z: (z - y, {"bad": jnp.sqrt(-y)}),
         EulerMaruyama(),
         0.0,
@@ -257,6 +280,7 @@ def test_sdae_nonfinite_initial_aux_fails_without_time_steps():
         n_steps=8,
         save_at=SaveAt(steps=True),
         has_aux=True,
+        has_algebraic_aux=True,
     )
     assert not bool(sol.ok)
     assert int(sol.num_accepted) == 0
@@ -266,9 +290,15 @@ def test_sdae_nonfinite_initial_aux_fails_without_time_steps():
 
 
 def test_sdae_nonfinite_endpoint_aux_terminates_at_previous_node():
+    def unit_drift(y, z, t, args, p, algebraic_aux):
+        return jnp.ones_like(y), algebraic_aux
+
+    def zero_diffusion(y, z, t, args, p, algebraic_aux):
+        return jnp.zeros_like(y)
+
     sol = solve_semi_explicit_sdae(
-        lambda y, z: jnp.ones_like(y),
-        lambda y, z: jnp.zeros_like(y),
+        unit_drift,
+        zero_diffusion,
         lambda y, z, t: (z - y, {"limited": jnp.sqrt(0.05 - t)}),
         EulerMaruyama(),
         0.0,
@@ -279,6 +309,7 @@ def test_sdae_nonfinite_endpoint_aux_terminates_at_previous_node():
         n_steps=2,
         save_at=SaveAt(steps=True),
         has_aux=True,
+        has_algebraic_aux=True,
     )
     assert not bool(sol.ok)
     assert int(sol.num_accepted) == 0

@@ -18,16 +18,22 @@ import jax.numpy as jnp
 from tinydiffeq import EulerMaruyama, SaveAt, solve_semi_explicit_sdae
 
 
-def drift(y, z, t, args, p):
-    return p["mu"] * z
+def drift(y, z, t, args, p, algebraic_aux):
+    value = p["mu"] * z
+    saved_aux = {
+        "variance_scale": algebraic_aux["variance_scale"],
+        "flow": value,
+    }
+    return value, saved_aux
 
 
-def diffusion(y, z, t, args, p):
+def diffusion(y, z, t, args, p, algebraic_aux):
     return p["sigma"] * z
 
 
 def constraint(y, z, t, args, p):
-    return z - y, {"variance_scale": p["sigma"] ** 2 * z**2}
+    context = {"variance_scale": p["sigma"] ** 2 * z**2}
+    return z - y, context
 
 
 sol = solve_semi_explicit_sdae(
@@ -43,7 +49,6 @@ sol = solve_semi_explicit_sdae(
     n_steps=256,
     p={"mu": jnp.asarray(0.4), "sigma": jnp.asarray(0.3)},
     save_at=SaveAt(steps=True),
-    has_aux=True,
 )
 ```
 
@@ -78,12 +83,17 @@ so JVP/VJP with respect to `y_0` and `p` are pathwise derivatives under common
 random numbers. The key is not differentiable.
 
 `z_0` is a root guess, receives zero tangent, and selects a local root branch.
-With `has_aux=True`, the algebraic function returns `(residual, aux)` and aux
-is evaluated once at every consistent node. Its derivatives include both
-direct parameter dependence and dependence through the implicit root.
-Every aux leaf must be finite. A nonfinite initial aux value sets `ok=False`
-before any stochastic step; a later nonfinite aux value terminates at the
-previous consistent node.
+The algebraic function may return `(residual, algebraic_aux)`; that internal
+context is passed to both drift and diffusion but is not stored. The drift may
+return `(drift_value, saved_aux)`, and only that saved aux becomes `sol.aux`.
+Steps mode stores it at every consistent node; endpoint mode evaluates it only
+at the final node. Its derivatives include both direct parameter dependence
+and dependence through the implicit root. See
+[Auxiliary Outputs](aux.md) for all contract variations and explicit flags.
+Invalid algebraic context at initialization sets `ok=False` before any
+stochastic step. In steps mode, invalid saved aux terminates at the previous
+consistent node. In endpoint mode, invalid final saved aux retains the
+endpoint state, returns zero aux, and sets `ok=False`.
 
 Only `SaveAt(t_1=True)` and `SaveAt(steps=True)` are supported. Stochastic
 paths are rough, so deterministic dense interpolation between nodes would be
@@ -92,8 +102,9 @@ sets `ok=False`, and pads the remaining static buffer. Failed roots have zero
 implicit tangents, and aux at a failed initial root is zero-filled, so masked
 lanes can preserve successful JVPs or VJPs under `vmap`. For that contract,
 pass `failure_ad_reference=(y_ref, z_ref, t_ref, p_ref)` at a point where the
-residual and aux maps are finite and differentiable. The reference is used
-only to linearize inactive lanes before zeroing their tangents. Without one,
+residual, context, and saved-aux maps are finite and differentiable. The
+reference is used only to linearize inactive lanes before zeroing their
+tangents. Without one,
 an all-ones best-effort default is used and a batch containing failures has no
 gradient guarantee. Outputs and gradients from the failed lane are not a
 valid solution.

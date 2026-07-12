@@ -414,8 +414,11 @@ def test_interpolated_aux_and_sdae_ad_run_on_gpu():
     dtype = jnp.float32
 
     def dae_output(p):
+        def differential(y, z, t, args, q, algebraic_aux):
+            return q * z, algebraic_aux
+
         sol = solve_semi_explicit_dae(
-            lambda y, z, t, args, q: q * z,
+            differential,
             lambda y, z, t, args, q: (
                 z - y,
                 {"value": q * z + y},
@@ -431,13 +434,20 @@ def test_interpolated_aux_and_sdae_ad_run_on_gpu():
             max_steps=64,
             save_at=SaveAt(ts=jnp.linspace(0.0, 1.0, 9, dtype=dtype)),
             has_aux=True,
+            has_algebraic_aux=True,
         )
         return jnp.sum(sol.zs + sol.aux["value"])
 
     def sdae_output(p):
+        def stochastic_drift(y, z, t, args, q, algebraic_aux):
+            return q * z, algebraic_aux
+
+        def stochastic_diffusion(y, z, t, args, q, algebraic_aux):
+            return jnp.asarray(0.1, dtype) * z
+
         sol = solve_semi_explicit_sdae(
-            lambda y, z, t, args, q: q * z,
-            lambda y, z: jnp.asarray(0.1, dtype) * z,
+            stochastic_drift,
+            stochastic_diffusion,
             lambda y, z, t, args, q: (z - y, {"value": q * z}),
             EulerMaruyama(),
             0.0,
@@ -448,6 +458,7 @@ def test_interpolated_aux_and_sdae_ad_run_on_gpu():
             key=jax.random.key(0),
             n_steps=16,
             has_aux=True,
+            has_algebraic_aux=True,
         )
         return sol.ys + sol.aux["value"]
 

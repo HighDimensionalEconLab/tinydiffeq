@@ -45,6 +45,7 @@ nav:
   - Home: index.md
   - Static Shapes: static_shapes.md
   - Adaptive Stepping and AD: adaptive_ad.md
+  - Auxiliary Outputs: aux.md
   - Rodas5P: rodas5p.md
   - Semi-Explicit DAEs: dae.md
   - Semi-Explicit SDAEs: sdae.md

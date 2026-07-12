@@ -415,8 +415,11 @@ def dae_endpoint(dtype):
     z_0 = jnp.asarray(0.8, dtype)
     p = jnp.asarray(0.2, dtype)
     grid = jnp.linspace(0.0, 1.0, 5, dtype=dtype)
+    def differential(y, z, t, args, q, algebraic_aux):
+        return q * z, algebraic_aux
+
     return solve_semi_explicit_dae(
-        lambda y, z, t, args, q: q * z,
+        differential,
         lambda y, z, t, args, q: (z - y, {"value": q * z + y}),
         RK4(),
         0.0,
@@ -428,6 +431,7 @@ def dae_endpoint(dtype):
         max_steps=8,
         save_at=SaveAt(ts=grid),
         has_aux=True,
+        has_algebraic_aux=True,
     )
 
 
@@ -441,8 +445,12 @@ for dtype in (jnp.float32, jnp.float64):
         assert "f32" not in str(jaxpr), jaxpr
 
 
+def mixed_differential(y, z, t, args, p, algebraic_aux):
+    return z, algebraic_aux
+
+
 mixed = solve_semi_explicit_dae(
-    lambda y, z: z,
+    mixed_differential,
     lambda y, z: (z - y, {"f32": z.astype(jnp.float32), "f64": z}),
     RK4(),
     0.0,
@@ -453,15 +461,22 @@ mixed = solve_semi_explicit_dae(
     max_steps=2,
     save_at=SaveAt(ts=jnp.linspace(0.0, 0.25, 3, dtype=jnp.float64)),
     has_aux=True,
+    has_algebraic_aux=True,
 )
 assert mixed.aux["f32"].dtype == jnp.float32
 assert mixed.aux["f64"].dtype == jnp.float64
 
 
 def sdae_endpoint(y_0, p):
+    def drift(y, z, t, args, q, algebraic_aux):
+        return q * z, algebraic_aux
+
+    def diffusion(y, z, t, args, q, algebraic_aux):
+        return jnp.asarray(0.1, y.dtype) * z
+
     return solve_semi_explicit_sdae(
-        lambda y, z, t, args, q: q * z,
-        lambda y, z: jnp.asarray(0.1, y.dtype) * z,
+        drift,
+        diffusion,
         lambda y, z, t, args, q: (z - y, {"value": q * z}),
         EulerMaruyama(),
         0.0,
@@ -472,6 +487,7 @@ def sdae_endpoint(y_0, p):
         key=jax.random.key(0),
         n_steps=8,
         has_aux=True,
+        has_algebraic_aux=True,
     )
 
 

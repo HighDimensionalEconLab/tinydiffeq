@@ -15,16 +15,16 @@ from tinydiffeq import (
 
 
 def fields():
-    def f(y, z, t, args, p):
-        return p["a"] * y
-
     def g(y, z, t, args, p):
         residual = z - y**2 - p["b"] * t
-        aux = {
+        algebraic_aux = {
             "mixed": (p["b"] * z + y).astype(jnp.float32),
             "state": jnp.stack([y, z, p["b"] * z + y]),
         }
-        return residual, aux
+        return residual, algebraic_aux
+
+    def f(y, z, t, args, p, algebraic_aux):
+        return p["a"] * y, algebraic_aux
 
     return f, g
 
@@ -48,6 +48,7 @@ def solve_aux(save_at, p=None, n=32):
         max_steps=n,
         save_at=save_at,
         has_aux=True,
+        has_algebraic_aux=True,
     )
 
 
@@ -134,8 +135,11 @@ def test_ill_conditioned_algebraic_jacobian_has_finite_dense_ad(
             residual = jnp.asarray([difference[0], epsilon * difference[1]])
             return residual, {"sum": jnp.sum(z)}
 
+        def differential(y, z, t, args, p, algebraic_aux):
+            return p * y, algebraic_aux
+
         sol = solve_semi_explicit_dae(
-            lambda y, z, t, args, p: p * y,
+            differential,
             constraint,
             RK4(),
             jnp.asarray(0.0, dtype),
@@ -148,6 +152,7 @@ def test_ill_conditioned_algebraic_jacobian_has_finite_dense_ad(
             max_steps=20,
             save_at=SaveAt(ts=query),
             has_aux=True,
+            has_algebraic_aux=True,
         )
         return jnp.sum(sol.zs) + sol.aux["sum"][0]
 
@@ -164,19 +169,42 @@ def test_ill_conditioned_algebraic_jacobian_has_finite_dense_ad(
 
 
 @pytest.mark.parametrize(
-    ("g", "has_aux", "match"),
+    ("f", "match"),
     [
-        (lambda y, z: (z - y, {"count": jnp.asarray(1)}), True, "real floating"),
-        (lambda y, z: (z - y, {}), True, "at least one"),
-        (lambda y, z: (z - y, {"x": jnp.asarray([])}), True, "not be empty"),
-        (lambda y, z: z - y, True, "must return"),
-        (lambda y, z: (z - y, {"x": y}), False, "has_aux=True"),
+        (lambda y, z: (z, {"count": jnp.asarray(1)}), "real floating"),
+        (lambda y, z: (z, {}), "at least one"),
+        (lambda y, z: (z, {"x": jnp.asarray([])}), "not be empty"),
+        (lambda y, z: z, "must return"),
     ],
 )
-def test_aux_contract_validation(g, has_aux, match):
+def test_saved_aux_contract_validation(f, match):
     with pytest.raises((TypeError, ValueError), match=match):
         solve_semi_explicit_dae(
-            lambda y, z: z,
+            f,
+            lambda y, z: z - y,
+            RK4(),
+            0.0,
+            0.1,
+            jnp.asarray(1.0),
+            jnp.asarray(1.0),
+            dt_0=0.1,
+            max_steps=1,
+            has_aux=True,
+        )
+
+
+@pytest.mark.parametrize(
+    ("g", "match"),
+    [
+        (lambda y, z: (z - y, {}), "at least one"),
+        (lambda y, z: (z - y, {"x": jnp.asarray([])}), "not be empty"),
+        (lambda y, z: z - y, "must return"),
+    ],
+)
+def test_algebraic_aux_contract_validation(g, match):
+    with pytest.raises((TypeError, ValueError), match=match):
+        solve_semi_explicit_dae(
+            lambda y, z, t, args, p, algebraic_aux: z,
             g,
             RK4(),
             0.0,
@@ -185,7 +213,24 @@ def test_aux_contract_validation(g, has_aux, match):
             jnp.asarray(1.0),
             dt_0=0.1,
             max_steps=1,
-            has_aux=has_aux,
+            has_algebraic_aux=True,
+        )
+
+
+def test_algebraic_residual_must_be_one_array():
+    with pytest.raises(TypeError, match="single array"):
+        solve_semi_explicit_dae(
+            lambda y, z: z,
+            lambda y, z: {"residual": z - y},
+            Rodas5P(),
+            0.0,
+            0.1,
+            jnp.asarray(1.0),
+            jnp.asarray(1.0),
+            dt_0=0.1,
+            max_steps=1,
+            has_aux=False,
+            has_algebraic_aux=False,
         )
 
 
@@ -237,18 +282,23 @@ def test_vmap_adaptive_interpolated_aux_has_finite_jvp_and_vjp():
         (SaveAt(ts=jnp.asarray([0.0, 0.1])), 2.0),
     ],
 )
-def test_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity):
+@pytest.mark.parametrize("solver", [RK4(), Rodas5P()])
+def test_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity, solver):
     y_0 = jnp.asarray([1.0, -1.0])
     z_0 = jnp.asarray([1.0, 0.0])
 
     def one_lane(y, z, p):
+        def differential(y, z, t, args, p, algebraic_aux):
+            derivative = jnp.zeros_like(y) / algebraic_aux["root"]
+            return derivative, {"off_domain": algebraic_aux["off_domain"]}
+
         return solve_semi_explicit_dae(
-            lambda y, z: jnp.zeros_like(y),
+            differential,
             lambda y, z, t, args, p: (
                 z**2 - y - p,
-                {"off_domain": p * jnp.sqrt(y)},
+                {"off_domain": p * jnp.sqrt(y), "root": jnp.sqrt(y)},
             ),
-            RK4(),
+            solver,
             0.0,
             0.1,
             y,
@@ -281,8 +331,11 @@ def test_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity):
 
 @pytest.mark.parametrize("solver", [RK4(), Rodas5P()])
 def test_nonfinite_initial_aux_fails_without_attempting_time_steps(solver):
+    def differential(y, z, t, args, p, algebraic_aux):
+        return jnp.full_like(y, jnp.nan), algebraic_aux
+
     sol = solve_semi_explicit_dae(
-        lambda y, z: jnp.full_like(y, jnp.nan),
+        differential,
         lambda y, z: (z - y, {"bad": jnp.sqrt(-y)}),
         solver,
         0.0,
@@ -303,8 +356,11 @@ def test_nonfinite_initial_aux_fails_without_attempting_time_steps(solver):
 
 @pytest.mark.parametrize("solver", [RK4(), Rodas5P()])
 def test_nonfinite_endpoint_aux_terminates_at_previous_node(solver):
+    def differential(y, z, t, args, p, algebraic_aux):
+        return jnp.ones_like(y), algebraic_aux
+
     sol = solve_semi_explicit_dae(
-        lambda y, z: jnp.ones_like(y),
+        differential,
         lambda y, z, t: (z - y, {"limited": jnp.sqrt(0.05 - t)}),
         solver,
         0.0,

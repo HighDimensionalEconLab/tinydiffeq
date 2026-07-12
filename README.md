@@ -90,7 +90,7 @@ sol = solve_ode(
     save_at=SaveAt(ts=jnp.linspace(0.0, 2.0, 21)),  # fixed output shape,
 )                                                  # however many steps adapt
 print(sol.xs)   # states on the grid
-print(sol.ok)   # reached t_1 within the max_steps budget?
+print(sol.ok)   # reached t_1 with every requested output valid?
 ```
 
 `IController()` and `PIController()` choose tolerances from `x_0.dtype`:
@@ -122,18 +122,19 @@ from tinydiffeq import IController, Rodas5P, Tsit5, solve_semi_explicit_dae
 
 
 def dae_f(y, z, t, args, p):
-    return p * z
+    dy = p * z
+    return dy, {"flow": dy}
 
 
 def dae_g(y, z, t, args, p):
-    return z - y, {"flow": p * z}
+    return z - y
 
 
 dae_sol = solve_semi_explicit_dae(
     dae_f, dae_g, Tsit5(), 0.0, 1.0,
     jnp.asarray(1.0), jnp.asarray(0.5),
     p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128, has_aux=True,
+    controller=IController(), max_steps=128,
 )
 print(dae_sol.ys, dae_sol.zs, dae_sol.aux["flow"])
 
@@ -142,16 +143,17 @@ stiff_dae_sol = solve_semi_explicit_dae(
     dae_f, dae_g, Rodas5P(), 0.0, 1.0,
     jnp.asarray(1.0), jnp.asarray(0.5),
     p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128, has_aux=True,
+    controller=IController(), max_steps=128,
 )
 ```
 
 `z_0` is a guess and is made consistent automatically. RK4 and Tsit5 restore
 the algebraic root at every stage. Rodas5P performs no nonlinear solves after
 initialization: it advances the corresponding block mass-matrix system using
-one reused LU factorization per attempt. Algebraic equations may return a
-floating aux pytree stored at every accepted node and interpolated on requested
-deterministic grids. JVP, VJP, and reverse-over-forward propagate through both
+one reused LU factorization per attempt. Differential fields may return a
+floating saved-aux pytree stored at accepted nodes and interpolated on requested
+deterministic grids. Algebraic equations may separately return internal context
+passed to the dynamics. JVP, VJP, and reverse-over-forward propagate through both
 implicit initialization and the time integrator. See the
 [DAE documentation](https://highdimensionaleconlab.github.io/tinydiffeq/dae/)
 for root controls, `SaveAt`, and scope limits.

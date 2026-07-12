@@ -119,10 +119,12 @@ coupled dynamics are stiff.
 state or combined `(y, z)` state. The three stored coefficient pytrees form a
 fourth-order stiff-aware polynomial; no query-time algebraic solve occurs.
 
-With `has_aux=True`, aux is evaluated and stored at the initial and accepted
-states. Requested-grid aux uses normalized cubic Hermite interpolation with
-endpoint tangents obtained from the Rodas5P polynomial and a JVP through the
-aux map. It is not recalculated or root-solved at each requested time.
+When the differential field returns `(value, saved_aux)`, aux is evaluated and
+stored at the required initial and accepted states. Requested-grid aux uses
+normalized cubic Hermite interpolation with endpoint tangents obtained from
+the Rodas5P polynomial and a JVP through the aux map. It is not recalculated
+or root-solved at each requested time. DAE algebraic aux is separate internal
+context and is never interpolated; see [Auxiliary Outputs](aux.md).
 
 The public derivative is the derivative of the discrete Rodas5P method.
 JVP/VJP propagate through Jacobian construction, stage solves, state output,

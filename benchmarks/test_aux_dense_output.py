@@ -19,8 +19,11 @@ def make_solve(n_steps, n_queries):
     grid = jnp.linspace(0.0, 1.0, n_queries)
 
     def run(rate):
+        def differential(y, z, t, args, p, algebraic_aux):
+            return p * z, algebraic_aux
+
         return solve_semi_explicit_dae(
-            lambda y, z, t, args, p: p * z,
+            differential,
             lambda y, z, t, args, p: (
                 z - y**2 - 0.1 * t,
                 {"flow": p * z, "level": y + z},
@@ -37,6 +40,7 @@ def make_solve(n_steps, n_queries):
             max_steps=n_steps,
             save_at=SaveAt(ts=grid),
             has_aux=True,
+            has_algebraic_aux=True,
         )
 
     return run
@@ -46,8 +50,11 @@ def make_adaptive_solve(n_queries):
     grid = jnp.linspace(0.0, 1.0, n_queries)
 
     def run(rate):
+        def differential(y, z, t, args, p, algebraic_aux):
+            return p * z, algebraic_aux
+
         return solve_semi_explicit_dae(
-            lambda y, z, t, args, p: p * z,
+            differential,
             lambda y, z, t, args, p: (
                 z - y**2 - 0.1 * t,
                 {"flow": p * z, "level": y + z},
@@ -64,13 +71,17 @@ def make_adaptive_solve(n_queries):
             max_steps=128,
             save_at=SaveAt(ts=grid),
             has_aux=True,
+            has_algebraic_aux=True,
         )
 
     return run
 
 
-def make_no_aux_solve(n_steps, n_queries):
+def make_no_aux_solve(n_steps, n_queries, *, explicit_no_aux):
     grid = jnp.linspace(0.0, 1.0, n_queries)
+    aux_options = (
+        {"has_aux": False, "has_algebraic_aux": False} if explicit_no_aux else {}
+    )
 
     def run(rate):
         return solve_semi_explicit_dae(
@@ -87,6 +98,7 @@ def make_no_aux_solve(n_steps, n_queries):
             root_solver=LMRootSolver(),
             max_steps=n_steps,
             save_at=SaveAt(ts=grid),
+            **aux_options,
         )
 
     return run
@@ -122,9 +134,12 @@ def test_aux_dense_output_crossover(benchmark, n_steps, n_queries, transform):
 @pytest.mark.parametrize("n_steps", [8, 128])
 @pytest.mark.parametrize("n_queries", [8, 128])
 @pytest.mark.parametrize("transform", ["primal", "jvp", "vjp"])
-def test_no_aux_grid_output_crossover(benchmark, n_steps, n_queries, transform):
+@pytest.mark.parametrize("explicit_no_aux", [False, True], ids=["auto", "explicit"])
+def test_no_aux_grid_output_crossover(
+    benchmark, n_steps, n_queries, transform, explicit_no_aux
+):
     """Cross-version baseline for the intentionally changed DAE grid path."""
-    solve = make_no_aux_solve(n_steps, n_queries)
+    solve = make_no_aux_solve(n_steps, n_queries, explicit_no_aux=explicit_no_aux)
     rate = jnp.asarray(0.2)
     assert bool(solve(rate).ok)
 

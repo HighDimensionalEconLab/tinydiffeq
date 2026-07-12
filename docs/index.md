@@ -73,9 +73,11 @@ no special autonomous code path: an unused `t` is dead-code-eliminated.
 Semi-explicit DAE fields use `(y, z)`, `(y, z, t)`,
 `(y, z, t, args)`, or `(y, z, t, args, p)`; see
 [Semi-Explicit DAEs](dae.md).
-Algebraic functions may return `(residual, aux)` under `has_aux=True`; aux is
-a floating pytree stored at consistent nodes and differentiated through the
-implicit root. [Semi-Explicit SDAEs](sdae.md) use the same field convention.
+Differential fields and stochastic drifts may return `(value, saved_aux)`;
+DAE/SDAE algebraic functions may separately return internal context consumed
+by the dynamics. Saved aux is differentiated and follows `SaveAt`. See
+[Auxiliary Outputs](aux.md) for all supported contracts and
+[Semi-Explicit SDAEs](sdae.md) for the stochastic form.
 
 ## Minimal example
 
@@ -100,7 +102,7 @@ sol = solve_ode(
     save_at=SaveAt(ts=jnp.linspace(0.0, 2.0, 21)),
 )
 sol.xs  # (21,) states on the grid, however many internal steps were taken
-sol.ok  # False if max_steps ran out before t_1
+sol.ok  # False if integration or a requested output failed
 ```
 
 With no arguments, `IController()` and `PIController()` use precision-aware
@@ -135,9 +137,9 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
   the initial state. Accepted steps form a contiguous prefix; rejected
   attempts are omitted and the tail repeats the last accepted state.
 - **Forward time only**: `t_1 > t_0`.
-- **Never poisons.** `sol.ok` reports whether `t_1` was reached; callers that
-  want diverging residuals can map `jnp.where(sol.ok, x, jnp.inf)` over
-  `sol.xs`.
+- **Never poisons.** `sol.ok` reports whether `t_1` was reached and every
+  requested output was valid; callers that want diverging residuals can map
+  `jnp.where(sol.ok, x, jnp.inf)` over `sol.xs`.
 - **`project`** (an idempotent clamp, e.g. positivity) is applied at every
   point where the vector field is evaluated and to every accepted state.
 - **Never sets `jax_enable_x64`.** The time dtype follows the common state
@@ -148,6 +150,6 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
 
 Read next: [Static Shapes](static_shapes.md) for the bounded-scan design and
 `SaveAt`, [Adaptive Stepping and AD](adaptive_ad.md) for what is and is not
-differentiated, [Rodas5P](rodas5p.md) for the SciML-derived linearly implicit
+differentiated, [Auxiliary Outputs](aux.md), [Rodas5P](rodas5p.md) for the SciML-derived linearly implicit
 method, [DAEs](dae.md), [SDEs](sde.md), [SDAEs](sdae.md), and the [API
 Reference](api.md).
