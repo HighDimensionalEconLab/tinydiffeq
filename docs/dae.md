@@ -15,8 +15,9 @@ total size of `z`. The implementation supports root-restored RK4/Tsit5 and
 linearly implicit Rodas5P with fixed or adaptive control.
 
 The algebraic solve uses
-[`nlls-gram`](https://highdimensionaleconlab.github.io/nlls_gram/square_systems/)'s
-solve-only `SquareLevenbergMarquardt`: an augmented-QR damped step for the
+[`nlls-gram`](https://highdimensionaleconlab.github.io/nlls_gram/)'s
+general Levenberg–Marquardt solver with `linear_solver="augmented_qr"`: a direct
+augmented-QR damped step for the
 primal root and a direct implicit Jacobian solve for derivatives.
 
 Rodas5P is a JAX adaptation of Steinebach's method following SciML's

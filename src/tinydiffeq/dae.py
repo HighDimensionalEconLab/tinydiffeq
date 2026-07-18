@@ -6,7 +6,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax.flatten_util import ravel_pytree
-from nlls_gram import LMStatus, SquareLevenbergMarquardt
+from nlls_gram import LMStatus, UnderdeterminedLevenbergMarquardt
 
 from tinydiffeq._aux import (
     make_safe_evaluator,
@@ -82,7 +82,8 @@ from tinydiffeq.solvers import (
 class LMRootSolver:
     """Configuration for algebraic solves in a semi-explicit DAE.
 
-    The implementation is :class:`nlls_gram.SquareLevenbergMarquardt`.
+    The implementation is :class:`nlls_gram.UnderdeterminedLevenbergMarquardt`
+    with its direct ``augmented_qr`` linear solver.
     ``max_steps`` counts nonlinear iterations for one algebraic root and is
     independent of the integration's time-step ``max_steps``. ``atol=None``
     selects nlls-gram's precision-aware default: ``1e-6`` in float32 and
@@ -190,11 +191,14 @@ def _build_algebraic_solver(g, config, has_algebraic_aux):
         value = value[0] if has_algebraic_aux else value
         return _asarray_residual(value)
 
-    return SquareLevenbergMarquardt(
+    return UnderdeterminedLevenbergMarquardt(
         residual,
         init_damping=config.init_damping,
         damping_decrease=config.damping_decrease,
         damping_increase=config.damping_increase,
+        linear_solver="augmented_qr",
+        geodesic_acceleration=False,
+        cache_jacobian=False,
     )
 
 
@@ -279,6 +283,10 @@ def _make_implicit_root_solver(
 ):
     """Wrap nlls roots in a status-safe implicit derivative."""
 
+    root_atol = root_solver.atol
+    if root_atol is None:
+        root_atol = 1e-10 if jnp.finfo(z_dtype).bits > 32 else 1e-6
+
     def algebraic_output(y, z, t, p):
         return g(y, z, t, args, p)
 
@@ -298,7 +306,7 @@ def _make_implicit_root_solver(
             args,
             p=(y, t, p),
             max_steps=root_solver.max_steps,
-            atol=root_solver.atol,
+            atol=root_atol,
         )
         ok = result.status == jnp.asarray(LMStatus.CONVERGED, result.status.dtype)
         value, dtype = asarray_state(result.x, "algebraic root")
