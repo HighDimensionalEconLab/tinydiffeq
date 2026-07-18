@@ -6,7 +6,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax.flatten_util import ravel_pytree
-from nlls_gram import LMStatus, UnderdeterminedLevenbergMarquardt
+from nlls_gram import LevenbergMarquardt, LMStatus
 
 from tinydiffeq._aux import (
     make_safe_evaluator,
@@ -82,7 +82,7 @@ from tinydiffeq.solvers import (
 class LMRootSolver:
     """Configuration for algebraic solves in a semi-explicit DAE.
 
-    The implementation is :class:`nlls_gram.UnderdeterminedLevenbergMarquardt`
+    The implementation is :class:`nlls_gram.LevenbergMarquardt`
     with its direct ``augmented_qr`` linear solver.
     ``max_steps`` counts nonlinear iterations for one algebraic root and is
     independent of the integration's time-step ``max_steps``. ``atol=None``
@@ -191,7 +191,7 @@ def _build_algebraic_solver(g, config, has_algebraic_aux):
         value = value[0] if has_algebraic_aux else value
         return _asarray_residual(value)
 
-    return UnderdeterminedLevenbergMarquardt(
+    return LevenbergMarquardt(
         residual,
         init_damping=config.init_damping,
         damping_decrease=config.damping_decrease,
