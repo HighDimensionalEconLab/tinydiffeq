@@ -16,9 +16,10 @@ linearly implicit Rodas5P with fixed or adaptive control.
 
 The algebraic solve uses
 [`nlls-gram`](https://highdimensionaleconlab.github.io/nlls_gram/)'s
-general Levenberg–Marquardt solver with `linear_solver="augmented_qr"`: a direct
-augmented-QR damped step for the
-primal root and a direct implicit Jacobian solve for derivatives.
+general Levenberg–Marquardt solver. The default `linear_solver="auto"` selects
+the dense normal-Cholesky form for the square algebraic system, while
+`ad_solver="auto"` resolves every square system to a general nonsymmetric
+direct solve of the algebraic Jacobian. No implicit ridge is added by default.
 
 Rodas5P is a JAX adaptation of Steinebach's method following SciML's
 [`OrdinaryDiffEqRosenbrock`](https://github.com/SciML/OrdinaryDiffEq.jl/tree/master/lib/OrdinaryDiffEqRosenbrock)
@@ -94,7 +95,13 @@ from tinydiffeq import LMRootSolver
 root_solver = LMRootSolver(
     max_steps=8,
     atol=None,          # 1e-6 float32, 1e-10 float64
+    gtol=0.0,           # disabled
+    xtol=0.0,           # disabled
     init_damping=1e-3,
+    linear_solver="auto",
+    jacobian_mode="auto",
+    ad_solver="auto",       # square constraint -> direct
+    ad_solver_penalty=None,
 )
 ```
 
@@ -102,6 +109,17 @@ The outer `max_steps` counts attempted time steps, including adaptive
 rejections. `root_solver.max_steps` separately bounds one algebraic root. For
 Rodas5P it affects only initial consistency; the method's later stages reuse
 one dense LU factorization per attempted time step.
+
+Root tolerances are independent of the outer controller tolerances. The
+`atol`, `gtol`, and `xtol` fields pass to the nlls solve; zero disables the
+corresponding test. The nlls constructor controls are also explicit fields on
+`LMRootSolver`: damping and maximum damping, forward solver and Jacobian mode,
+iterative solver tolerances/preconditioners, AD solver tolerances,
+preconditioner and penalty, solve dtypes, metrics/factories, and recycling.
+Their names and semantics match nlls-gram 2.4. Algebraic roots fix
+`cache_jacobian=False` and `geodesic_acceleration=False`, because each DAE
+stage changes the root problem and the intended path is the ordinary dense LM
+step.
 
 Every nonlinear root passes `(y, t, p)` through nlls-gram's differentiated parameter
 pytree. Thus it differentiates the defining constraint,
@@ -141,18 +159,18 @@ final value retains the endpoint state, returns zero aux, and sets `ok=False`.
 An adaptive stage-root or Rodas5P linear failure rejects the time-step attempt
 and asks the controller for a smaller step. A fixed-step failure terminates.
 In either case `sol.ok` is false if the endpoint is not reached with valid
-algebraic states. Nonconverged roots receive a zero implicit tangent before
-the linear solve, and aux at a failed initial root is a zero pytree of the
-declared shape. Callers that want to retain successful-lane JVPs/VJPs from a
-mixed-success `vmap` batch should pass
+algebraic states. tinydiffeq delegates each root and its implicit JVP/VJP to
+nlls-gram; nonconverged roots receive a zero implicit tangent, and aux at a
+failed initial root is a zero pytree of the declared shape. Callers that want
+to retain successful-lane JVPs/VJPs from a mixed-success `vmap` batch should pass
 `failure_ad_reference=(y_ref, z_ref, t_ref, p_ref)`, choosing a point where
 the residual, context, and saved-aux maps are finite and differentiable.
-Inactive lanes are linearized at that point before their tangents are zeroed.
-It never affects a successful lane or the primal solve. Without an explicit
-reference, an
-all-ones best-effort default is used; gradients of a batch containing failures
-are not guaranteed if the model is undefined there. A failed lane itself is
-never a valid solution.
+The corresponding `(z_ref, args, (y_ref, t_ref, p_ref))` reference is passed
+to nlls so inactive lanes are linearized safely before their tangents are
+zeroed. It never affects a successful lane or the primal solve. Without an
+explicit reference, an all-ones best-effort default is used; gradients of a
+batch containing failures are not guaranteed if the model is undefined there.
+A failed lane itself is never a valid solution.
 
 ## Saving output
 

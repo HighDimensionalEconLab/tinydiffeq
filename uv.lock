@@ -547,15 +547,27 @@ wheels = [
 
 [[package]]
 name = "nlls-gram"
-version = "2.2.0"
-source = { registry = "https://pypi.org/simple" }
+version = "2.4.0"
+source = { editable = "../nlls_gram" }
 dependencies = [
     { name = "jax" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/71/1f/6b91e05776adca1475936f60545bda2a0741cf45a049f3a90a32a10f490c/nlls_gram-2.2.0.tar.gz", hash = "sha256:2656beefa641bc38a739b27d28b2a75ef7fad403da7d5a411ac160f637856901", size = 259405, upload-time = "2026-07-18T13:55:48.582Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/49/59435b18797fc89a889afa277fccc059fce95754b1de9af62e58e7f632b9/nlls_gram-2.2.0-py3-none-any.whl", hash = "sha256:1d05599bc9f6cdb3ed2d6792d671991295314e3c867dd430fad8aa7e03f660b0", size = 63742, upload-time = "2026-07-18T13:55:46.96Z" },
+
+[package.metadata]
+requires-dist = [{ name = "jax", specifier = ">=0.7.0" }]
+
+[package.metadata.requires-dev]
+benchmark = [{ name = "pytest-benchmark", specifier = ">=5.2.3" }]
+dev = [
+    { name = "flax", specifier = ">=0.12.7" },
+    { name = "pytest", specifier = ">=8" },
+    { name = "ruff", specifier = ">=0.15.17" },
 ]
+docs = [
+    { name = "mkdocs-material", specifier = ">=9.5" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26" },
+]
+gpu = [{ name = "jax", extras = ["cuda13"], marker = "sys_platform == 'linux'", specifier = ">=0.7.0" }]
 
 [[package]]
 name = "numpy"
@@ -1255,7 +1267,7 @@ gpu = [
 [package.metadata]
 requires-dist = [
     { name = "jax", specifier = ">=0.7.0" },
-    { name = "nlls-gram", specifier = ">=2.2.0" },
+    { name = "nlls-gram", editable = "../nlls_gram" },
 ]
 
 [package.metadata.requires-dev]

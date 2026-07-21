@@ -29,8 +29,11 @@ classifiers = [
 ]
 dependencies = [
     "jax>=0.7.0",
-    "nlls-gram>=2.2.0",
+    "nlls-gram>=2.4.0",
 ]
+
+[tool.uv.sources]
+nlls-gram = { path = "../nlls_gram", editable = true }
 
 [project.urls]
 Homepage = "https://github.com/HighDimensionalEconLab/tinydiffeq"

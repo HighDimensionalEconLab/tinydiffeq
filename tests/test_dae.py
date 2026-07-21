@@ -11,6 +11,7 @@ from tinydiffeq import (
     solve_ode,
     solve_semi_explicit_dae,
 )
+from tinydiffeq.dae import _build_algebraic_solver
 
 
 def linear_f(y, z, t, args, p):
@@ -36,6 +37,54 @@ def solve_linear(p, y_0, z_0, solver, save_at, **kwargs):
         save_at=save_at,
         **kwargs,
     )
+
+
+def test_lm_root_solver_uses_nlls_24_defaults_and_forwards_options():
+    def constraint(y, z, t, args, p):
+        return z - y
+
+    defaults = _build_algebraic_solver(constraint, LMRootSolver(), False)
+    assert defaults.linear_solver == "auto"
+    assert defaults.jacobian_mode == "auto"
+    assert defaults.ad_solver == "auto"
+    assert defaults.ad_solver_penalty is None
+    assert not defaults.cache_jacobian
+    assert not defaults.geodesic_acceleration
+
+    configured = _build_algebraic_solver(
+        constraint,
+        LMRootSolver(
+            init_damping=2e-3,
+            damping_decrease=0.4,
+            damping_increase=3.0,
+            max_damping=10.0,
+            linear_solver="qr",
+            jacobian_mode="rev",
+            iterative_tol=1e-4,
+            iterative_atol=1e-6,
+            iterative_maxiter=17,
+            ad_solver="augmented_qr",
+            ad_solver_tol=1e-5,
+            ad_solver_atol=1e-7,
+            ad_solver_maxiter=13,
+            ad_solver_penalty=1e-8,
+        ),
+        False,
+    )
+    assert configured.init_damping == 2e-3
+    assert configured.damping_decrease == 0.4
+    assert configured.damping_increase == 3.0
+    assert configured.max_damping == 10.0
+    assert configured.linear_solver == "qr"
+    assert configured.jacobian_mode == "rev"
+    assert configured.iterative_tol == 1e-4
+    assert configured.iterative_atol == 1e-6
+    assert configured.iterative_maxiter == 17
+    assert configured.ad_solver == "augmented_qr"
+    assert configured.ad_solver_tol == 1e-5
+    assert configured.ad_solver_atol == 1e-7
+    assert configured.ad_solver_maxiter == 13
+    assert configured.ad_solver_penalty == 1e-8
 
 
 def test_rk4_initial_consistency_and_endpoint_accuracy():
@@ -159,6 +208,60 @@ def test_jvp_vjp_and_reverse_over_forward():
 
     exact_sampled = jnp.sum(grid * y_0 * jnp.exp(p * grid))
     assert jnp.abs(jax.grad(sampled_sum)(p) - exact_sampled) < 5e-4
+
+
+@pytest.mark.parametrize(
+    ("dtype", "root_atol", "comparison_atol", "transpose_atol"),
+    [
+        (jnp.float32, 1e-6, 1e-7, 1e-7),
+        (jnp.float64, 1e-12, 1e-15, 1e-15),
+    ],
+)
+def test_nonsymmetric_square_constraint_jvp_and_vjp_match_closed_form(
+    dtype, root_atol, comparison_atol, transpose_atol
+):
+    matrix = jnp.asarray([[2.0, -1.0], [0.5, 1.5]], dtype=dtype)
+    parameter_map = jnp.asarray([[1.0, 2.0], [-0.5, 1.0]], dtype=dtype)
+    y_0 = jnp.asarray([0.7, -0.2], dtype=dtype)
+    z_guess = jnp.zeros(2, dtype=dtype)
+    direction = jnp.asarray([0.6, -0.8], dtype=dtype)
+    cotangent = jnp.asarray([-0.5, 1.2], dtype=dtype)
+
+    def endpoint(p):
+        return solve_semi_explicit_dae(
+            lambda y, z: jnp.zeros_like(y),
+            lambda y, z, t, args, p: matrix @ z - y - parameter_map @ p,
+            RK4(),
+            0.0,
+            0.1,
+            y_0,
+            z_guess,
+            p=p,
+            dt_0=0.1,
+            max_steps=1,
+            root_solver=LMRootSolver(max_steps=8, atol=root_atol),
+        ).zs
+
+    def transformed(p):
+        value, tangent = jax.jvp(endpoint, (p,), (direction,))
+        _, pullback = jax.vjp(endpoint, p)
+        return value, tangent, pullback(cotangent)[0]
+
+    p = jnp.asarray([0.3, -0.4], dtype=dtype)
+    value, tangent, pulled_back = jax.jit(transformed)(p)
+    expected_value = jnp.linalg.solve(matrix, y_0 + parameter_map @ p)
+    expected_tangent = jnp.linalg.solve(matrix, parameter_map @ direction)
+    expected_pullback = parameter_map.T @ jnp.linalg.solve(matrix.T, cotangent)
+
+    assert jnp.allclose(value, expected_value, rtol=0.0, atol=comparison_atol)
+    assert jnp.allclose(tangent, expected_tangent, rtol=0.0, atol=comparison_atol)
+    assert jnp.allclose(pulled_back, expected_pullback, rtol=0.0, atol=comparison_atol)
+    assert jnp.allclose(
+        cotangent @ tangent,
+        pulled_back @ direction,
+        rtol=0.0,
+        atol=transpose_atol,
+    )
 
 
 def test_root_guess_has_zero_derivative_and_y_0_differentiates():
@@ -470,6 +573,10 @@ def test_validation():
         )
     with pytest.raises(ValueError, match="positive int"):
         LMRootSolver(max_steps=0)
+    with pytest.raises(ValueError, match="gtol must be nonnegative"):
+        LMRootSolver(gtol=-1.0)
+    with pytest.raises(ValueError, match="xtol must be nonnegative"):
+        LMRootSolver(xtol=-1.0)
     with pytest.raises(ValueError, match="2 to 5 positional"):
         solve_semi_explicit_dae(
             lambda y: y,
