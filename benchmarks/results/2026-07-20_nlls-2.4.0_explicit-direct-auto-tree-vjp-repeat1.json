@@ -1,0 +1,104 @@
+{
+    "machine_info": {
+        "node": "dh4.econ.ubc.ca",
+        "processor": "arm",
+        "machine": "arm64",
+        "python_compiler": "Clang 20.1.0 ",
+        "python_implementation": "CPython",
+        "python_implementation_version": "3.13.2",
+        "python_version": "3.13.2",
+        "python_build": [
+            "main",
+            "Mar 17 2025 21:26:38"
+        ],
+        "release": "25.5.0",
+        "system": "Darwin",
+        "cpu": {
+            "python_version": "3.13.2.final.0 (64 bit)",
+            "cpuinfo_version": [
+                9,
+                0,
+                0
+            ],
+            "cpuinfo_version_string": "9.0.0",
+            "arch": "ARM_8",
+            "bits": 64,
+            "count": 16,
+            "arch_string_raw": "arm64",
+            "brand_raw": "Apple M4 Max"
+        }
+    },
+    "commit_info": {
+        "id": "8e0a48e8a463a5f3f9521b9cdb26f1af05477fb4",
+        "time": "2026-07-18T07:08:23-07:00",
+        "author_time": "2026-07-18T07:08:23-07:00",
+        "dirty": true,
+        "project": "tinydiffeq",
+        "branch": "main"
+    },
+    "benchmarks": [
+        {
+            "group": null,
+            "name": "test_steady_state[vjp-tree16-dae]",
+            "fullname": "benchmarks/test_pytree_overhead.py::test_steady_state[vjp-tree16-dae]",
+            "params": {
+                "transform": "vjp",
+                "state_kind": "tree16",
+                "method": "dae"
+            },
+            "param": "vjp-tree16-dae",
+            "extra_info": {},
+            "options": {
+                "disable_gc": false,
+                "timer": "perf_counter",
+                "min_rounds": 5,
+                "max_time": 1.0,
+                "min_time": 5e-06,
+                "warmup": false
+            },
+            "stats": {
+                "min": 0.0006325250025838614,
+                "max": 0.0007049917010590434,
+                "mean": 0.0006498923024628312,
+                "stddev": 1.542554413099478e-05,
+                "rounds": 20,
+                "median": 0.0006470812542829663,
+                "iqr": 1.1758343316614563e-05,
+                "q1": 0.0006417167081963271,
+                "q3": 0.0006534750515129416,
+                "iqr_outliers": 1,
+                "stddev_outliers": 4,
+                "outliers": "4;1",
+                "ld15iqr": 0.0006325250025838614,
+                "hd15iqr": 0.0007049917010590434,
+                "ops": 1538.716486116855,
+                "total": 0.012997846049256623,
+                "data": [
+                    0.0007049917010590434,
+                    0.0006564499926753342,
+                    0.0006495916051790119,
+                    0.0006325250025838614,
+                    0.0006442959071137011,
+                    0.000657566695008427,
+                    0.0006519417045637965,
+                    0.0006481208023615181,
+                    0.0006670458009466529,
+                    0.0006429959088563919,
+                    0.0006517542060464621,
+                    0.0006404375075362623,
+                    0.0006446541054174304,
+                    0.000634012499358505,
+                    0.0006454208050854504,
+                    0.0006463083089329302,
+                    0.0006372458999976515,
+                    0.0006550083984620869,
+                    0.0006396249984391034,
+                    0.0006478541996330023
+                ],
+                "iterations": 10
+            }
+        }
+    ],
+    "datetime": "2026-07-21T05:57:38.149795+00:00",
+    "version": "5.2.3"
+}

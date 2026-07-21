@@ -1,0 +1,10 @@
+case,transform,baseline_us,post_us
+aux-8-8,primal,55.882090,55.019170
+aux-128-8,primal,462.615000,460.960419
+aux-32-32,primal,129.064999,136.681660
+aux-128-128,primal,461.462911,457.999579
+aux-8-128,jvp,68.364170,70.695000
+noaux-auto-8-8,primal,47.334580,49.216250
+noaux-auto-128-128,vjp,696.938330,714.708749
+noaux-explicit-8-8,primal,47.100410,47.717080
+noaux-explicit-8-128,vjp,67.085830,67.904580

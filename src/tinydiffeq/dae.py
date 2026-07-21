@@ -1,6 +1,7 @@
 import functools
 import inspect
 from dataclasses import dataclass, field
+from typing import Any
 
 import jax
 import jax.numpy as jnp
@@ -82,27 +83,67 @@ from tinydiffeq.solvers import (
 class LMRootSolver:
     """Configuration for algebraic solves in a semi-explicit DAE.
 
-    The implementation is :class:`nlls_gram.LevenbergMarquardt`
-    with its direct ``augmented_qr`` linear solver.
+    The implementation is :class:`nlls_gram.LevenbergMarquardt`. Its
+    shape-adaptive dense default uses ``linear_solver="auto"`` (the normal
+    Cholesky form for a square DAE constraint) and its implicit derivative
+    uses ``ad_solver="auto"``, which resolves every square constraint to the
+    general nonsymmetric direct solve.
     ``max_steps`` counts nonlinear iterations for one algebraic root and is
-    independent of the integration's time-step ``max_steps``. ``atol=None``
-    selects nlls-gram's precision-aware default: ``1e-6`` in float32 and
-    ``1e-10`` in float64.
+    independent of the integration's time-step ``max_steps``.
+    ``max_steps_is_success=True`` accepts the final iterate when that budget is
+    exhausted; set it to ``False`` to require an nlls ``CONVERGED`` status.
+    ``atol=None`` selects ``1e-6`` in float32 and ``1e-10`` in float64.
+    ``gtol`` and ``xtol`` default to zero (disabled); root tolerances are
+    deliberately independent of the outer integration tolerances.
+
+    The remaining fields pass directly to ``LevenbergMarquardt``. Algebraic
+    residuals do not expose nlls aux, Jacobian caching is disabled because
+    roots change at every DAE stage, and geodesic acceleration is disabled.
     """
 
     max_steps: int = field(default=8, metadata=dict(static=True))
+    max_steps_is_success: bool = field(default=True, metadata=dict(static=True))
     atol: float | None = field(default=None, metadata=dict(static=True))
+    gtol: float = field(default=0.0, metadata=dict(static=True))
+    xtol: float = field(default=0.0, metadata=dict(static=True))
     init_damping: float = field(default=1e-3, metadata=dict(static=True))
     damping_decrease: float = field(default=0.5, metadata=dict(static=True))
     damping_increase: float = field(default=4.0, metadata=dict(static=True))
+    max_damping: float | None = field(default=None, metadata=dict(static=True))
+    linear_solver: str = field(default="auto", metadata=dict(static=True))
+    jacobian_mode: str = field(default="auto", metadata=dict(static=True))
+    iterative_tol: float = field(default=0.0, metadata=dict(static=True))
+    iterative_atol: float = field(default=0.0, metadata=dict(static=True))
+    iterative_maxiter: int | None = field(default=8, metadata=dict(static=True))
+    dual_preconditioner: Any = field(default=None, metadata=dict(static=True))
+    preconditioner_factory: Any = field(default=None, metadata=dict(static=True))
+    normal_preconditioner: Any = field(default=None, metadata=dict(static=True))
+    whitened_preconditioner: Any = field(default=None, metadata=dict(static=True))
+    ad_solver: str = field(default="auto", metadata=dict(static=True))
+    ad_solver_tol: float | None = field(default=None, metadata=dict(static=True))
+    ad_solver_atol: float = field(default=0.0, metadata=dict(static=True))
+    ad_solver_maxiter: int | None = field(default=None, metadata=dict(static=True))
+    ad_solver_preconditioner: Any = field(default=None, metadata=dict(static=True))
+    ad_solver_penalty: float | None = field(default=None, metadata=dict(static=True))
+    linear_solve_dtype: Any = field(default=None, metadata=dict(static=True))
+    metric_solve_dtype: Any = field(default=None, metadata=dict(static=True))
+    metric: Any = field(default=None, metadata=dict(static=True))
+    metric_factory: Any = field(default=None, metadata=dict(static=True))
+    recycle: Any = field(default=None, metadata=dict(static=True))
 
     def __post_init__(self):
         if not isinstance(self.max_steps, int) or isinstance(self.max_steps, bool):
             raise ValueError("LMRootSolver.max_steps must be a positive int")
         if self.max_steps <= 0:
             raise ValueError("LMRootSolver.max_steps must be a positive int")
+        if not isinstance(self.max_steps_is_success, bool):
+            raise TypeError("LMRootSolver.max_steps_is_success must be a bool")
         if self.atol is not None and self.atol < 0:
             raise ValueError("LMRootSolver.atol must be nonnegative or None")
+        if self.gtol < 0:
+            raise ValueError("LMRootSolver.gtol must be nonnegative")
+        if self.xtol < 0:
+            raise ValueError("LMRootSolver.xtol must be nonnegative")
         if self.init_damping <= 0:
             raise ValueError("LMRootSolver.init_damping must be positive")
         if self.damping_decrease <= 0:
@@ -196,9 +237,29 @@ def _build_algebraic_solver(g, config, has_algebraic_aux):
         init_damping=config.init_damping,
         damping_decrease=config.damping_decrease,
         damping_increase=config.damping_increase,
-        linear_solver="augmented_qr",
+        max_damping=config.max_damping,
+        linear_solver=config.linear_solver,
+        jacobian_mode=config.jacobian_mode,
+        iterative_tol=config.iterative_tol,
+        iterative_atol=config.iterative_atol,
+        iterative_maxiter=config.iterative_maxiter,
+        dual_preconditioner=config.dual_preconditioner,
+        preconditioner_factory=config.preconditioner_factory,
+        normal_preconditioner=config.normal_preconditioner,
+        whitened_preconditioner=config.whitened_preconditioner,
+        ad_solver=config.ad_solver,
+        ad_solver_tol=config.ad_solver_tol,
+        ad_solver_atol=config.ad_solver_atol,
+        ad_solver_maxiter=config.ad_solver_maxiter,
+        ad_solver_preconditioner=config.ad_solver_preconditioner,
+        ad_solver_penalty=config.ad_solver_penalty,
+        linear_solve_dtype=config.linear_solve_dtype,
+        metric_solve_dtype=config.metric_solve_dtype,
+        metric=config.metric,
+        metric_factory=config.metric_factory,
         geodesic_acceleration=False,
         cache_jacobian=False,
+        recycle=config.recycle,
     )
 
 
@@ -217,8 +278,20 @@ def _get_algebraic_solver(g, config, has_algebraic_aux=False):
         return _build_algebraic_solver(g, config, has_algebraic_aux)
 
 
-def _zero_discrete_tangent(value):
-    return jnp.zeros(value.shape, dtype=jax.dtypes.float0)
+@jax.custom_jvp
+def _inactive_safe_inputs(active, inputs, reference):
+    return jax.tree.map(
+        lambda value, reference_value: jnp.where(active, value, reference_value),
+        inputs,
+        reference,
+    )
+
+
+@_inactive_safe_inputs.defjvp
+def _inactive_safe_inputs_jvp(primals, tangents):
+    active, inputs, reference = primals
+    _, inputs_dot, _ = tangents
+    return _inactive_safe_inputs(active, inputs, reference), inputs_dot
 
 
 def _prepare_failure_ad_reference(reference, y, z, t, p):
@@ -281,7 +354,7 @@ def _make_implicit_root_solver(
     args,
     has_algebraic_aux,
 ):
-    """Wrap nlls roots in a status-safe implicit derivative."""
+    """Delegate root solving and status-safe implicit AD to nlls-gram."""
 
     root_atol = root_solver.atol
     if root_atol is None:
@@ -299,54 +372,40 @@ def _make_implicit_root_solver(
         y, z, t, p = inputs
         return split_algebraic_output(algebraic_output(y, z, t, p), True)[1]
 
-    @jax.custom_jvp
-    def solve_root(y, t, z_guess, p, failure_ad_reference):
+    def solve_root(y, t, z_guess, p, active, failure_ad_reference):
+        # The enclosing root-result mask supplies exact zero AD for inactive
+        # lanes. Make this domain-safe primal substitution value-only so its
+        # redundant selector cotangents do not accumulate across DAE stages.
+        y_initial, z_initial, t_initial, p_initial = _inactive_safe_inputs(
+            active,
+            (y, z_guess, t, p),
+            failure_ad_reference,
+        )
         result = algebraic_solver.solve(
-            z_guess,
+            z_initial,
             args,
-            p=(y, t, p),
+            p=(y_initial, t_initial, p_initial),
             max_steps=root_solver.max_steps,
+            max_steps_is_success=root_solver.max_steps_is_success,
             atol=root_atol,
+            gtol=root_solver.gtol,
+            xtol=root_solver.xtol,
         )
         ok = result.status == jnp.asarray(LMStatus.CONVERGED, result.status.dtype)
+        if root_solver.max_steps_is_success:
+            ok = ok | (
+                result.status == jnp.asarray(LMStatus.MAX_STEPS, result.status.dtype)
+            )
+        ok = active & ok
         value, dtype = asarray_state(result.x, "algebraic root")
         assert_same_structure(z_reference, value, "algebraic root")
         if dtype != z_dtype:
             raise TypeError("the algebraic root must preserve the z dtype")
         # A failed root is not a solution. Returning the finite warm start
         # keeps the static failure prefix usable while `ok` carries validity.
-        return where(ok, value, z_guess), ok
-
-    @solve_root.defjvp
-    def solve_root_jvp(primals, tangents):
-        y, t, z_guess, p, failure_ad_reference = primals
-        y_dot, t_dot, _, p_dot, _ = tangents
-        z, ok = solve_root(y, t, z_guess, p, failure_ad_reference)
-        y_ref, z_ref, t_ref, p_ref = failure_ad_reference
-        y_eval = where(ok, y, y_ref)
-        z_eval = where(ok, z, z_ref)
-        t_eval = jnp.where(ok, t, t_ref)
-        p_eval = where(ok, p, p_ref)
-        theta, unravel = ravel_pytree(z_eval)
-
-        def residual_theta(theta_value):
-            return jnp.ravel(residual(y_eval, unravel(theta_value), t_eval, p_eval))
-
-        jacobian = jax.jacfwd(residual_theta)(theta)
-
-        def residual_inputs(y_value, t_value, p_value):
-            return jnp.ravel(residual(y_value, z_eval, t_value, p_value))
-
-        rhs = jax.jvp(
-            residual_inputs,
-            (y_eval, t_eval, p_eval),
-            (y_dot, t_dot, p_dot),
-        )[1]
-        identity = jnp.eye(theta.size, dtype=theta.dtype)
-        jacobian_safe = jnp.where(ok, jacobian, identity)
-        rhs_safe = jnp.where(ok, rhs, jnp.zeros_like(rhs))
-        z_dot = unravel(jnp.linalg.solve(jacobian_safe, -rhs_safe))
-        return (z, ok), (z_dot, _zero_discrete_tangent(ok))
+        # The guess is never a differentiable algebraic state, including on
+        # failure; successful tangents come entirely from nlls implicit AD.
+        return where(ok, value, jax.lax.stop_gradient(z_guess)), ok
 
     return solve_root, residual, algebraic_auxiliary
 
@@ -753,7 +812,9 @@ def solve_semi_explicit_dae(
     explicit ``False`` selects the minimal paths without those traces.
 
     ``failure_ad_reference=(y, z, t, p)`` may provide a domain-safe point for
-    retaining successful-lane derivatives when other ``vmap`` lanes fail.
+    already-inactive ``vmap`` lanes and model aux/field evaluation. A newly
+    attempted root still requires its actual ``(y, z_guess, t, p)`` to be
+    JVP-safe; the reference does not replace an active root after it fails.
     A nonfinite inexact algebraic-aux leaf at initialization prevents all
     time-step work. Saved aux is checked at the initial and accepted nodes in
     prefix/grid modes; endpoint mode checks it only after integration and
@@ -861,8 +922,8 @@ def solve_semi_explicit_dae(
     else:
         evaluate_aux = None
 
-    def solve_root(y, t, z_guess):
-        return solve_root_ad(y, t, z_guess, p, failure_ad_reference)
+    def solve_root(y, t, z_guess, active):
+        return solve_root_ad(y, t, z_guess, p, active, failure_ad_reference)
 
     def differential(y, z, t, active=None):
         if active is None:
@@ -935,7 +996,7 @@ def solve_semi_explicit_dae(
         aux_dot = where(active, aux_dot, zeros_like(aux_dot))
         return z_dot, aux_dot
 
-    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0)
+    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0, jnp.asarray(True))
     if has_algebraic_aux:
         _, initial_context_ok = evaluate_context(
             y_0, z_initial, t_0, p, initial_root_ok
@@ -1043,7 +1104,7 @@ def solve_semi_explicit_dae(
 
     def stage(y_stage, t_stage, z_guess, active, need_derivative=True):
         def evaluate():
-            z_stage, root_ok = solve_root(y_stage, t_stage, z_guess)
+            z_stage, root_ok = solve_root(y_stage, t_stage, z_guess, active)
             if need_derivative:
                 k_stage, field_ok = jax.lax.cond(
                     root_ok,

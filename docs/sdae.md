@@ -83,6 +83,12 @@ so JVP/VJP with respect to `y_0` and `p` are pathwise derivatives under common
 random numbers. The key is not differentiable.
 
 `z_0` is a root guess, receives zero tangent, and selects a local root branch.
+Algebraic solves use the same nlls-gram 2.4 `LMRootSolver` configuration and
+implicit-AD contract as deterministic DAEs; see
+[Nonlinear-solve and AD contract](dae.md#nonlinear-solve-and-ad-contract).
+`MAX_STEPS` is accepted by default; use
+`LMRootSolver(max_steps_is_success=False)` when every stochastic node must
+report nlls `CONVERGED`.
 The algebraic function may return `(residual, algebraic_aux)`; that internal
 context is passed to both drift and diffusion but is not stored. The drift may
 return `(drift_value, saved_aux)`, and only that saved aux becomes `sol.aux`.
@@ -97,14 +103,16 @@ endpoint state, returns zero aux, and sets `ok=False`.
 
 Only `SaveAt(t_1=True)` and `SaveAt(steps=True)` are supported. Stochastic
 paths are rough, so deterministic dense interpolation between nodes would be
-mathematically wrong. A root failure freezes the last consistent prefix,
+mathematically wrong. A root status rejected by the configured policy freezes
+the last consistent prefix,
 sets `ok=False`, and pads the remaining static buffer. Failed roots have zero
 implicit tangents, and aux at a failed initial root is zero-filled, so masked
 lanes can preserve successful JVPs or VJPs under `vmap`. For that contract,
 pass `failure_ad_reference=(y_ref, z_ref, t_ref, p_ref)` at a point where the
 residual, context, and saved-aux maps are finite and differentiable. The
-reference is used only to linearize inactive lanes before zeroing their
-tangents. Without one,
-an all-ones best-effort default is used and a batch containing failures has no
-gradient guarantee. Outputs and gradients from the failed lane are not a
-valid solution.
+reference is substituted before nlls only for already-inactive lanes and is
+also used by inactive context, drift, diffusion, and saved-aux evaluation. A
+newly attempted root must be JVP-safe at its actual initial point; the
+reference cannot repair an invalid active attempt after it fails. Without one,
+an all-ones best-effort default is used for inactive work. Outputs and
+gradients from a failed lane are not a valid solution.

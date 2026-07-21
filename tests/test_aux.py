@@ -308,6 +308,7 @@ def test_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity, solv
             max_steps=1,
             save_at=save_at,
             has_aux=True,
+            root_solver=LMRootSolver(max_steps_is_success=False),
             failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
         )
 

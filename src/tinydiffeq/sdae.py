@@ -75,7 +75,9 @@ def solve_semi_explicit_sdae(
     one common-random-number path for JVP/VJP with respect to ``y_0`` and
     ``p``. ``z_0`` is only a root guess and has zero tangent by contract.
     ``failure_ad_reference=(y, z, t, p)`` may provide a domain-safe point for
-    retaining successful-lane derivatives when other ``vmap`` lanes fail.
+    already-inactive ``vmap`` lanes and model aux/field evaluation. A newly
+    attempted root still requires its actual ``(y, z_guess, t, p)`` to be
+    JVP-safe; the reference does not replace an active root after it fails.
     A nonfinite inexact algebraic-aux leaf at initialization prevents all
     stochastic time-step work. Saved aux is checked at every node in steps
     mode; endpoint mode checks it only after integration and retains the
@@ -183,8 +185,8 @@ def solve_semi_explicit_sdae(
     else:
         evaluate_aux = None
 
-    def solve_root(y, t, z_guess):
-        return solve_root_ad(y, t, z_guess, p, failure_ad_reference)
+    def solve_root(y, t, z_guess, active):
+        return solve_root_ad(y, t, z_guess, p, active, failure_ad_reference)
 
     def checked_value(output, name):
         value, dtype = asarray_state(output, name)
@@ -193,7 +195,7 @@ def solve_semi_explicit_sdae(
             raise TypeError(f"{name} must preserve the y dtype")
         return value
 
-    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0)
+    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0, jnp.asarray(True))
     if has_algebraic_aux:
         context_initial, initial_context_ok = evaluate_context(
             y_0, z_initial, t_0, initial_root_ok
@@ -246,7 +248,7 @@ def solve_semi_explicit_sdae(
             (dt, drift_value),
             (1.0, multiply(diffusion_value, d_w_step)),
         )
-        z_candidate, root_ok = solve_root(y_candidate, t_next, z)
+        z_candidate, root_ok = solve_root(y_candidate, t_next, z, active)
         if has_algebraic_aux:
             context_candidate, context_ok = evaluate_context(
                 y_candidate, z_candidate, t_next, root_ok & active
