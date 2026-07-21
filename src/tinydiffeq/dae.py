@@ -89,10 +89,12 @@ class LMRootSolver:
     uses ``ad_solver="auto"``, which resolves every square constraint to the
     general nonsymmetric direct solve.
     ``max_steps`` counts nonlinear iterations for one algebraic root and is
-    independent of the integration's time-step ``max_steps``. ``atol=None``
-    selects ``1e-6`` in float32 and ``1e-10`` in float64. ``gtol`` and
-    ``xtol`` default to zero (disabled); root tolerances are deliberately
-    independent of the outer integration tolerances.
+    independent of the integration's time-step ``max_steps``.
+    ``max_steps_is_success=True`` accepts the final iterate when that budget is
+    exhausted; set it to ``False`` to require an nlls ``CONVERGED`` status.
+    ``atol=None`` selects ``1e-6`` in float32 and ``1e-10`` in float64.
+    ``gtol`` and ``xtol`` default to zero (disabled); root tolerances are
+    deliberately independent of the outer integration tolerances.
 
     The remaining fields pass directly to ``LevenbergMarquardt``. Algebraic
     residuals do not expose nlls aux, Jacobian caching is disabled because
@@ -100,6 +102,7 @@ class LMRootSolver:
     """
 
     max_steps: int = field(default=8, metadata=dict(static=True))
+    max_steps_is_success: bool = field(default=True, metadata=dict(static=True))
     atol: float | None = field(default=None, metadata=dict(static=True))
     gtol: float = field(default=0.0, metadata=dict(static=True))
     xtol: float = field(default=0.0, metadata=dict(static=True))
@@ -133,6 +136,8 @@ class LMRootSolver:
             raise ValueError("LMRootSolver.max_steps must be a positive int")
         if self.max_steps <= 0:
             raise ValueError("LMRootSolver.max_steps must be a positive int")
+        if not isinstance(self.max_steps_is_success, bool):
+            raise TypeError("LMRootSolver.max_steps_is_success must be a bool")
         if self.atol is not None and self.atol < 0:
             raise ValueError("LMRootSolver.atol must be nonnegative or None")
         if self.gtol < 0:
@@ -273,6 +278,22 @@ def _get_algebraic_solver(g, config, has_algebraic_aux=False):
         return _build_algebraic_solver(g, config, has_algebraic_aux)
 
 
+@jax.custom_jvp
+def _inactive_safe_inputs(active, inputs, reference):
+    return jax.tree.map(
+        lambda value, reference_value: jnp.where(active, value, reference_value),
+        inputs,
+        reference,
+    )
+
+
+@_inactive_safe_inputs.defjvp
+def _inactive_safe_inputs_jvp(primals, tangents):
+    active, inputs, reference = primals
+    _, inputs_dot, _ = tangents
+    return _inactive_safe_inputs(active, inputs, reference), inputs_dot
+
+
 def _prepare_failure_ad_reference(reference, y, z, t, p):
     """Validate a derivative-only reference point for inactive vmap lanes."""
 
@@ -351,19 +372,31 @@ def _make_implicit_root_solver(
         y, z, t, p = inputs
         return split_algebraic_output(algebraic_output(y, z, t, p), True)[1]
 
-    def solve_root(y, t, z_guess, p, failure_ad_reference):
-        y_ref, z_ref, t_ref, p_ref = failure_ad_reference
+    def solve_root(y, t, z_guess, p, active, failure_ad_reference):
+        # The enclosing root-result mask supplies exact zero AD for inactive
+        # lanes. Make this domain-safe primal substitution value-only so its
+        # redundant selector cotangents do not accumulate across DAE stages.
+        y_initial, z_initial, t_initial, p_initial = _inactive_safe_inputs(
+            active,
+            (y, z_guess, t, p),
+            failure_ad_reference,
+        )
         result = algebraic_solver.solve(
-            z_guess,
+            z_initial,
             args,
-            p=(y, t, p),
+            p=(y_initial, t_initial, p_initial),
             max_steps=root_solver.max_steps,
+            max_steps_is_success=root_solver.max_steps_is_success,
             atol=root_atol,
             gtol=root_solver.gtol,
             xtol=root_solver.xtol,
-            failure_ad_reference=(z_ref, args, (y_ref, t_ref, p_ref)),
         )
         ok = result.status == jnp.asarray(LMStatus.CONVERGED, result.status.dtype)
+        if root_solver.max_steps_is_success:
+            ok = ok | (
+                result.status == jnp.asarray(LMStatus.MAX_STEPS, result.status.dtype)
+            )
+        ok = active & ok
         value, dtype = asarray_state(result.x, "algebraic root")
         assert_same_structure(z_reference, value, "algebraic root")
         if dtype != z_dtype:
@@ -779,7 +812,9 @@ def solve_semi_explicit_dae(
     explicit ``False`` selects the minimal paths without those traces.
 
     ``failure_ad_reference=(y, z, t, p)`` may provide a domain-safe point for
-    retaining successful-lane derivatives when other ``vmap`` lanes fail.
+    already-inactive ``vmap`` lanes and model aux/field evaluation. A newly
+    attempted root still requires its actual ``(y, z_guess, t, p)`` to be
+    JVP-safe; the reference does not replace an active root after it fails.
     A nonfinite inexact algebraic-aux leaf at initialization prevents all
     time-step work. Saved aux is checked at the initial and accepted nodes in
     prefix/grid modes; endpoint mode checks it only after integration and
@@ -887,8 +922,8 @@ def solve_semi_explicit_dae(
     else:
         evaluate_aux = None
 
-    def solve_root(y, t, z_guess):
-        return solve_root_ad(y, t, z_guess, p, failure_ad_reference)
+    def solve_root(y, t, z_guess, active):
+        return solve_root_ad(y, t, z_guess, p, active, failure_ad_reference)
 
     def differential(y, z, t, active=None):
         if active is None:
@@ -961,7 +996,7 @@ def solve_semi_explicit_dae(
         aux_dot = where(active, aux_dot, zeros_like(aux_dot))
         return z_dot, aux_dot
 
-    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0)
+    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0, jnp.asarray(True))
     if has_algebraic_aux:
         _, initial_context_ok = evaluate_context(
             y_0, z_initial, t_0, p, initial_root_ok
@@ -1069,7 +1104,7 @@ def solve_semi_explicit_dae(
 
     def stage(y_stage, t_stage, z_guess, active, need_derivative=True):
         def evaluate():
-            z_stage, root_ok = solve_root(y_stage, t_stage, z_guess)
+            z_stage, root_ok = solve_root(y_stage, t_stage, z_guess, active)
             if need_derivative:
                 k_stage, field_ok = jax.lax.cond(
                     root_ok,

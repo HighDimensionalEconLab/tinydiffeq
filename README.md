@@ -34,8 +34,9 @@ implementation. Use [diffrax](https://docs.kidger.site/diffrax/) or
 [SciML](https://docs.sciml.ai/DiffEqDocs/stable/) if you need general mass
 matrices, fully implicit or higher-index DAEs, events, continuous solution
 objects, sparse/Krylov linear solvers for ODE/DAE stages, or specialized
-adjoints. Initial DAE
-consistency and explicit DAE stages use `nlls-gram`.
+adjoints. Initial DAE consistency and explicit DAE stages use `nlls-gram`;
+`LMRootSolver` accepts a `MAX_STEPS` iterate by default and offers strict
+`CONVERGED`-only status via `max_steps_is_success=False`.
 
 The linear exponential-action API follows SciML
 [`ExponentialUtilities.expv`](https://docs.sciml.ai/ExponentialUtilities/stable/expv/).

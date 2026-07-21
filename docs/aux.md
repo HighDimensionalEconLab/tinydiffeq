@@ -143,4 +143,7 @@ For batched differentiation where inactive lanes may leave the model domain,
 `failure_ad_reference` supplies a finite point used only for safe
 linearization. ODE/SDE references have the form `(x, t, p)`; DAE/SDAE
 references have `(y, z, t, p)`. Without one, tinydiffeq uses an all-ones
-best-effort reference.
+best-effort reference. For DAE/SDAE roots, it is substituted before nlls only
+after a lane is already inactive. A newly attempted root and its model context
+must be JVP-safe at the actual initial point; the reference is not a post-hoc
+replacement for an active failure.

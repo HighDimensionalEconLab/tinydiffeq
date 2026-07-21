@@ -5,6 +5,7 @@ import pytest
 
 from tinydiffeq import (
     EulerMaruyama,
+    LMRootSolver,
     SaveAt,
     solve_sde,
     solve_semi_explicit_sdae,
@@ -199,6 +200,7 @@ def test_sdae_root_failure_returns_consistent_prefix_and_padding():
         save_at=SaveAt(steps=True),
         has_aux=True,
         has_algebraic_aux=True,
+        root_solver=LMRootSolver(max_steps_is_success=False),
     )
     assert not bool(sol.ok)
     assert int(sol.accepted.sum()) == int(sol.num_accepted) + 1
@@ -239,6 +241,7 @@ def test_sdae_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity)
             save_at=save_at,
             has_aux=True,
             has_algebraic_aux=True,
+            root_solver=LMRootSolver(max_steps_is_success=False),
             failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
         )
 

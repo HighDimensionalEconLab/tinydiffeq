@@ -44,6 +44,7 @@ def test_lm_root_solver_uses_nlls_24_defaults_and_forwards_options():
         return z - y
 
     defaults = _build_algebraic_solver(constraint, LMRootSolver(), False)
+    assert LMRootSolver().max_steps_is_success
     assert defaults.linear_solver == "auto"
     assert defaults.jacobian_mode == "auto"
     assert defaults.ad_solver == "auto"
@@ -85,6 +86,50 @@ def test_lm_root_solver_uses_nlls_24_defaults_and_forwards_options():
     assert configured.ad_solver_atol == 1e-7
     assert configured.ad_solver_maxiter == 13
     assert configured.ad_solver_penalty == 1e-8
+
+
+def test_max_steps_policy_and_strict_batched_derivative():
+    def one_lane(z_0, p, max_steps_is_success):
+        return solve_semi_explicit_dae(
+            lambda y, z: jnp.zeros_like(y),
+            lambda y, z, t, args, p: z - p,
+            RK4(),
+            0.0,
+            0.1,
+            jnp.asarray(0.0),
+            z_0,
+            p=p,
+            dt_0=0.1,
+            max_steps=1,
+            root_solver=LMRootSolver(
+                max_steps=1,
+                max_steps_is_success=max_steps_is_success,
+                atol=1e-12,
+            ),
+        )
+
+    p = jnp.asarray(1.0)
+    forgiving = one_lane(jnp.asarray(0.0), p, True)
+    strict = one_lane(jnp.asarray(0.0), p, False)
+    assert bool(forgiving.ok)
+    assert not bool(strict.ok)
+
+    def strict_batch(parameter):
+        return jax.vmap(lambda z_0: one_lane(z_0, parameter, False))(
+            jnp.asarray([1.0, 0.0])
+        )
+
+    def endpoint(parameter):
+        result = strict_batch(parameter)
+        return jnp.where(result.ok, result.zs, 0.0)
+
+    result = strict_batch(p)
+    value, tangent = jax.jvp(endpoint, (p,), (jnp.ones_like(p),))
+    _, pullback = jax.vjp(endpoint, p)
+    assert jnp.array_equal(result.ok, jnp.asarray([True, False]))
+    assert jnp.array_equal(value, jnp.asarray([1.0, 0.0]))
+    assert jnp.array_equal(tangent, jnp.asarray([1.0, 0.0]))
+    assert jnp.array_equal(pullback(jnp.ones_like(value))[0], jnp.asarray(1.0))
 
 
 def test_rk4_initial_consistency_and_endpoint_accuracy():
@@ -441,6 +486,7 @@ def test_initial_root_failure_and_time_budget_failure():
         jnp.asarray(0.0),
         dt_0=0.1,
         max_steps=10,
+        root_solver=LMRootSolver(max_steps_is_success=False),
     )
     assert not bool(failed_root.ok)
     assert int(failed_root.num_accepted) == 0
@@ -473,7 +519,7 @@ def test_adaptive_stage_root_failure_retries_with_smaller_step():
         jnp.asarray(0.0),
         dt_0=0.005,
         controller=IController(),
-        root_solver=LMRootSolver(max_steps=1, atol=1e-6),
+        root_solver=LMRootSolver(max_steps=1, max_steps_is_success=False, atol=1e-6),
         max_steps=64,
         save_at=SaveAt(steps=True),
     )
@@ -499,6 +545,7 @@ def test_masked_failed_lane_has_safe_implicit_root_jvp_and_vjp():
             p=p,
             dt_0=0.1,
             max_steps=1,
+            root_solver=LMRootSolver(max_steps_is_success=False),
             failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
         )
 
@@ -573,6 +620,8 @@ def test_validation():
         )
     with pytest.raises(ValueError, match="positive int"):
         LMRootSolver(max_steps=0)
+    with pytest.raises(TypeError, match="max_steps_is_success must be a bool"):
+        LMRootSolver(max_steps_is_success=1)
     with pytest.raises(ValueError, match="gtol must be nonnegative"):
         LMRootSolver(gtol=-1.0)
     with pytest.raises(ValueError, match="xtol must be nonnegative"):

@@ -94,6 +94,7 @@ from tinydiffeq import LMRootSolver
 
 root_solver = LMRootSolver(
     max_steps=8,
+    max_steps_is_success=True,
     atol=None,          # 1e-6 float32, 1e-10 float64
     gtol=0.0,           # disabled
     xtol=0.0,           # disabled
@@ -112,7 +113,11 @@ one dense LU factorization per attempted time step.
 
 Root tolerances are independent of the outer controller tolerances. The
 `atol`, `gtol`, and `xtol` fields pass to the nlls solve; zero disables the
-corresponding test. The nlls constructor controls are also explicit fields on
+corresponding test. By default, exhausting `root_solver.max_steps` accepts the
+last root iterate and uses its implicit derivative even though nlls retains the
+diagnostic `MAX_STEPS` status. Set `max_steps_is_success=False` to require
+`CONVERGED`; the failed root then has zero implicit tangent. The nlls
+constructor controls are also explicit fields on
 `LMRootSolver`: damping and maximum damping, forward solver and Jacobian mode,
 iterative solver tolerances/preconditioners, AD solver tolerances,
 preconditioner and penalty, solve dtypes, metrics/factories, and recycling.
@@ -156,21 +161,28 @@ the initial and accepted nodes, so an invalid value freezes the previous valid
 prefix. Endpoint mode evaluates saved aux only after integration; an invalid
 final value retains the endpoint state, returns zero aux, and sets `ok=False`.
 
-An adaptive stage-root or Rodas5P linear failure rejects the time-step attempt
-and asks the controller for a smaller step. A fixed-step failure terminates.
+With strict root status enabled, an adaptive stage-root failure rejects the
+time-step attempt and asks the controller for a smaller step; a fixed-step
+failure terminates. Rodas5P linear failures follow the same controller policy.
 In either case `sol.ok` is false if the endpoint is not reached with valid
 algebraic states. tinydiffeq delegates each root and its implicit JVP/VJP to
-nlls-gram; nonconverged roots receive a zero implicit tangent, and aux at a
-failed initial root is a zero pytree of the declared shape. Callers that want
-to retain successful-lane JVPs/VJPs from a mixed-success `vmap` batch should pass
+nlls-gram; statuses rejected by the configured policy receive a zero implicit
+tangent, and aux at a failed initial root is a zero pytree of the declared
+shape. Callers that want to retain successful-lane JVPs/VJPs after another
+lane has already become inactive should pass
 `failure_ad_reference=(y_ref, z_ref, t_ref, p_ref)`, choosing a point where
 the residual, context, and saved-aux maps are finite and differentiable.
-The corresponding `(z_ref, args, (y_ref, t_ref, p_ref))` reference is passed
-to nlls so inactive lanes are linearized safely before their tangents are
-zeroed. It never affects a successful lane or the primal solve. Without an
-explicit reference, an all-ones best-effort default is used; gradients of a
-batch containing failures are not guaranteed if the model is undefined there.
-A failed lane itself is never a valid solution.
+tinydiffeq substitutes this point into an already-inactive root call before
+entering nlls, and also uses it for inactive algebraic aux, saved aux, and
+differential-field evaluations. It is not an nlls solve argument and never
+changes an active root attempt.
+
+Every newly attempted root must therefore be JVP-safe at its actual
+`(y, z_guess, t, p)`: the residual and any model context evaluated there must
+have valid derivatives. The reference cannot rescue an intrinsically invalid
+active attempt after the fact. Without an explicit reference, an all-ones
+best-effort default is used for inactive work; gradients are not guaranteed if
+the model is undefined there. A failed lane itself is never a valid solution.
 
 ## Saving output
 
