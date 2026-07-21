@@ -103,3 +103,27 @@ JAX_PLATFORMS=cpu JAX_ENABLE_X64=1 \
 
 The baseline/post JSON, cold-compilation CSVs, JVP-strategy CSVs, stable matrix
 CSVs, and targeted raw-crossing CSV are stored alongside this report.
+
+## Published nlls-gram 2.4.0 verification
+
+The release candidate was retested after replacing the local editable nlls-gram
+source with the published PyPI wheel. The lockfile resolves `nlls-gram` 2.4.0
+from the registry while the tinydiffeq package metadata retains the public
+requirement `nlls-gram>=2.4.0`.
+
+The full released-dependency benchmark completed all 115 cases. Its only raw
+short-round crossing was the unrelated Tsit5 tree-state primal case (21.869 to
+23.608 us); no JVP or VJP case crossed the gate.
+
+The corresponding 39-case higher-stability root/aux matrix initially showed
+one 5.74% sample increase for the DAE tree-state JVP (185.392 to 196.033 us).
+Seven immediate repetitions of that exact 15-round by 100-dispatch measurement
+ranged from 174.412 to 182.578 us, all faster than the reference. It was thus a
+transient timing sample rather than a released-package regression. Every other
+stable JVP/VJP case passed on the first release run.
+
+Release verification artifacts:
+
+- `2026-07-21_nlls-2.4.0-release.json`
+- `2026-07-21_nlls-2.4.0-release-stable.csv`
+- `2026-07-21_nlls-2.4.0-release-tree-jvp-repeat.csv`
