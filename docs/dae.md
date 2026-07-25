@@ -98,11 +98,7 @@ root_solver = LMRootSolver(
     atol=None,          # 1e-6 float32, 1e-10 float64
     gtol=0.0,           # disabled
     xtol=0.0,           # disabled
-    init_damping=1e-3,
-    linear_solver="auto",
-    jacobian_mode="auto",
-    ad_solver="auto",       # square constraint -> direct
-    ad_solver_penalty=None,
+    solver_options=(),  # nlls-gram constructor defaults
 )
 ```
 
@@ -116,15 +112,25 @@ Root tolerances are independent of the outer controller tolerances. The
 corresponding test. By default, exhausting `root_solver.max_steps` accepts the
 last root iterate and uses its implicit derivative even though nlls retains the
 diagnostic `MAX_STEPS` status. Set `max_steps_is_success=False` to require
-`CONVERGED`; the failed root then has zero implicit tangent. The nlls
-constructor controls are also explicit fields on
-`LMRootSolver`: damping and maximum damping, forward solver and Jacobian mode,
-iterative solver tolerances/preconditioners, AD solver tolerances,
-preconditioner and penalty, solve dtypes, metrics/factories, and recycling.
-Their names and semantics match nlls-gram 2.4. Algebraic roots fix
-`cache_jacobian=False` and `geodesic_acceleration=False`, because each DAE
-stage changes the root problem and the intended path is the ordinary dense LM
-step.
+`CONVERGED`; the failed root then has zero implicit tangent. Everything
+algorithmic runs at nlls-gram's own defaults — a dense `Cholesky()` forward
+solve and `ad_solver=None` for the implicit derivative. For the rare root that
+needs to depart from them, `solver_options` forwards keyword arguments
+verbatim to the `LevenbergMarquardt` constructor:
+
+```python
+from nlls_gram import QR
+
+root_solver = LMRootSolver(solver_options={"linear_solver": QR()})
+```
+
+The names and semantics are nlls-gram's, so they track that package rather
+than being mirrored here. Pass a mapping or key/value pairs; it is normalized
+to a sorted tuple so equal configurations remain hashable and share one
+compiled solver. Algebraic roots fix `cache_jacobian=False` and
+`geodesic_acceleration=False` — each DAE stage changes the root problem and
+the intended path is the ordinary dense LM step — and `solver_options` rejects
+both rather than silently honoring an override.
 
 Every nonlinear root passes `(y, t, p)` through nlls-gram's differentiated parameter
 pytree. Thus it differentiates the defining constraint,

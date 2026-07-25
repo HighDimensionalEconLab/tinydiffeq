@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
     "jax>=0.7.0",
-    "nlls-gram>=2.4.0",
+    "nlls-gram>=2.7.0",
 ]
 
 [project.urls]
@@ -50,6 +50,9 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+nlls-gram = { path = "../nlls_gram", editable = true }
 
 [dependency-groups]
 benchmark = [

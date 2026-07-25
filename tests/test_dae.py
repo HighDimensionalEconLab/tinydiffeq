@@ -1,6 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pytest
+from nlls_gram import QR, Cholesky
 
 from tinydiffeq import (
     RK4,
@@ -39,53 +40,60 @@ def solve_linear(p, y_0, z_0, solver, save_at, **kwargs):
     )
 
 
-def test_lm_root_solver_uses_nlls_24_defaults_and_forwards_options():
+def test_lm_root_solver_uses_nlls_defaults_and_forwards_options():
     def constraint(y, z, t, args, p):
         return z - y
 
     defaults = _build_algebraic_solver(constraint, LMRootSolver(), False)
     assert LMRootSolver().max_steps_is_success
-    assert defaults.linear_solver == "auto"
+    # Everything algorithmic is nlls-gram's default; only the two invariants
+    # this package owns are pinned.
+    assert isinstance(defaults.linear_solver, Cholesky)
     assert defaults.jacobian_mode == "auto"
-    assert defaults.ad_solver == "auto"
-    assert defaults.ad_solver_penalty is None
+    assert defaults.ad_solver is None
     assert not defaults.cache_jacobian
     assert not defaults.geodesic_acceleration
 
     configured = _build_algebraic_solver(
         constraint,
         LMRootSolver(
-            init_damping=2e-3,
-            damping_decrease=0.4,
-            damping_increase=3.0,
-            max_damping=10.0,
-            linear_solver="qr",
-            jacobian_mode="rev",
-            iterative_tol=1e-4,
-            iterative_atol=1e-6,
-            iterative_maxiter=17,
-            ad_solver="augmented_qr",
-            ad_solver_tol=1e-5,
-            ad_solver_atol=1e-7,
-            ad_solver_maxiter=13,
-            ad_solver_penalty=1e-8,
+            solver_options={
+                "init_damping": 2e-3,
+                "damping_decrease": 0.4,
+                "damping_increase": 3.0,
+                "jacobian_mode": "rev",
+                "linear_solver": QR(),
+            }
         ),
         False,
     )
     assert configured.init_damping == 2e-3
     assert configured.damping_decrease == 0.4
     assert configured.damping_increase == 3.0
-    assert configured.max_damping == 10.0
-    assert configured.linear_solver == "qr"
     assert configured.jacobian_mode == "rev"
-    assert configured.iterative_tol == 1e-4
-    assert configured.iterative_atol == 1e-6
-    assert configured.iterative_maxiter == 17
-    assert configured.ad_solver == "augmented_qr"
-    assert configured.ad_solver_tol == 1e-5
-    assert configured.ad_solver_atol == 1e-7
-    assert configured.ad_solver_maxiter == 13
-    assert configured.ad_solver_penalty == 1e-8
+    assert isinstance(configured.linear_solver, QR)
+    # The invariants survive a populated pass-through.
+    assert not configured.cache_jacobian
+    assert not configured.geodesic_acceleration
+
+
+def test_lm_root_solver_options_normalize_and_reject_fixed_keys():
+    # A mapping and the equivalent pairs must compare and hash equal, so
+    # _cached_algebraic_solver shares one compiled solver between them.
+    mapping = LMRootSolver(solver_options={"jacobian_mode": "rev", "init_damping": 0.1})
+    pairs = LMRootSolver(
+        solver_options=(("init_damping", 0.1), ("jacobian_mode", "rev"))
+    )
+    assert mapping == pairs
+    assert hash(mapping) == hash(pairs)
+    # Re-wrapping an already-normalized value is idempotent.
+    assert LMRootSolver(solver_options=mapping.solver_options) == mapping
+
+    for fixed in ("cache_jacobian", "geodesic_acceleration"):
+        with pytest.raises(ValueError, match=fixed):
+            LMRootSolver(solver_options={fixed: True})
+    with pytest.raises(TypeError, match="mapping or key/value pairs"):
+        LMRootSolver(solver_options=5)
 
 
 def test_max_steps_policy_and_strict_batched_derivative():

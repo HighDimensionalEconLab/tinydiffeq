@@ -83,7 +83,7 @@ so JVP/VJP with respect to `y_0` and `p` are pathwise derivatives under common
 random numbers. The key is not differentiable.
 
 `z_0` is a root guess, receives zero tangent, and selects a local root branch.
-Algebraic solves use the same nlls-gram 2.4 `LMRootSolver` configuration and
+Algebraic solves use the same `LMRootSolver` configuration and
 implicit-AD contract as deterministic DAEs; see
 [Nonlinear-solve and AD contract](dae.md#nonlinear-solve-and-ad-contract).
 `MAX_STEPS` is accepted by default; use
