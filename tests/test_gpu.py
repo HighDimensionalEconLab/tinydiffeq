@@ -526,3 +526,136 @@ def test_rodas5p_ode_dae_and_derivatives_run_on_gpu():
     for leaf in jax.tree.leaves(result):
         assert leaf.devices().pop().platform == "gpu"
         assert bool(jnp.isfinite(leaf))
+
+
+# The tests above build state with a bare `jnp.asarray(1.0)`, which is float64
+# under the x64 conftest -- so the core ODE/SDE/DAE GPU paths were never
+# exercised in single precision. These are float32 end to end. The bar is
+# deliberately coarse: no crash, on-device, finite, and right to a few digits.
+# Tight float32 agreement is a CPU concern; here the point is that the GPU
+# kernels take the same paths and do not produce nonsense.
+
+F32_DECAY = 0.2
+
+
+def test_float32_adaptive_ode_runs_on_gpu():
+    gpu = gpu_devices()[0]
+
+    def f(x, t, args, p):
+        return -p * x
+
+    @jax.jit
+    def run(x_0, p):
+        return solve_ode(
+            f, Tsit5(), 0.0, 1.0, x_0, p=p, dt_0=0.1, controller=IController()
+        ).xs[-1]
+
+    with jax.default_device(gpu):
+        out = jax.block_until_ready(
+            run(jnp.asarray(1.0, jnp.float32), jnp.asarray(F32_DECAY, jnp.float32))
+        )
+
+    assert out.dtype == jnp.float32
+    assert out.devices().pop().platform == "gpu"
+    assert bool(jnp.isfinite(out))
+    assert abs(float(out) - float(jnp.exp(-F32_DECAY))) < 1e-3
+
+
+def test_float32_sde_runs_on_gpu():
+    gpu = gpu_devices()[0]
+
+    @jax.jit
+    def run(x_0):
+        return solve_sde(
+            lambda x, t, args, p: -F32_DECAY * x,
+            lambda x, t, args, p: jnp.asarray(0.1, x.dtype) * jnp.ones_like(x),
+            EulerMaruyama(),
+            0.0,
+            1.0,
+            x_0,
+            key=jax.random.key(0),
+            n_steps=64,
+        ).xs[-1]
+
+    with jax.default_device(gpu):
+        out = jax.block_until_ready(run(jnp.asarray(1.0, jnp.float32)))
+
+    assert out.dtype == jnp.float32
+    assert out.devices().pop().platform == "gpu"
+    assert bool(jnp.isfinite(out))
+    assert abs(float(out)) < 10.0  # a diverged path, not a tolerance check
+
+
+def test_float32_dae_value_and_grad_run_on_gpu():
+    gpu = gpu_devices()[0]
+
+    def f(state, z):
+        return -F32_DECAY * z
+
+    def g(y, z, t, args, p):
+        return z - p * y
+
+    def endpoint(p):
+        return jnp.sum(
+            solve_semi_explicit_dae(
+                f,
+                g,
+                Tsit5(),
+                0.0,
+                1.0,
+                jnp.asarray([1.0], jnp.float32),
+                jnp.asarray([1.0], jnp.float32),
+                p=p,
+                dt_0=0.1,
+                controller=IController(),
+            ).ys[-1]
+        )
+
+    with jax.default_device(gpu):
+        value, grad = jax.block_until_ready(
+            jax.jit(lambda p: (endpoint(p), jax.grad(endpoint)(p)))(
+                jnp.asarray(1.0, jnp.float32)
+            )
+        )
+
+    for leaf in (value, grad):
+        assert leaf.dtype == jnp.float32
+        assert leaf.devices().pop().platform == "gpu"
+        assert bool(jnp.isfinite(leaf))
+
+
+def test_float32_y_with_float64_z_keeps_the_tight_root_tolerance_on_gpu():
+    # dae.py picks root_atol from z_dtype alone: 1e-10 when z has more than 32
+    # bits, 1e-6 otherwise. A float32 y with a float64 z therefore gets the
+    # tight bar, and both dtypes must survive the round trip on device.
+    gpu = gpu_devices()[0]
+
+    def f(state, z):
+        return -F32_DECAY * state
+
+    def g(y, z, t, args, p):
+        return z - jnp.asarray(y, z.dtype)
+
+    @jax.jit
+    def run(y_0, z_0):
+        solution = solve_semi_explicit_dae(
+            f,
+            g,
+            Tsit5(),
+            0.0,
+            1.0,
+            y_0,
+            z_0,
+            dt_0=0.1,
+            controller=IController(),
+        )
+        return solution.ys[-1], solution.zs[-1]
+
+    with jax.default_device(gpu):
+        ys, zs = jax.block_until_ready(
+            run(jnp.asarray([1.0], jnp.float32), jnp.asarray([1.0], jnp.float64))
+        )
+
+    assert ys.dtype == jnp.float32
+    assert zs.dtype == jnp.float64
+    assert bool(jnp.all(jnp.isfinite(ys))) and bool(jnp.all(jnp.isfinite(zs)))
