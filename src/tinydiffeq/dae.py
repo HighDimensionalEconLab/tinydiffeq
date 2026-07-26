@@ -77,28 +77,44 @@ from tinydiffeq.solvers import (
     Tsit5,
 )
 
+# Fixed for algebraic roots: each DAE stage changes the root problem, so a
+# cached Jacobian is stale and the intended path is the ordinary dense LM step.
+_FIXED_SOLVER_OPTIONS = frozenset({"cache_jacobian", "geodesic_acceleration"})
+
 
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
 class LMRootSolver:
     """Configuration for algebraic solves in a semi-explicit DAE.
 
-    The implementation is :class:`nlls_gram.LevenbergMarquardt`. Its
-    shape-adaptive dense default uses ``linear_solver="auto"`` (the normal
-    Cholesky form for a square DAE constraint) and its implicit derivative
-    uses ``ad_solver="auto"``, which resolves every square constraint to the
-    general nonsymmetric direct solve.
-    ``max_steps`` counts nonlinear iterations for one algebraic root and is
-    independent of the integration's time-step ``max_steps``.
-    ``max_steps_is_success=True`` accepts the final iterate when that budget is
-    exhausted; set it to ``False`` to require an nlls ``CONVERGED`` status.
-    ``atol=None`` selects ``1e-6`` in float32 and ``1e-10`` in float64.
-    ``gtol`` and ``xtol`` default to zero (disabled); root tolerances are
-    deliberately independent of the outer integration tolerances.
+    The implementation is :class:`nlls_gram.LevenbergMarquardt` at its
+    defaults: a dense ``Cholesky()`` forward solve, which takes the normal
+    form for a square DAE constraint, and ``ad_solver=None`` for the implicit
+    derivative, which matches the forward family.
 
-    The remaining fields pass directly to ``LevenbergMarquardt``. Algebraic
-    residuals do not expose nlls aux, Jacobian caching is disabled because
-    roots change at every DAE stage, and geodesic acceleration is disabled.
+    The fields here are the ones this package owns; all of them reach the nlls
+    ``solve`` rather than its constructor. ``max_steps`` counts nonlinear
+    iterations for one algebraic root and is independent of the integration's
+    time-step ``max_steps``. ``max_steps_is_success=True`` accepts the final
+    iterate when that budget is exhausted; set it to ``False`` to require an
+    nlls ``CONVERGED`` status. ``atol=None`` selects ``1e-6`` in float32 and
+    ``1e-10`` in float64. ``gtol`` and ``xtol`` default to zero (disabled);
+    root tolerances are deliberately independent of the outer integration
+    tolerances.
+
+    ``solver_options`` is the escape hatch for the rare root that needs a
+    non-default algorithm: a mapping (or pairs) forwarded verbatim to the
+    ``LevenbergMarquardt`` constructor, e.g.
+    ``solver_options={"linear_solver": QR()}``. Names and semantics are
+    nlls-gram's, not this package's, so they track it across versions instead
+    of being mirrored here. It is normalized to a sorted tuple so equal
+    configurations stay hashable and share one compiled solver -- an
+    unhashable config silently rebuilds the solver per call, and nlls-gram
+    keys its compiled loop on solver identity, so that would retrace every
+    step. ``cache_jacobian`` and ``geodesic_acceleration`` are fixed to
+    ``False`` and rejected here: each DAE stage changes the root problem, and
+    the intended path is the ordinary dense LM step. Algebraic residuals do
+    not expose nlls aux.
     """
 
     max_steps: int = field(default=8, metadata=dict(static=True))
@@ -106,30 +122,7 @@ class LMRootSolver:
     atol: float | None = field(default=None, metadata=dict(static=True))
     gtol: float = field(default=0.0, metadata=dict(static=True))
     xtol: float = field(default=0.0, metadata=dict(static=True))
-    init_damping: float = field(default=1e-3, metadata=dict(static=True))
-    damping_decrease: float = field(default=0.5, metadata=dict(static=True))
-    damping_increase: float = field(default=4.0, metadata=dict(static=True))
-    max_damping: float | None = field(default=None, metadata=dict(static=True))
-    linear_solver: str = field(default="auto", metadata=dict(static=True))
-    jacobian_mode: str = field(default="auto", metadata=dict(static=True))
-    iterative_tol: float = field(default=0.0, metadata=dict(static=True))
-    iterative_atol: float = field(default=0.0, metadata=dict(static=True))
-    iterative_maxiter: int | None = field(default=8, metadata=dict(static=True))
-    dual_preconditioner: Any = field(default=None, metadata=dict(static=True))
-    preconditioner_factory: Any = field(default=None, metadata=dict(static=True))
-    normal_preconditioner: Any = field(default=None, metadata=dict(static=True))
-    whitened_preconditioner: Any = field(default=None, metadata=dict(static=True))
-    ad_solver: str = field(default="auto", metadata=dict(static=True))
-    ad_solver_tol: float | None = field(default=None, metadata=dict(static=True))
-    ad_solver_atol: float = field(default=0.0, metadata=dict(static=True))
-    ad_solver_maxiter: int | None = field(default=None, metadata=dict(static=True))
-    ad_solver_preconditioner: Any = field(default=None, metadata=dict(static=True))
-    ad_solver_penalty: float | None = field(default=None, metadata=dict(static=True))
-    linear_solve_dtype: Any = field(default=None, metadata=dict(static=True))
-    metric_solve_dtype: Any = field(default=None, metadata=dict(static=True))
-    metric: Any = field(default=None, metadata=dict(static=True))
-    metric_factory: Any = field(default=None, metadata=dict(static=True))
-    recycle: Any = field(default=None, metadata=dict(static=True))
+    solver_options: Any = field(default=(), metadata=dict(static=True))
 
     def __post_init__(self):
         if not isinstance(self.max_steps, int) or isinstance(self.max_steps, bool):
@@ -144,12 +137,19 @@ class LMRootSolver:
             raise ValueError("LMRootSolver.gtol must be nonnegative")
         if self.xtol < 0:
             raise ValueError("LMRootSolver.xtol must be nonnegative")
-        if self.init_damping <= 0:
-            raise ValueError("LMRootSolver.init_damping must be positive")
-        if self.damping_decrease <= 0:
-            raise ValueError("LMRootSolver.damping_decrease must be positive")
-        if self.damping_increase <= 0:
-            raise ValueError("LMRootSolver.damping_increase must be positive")
+        try:
+            options = tuple(sorted(dict(self.solver_options).items()))
+        except (TypeError, ValueError) as error:
+            raise TypeError(
+                "LMRootSolver.solver_options must be a mapping or key/value pairs"
+            ) from error
+        fixed = _FIXED_SOLVER_OPTIONS.intersection(name for name, _ in options)
+        if fixed:
+            raise ValueError(
+                "LMRootSolver fixes " + ", ".join(sorted(fixed)) + " for algebraic "
+                "roots; they cannot be set through solver_options"
+            )
+        object.__setattr__(self, "solver_options", options)
 
 
 def _canonicalize_dae_field(fn, name):
@@ -234,32 +234,9 @@ def _build_algebraic_solver(g, config, has_algebraic_aux):
 
     return LevenbergMarquardt(
         residual,
-        init_damping=config.init_damping,
-        damping_decrease=config.damping_decrease,
-        damping_increase=config.damping_increase,
-        max_damping=config.max_damping,
-        linear_solver=config.linear_solver,
-        jacobian_mode=config.jacobian_mode,
-        iterative_tol=config.iterative_tol,
-        iterative_atol=config.iterative_atol,
-        iterative_maxiter=config.iterative_maxiter,
-        dual_preconditioner=config.dual_preconditioner,
-        preconditioner_factory=config.preconditioner_factory,
-        normal_preconditioner=config.normal_preconditioner,
-        whitened_preconditioner=config.whitened_preconditioner,
-        ad_solver=config.ad_solver,
-        ad_solver_tol=config.ad_solver_tol,
-        ad_solver_atol=config.ad_solver_atol,
-        ad_solver_maxiter=config.ad_solver_maxiter,
-        ad_solver_preconditioner=config.ad_solver_preconditioner,
-        ad_solver_penalty=config.ad_solver_penalty,
-        linear_solve_dtype=config.linear_solve_dtype,
-        metric_solve_dtype=config.metric_solve_dtype,
-        metric=config.metric,
-        metric_factory=config.metric_factory,
         geodesic_acceleration=False,
         cache_jacobian=False,
-        recycle=config.recycle,
+        **dict(config.solver_options),
     )
 
 
