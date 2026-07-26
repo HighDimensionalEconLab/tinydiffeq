@@ -546,9 +546,10 @@ def test_float32_adaptive_ode_runs_on_gpu():
 
     @jax.jit
     def run(x_0, p):
+        # SaveAt defaults to t_1=True, so xs IS the endpoint.
         return solve_ode(
             f, Tsit5(), 0.0, 1.0, x_0, p=p, dt_0=0.1, controller=IController()
-        ).xs[-1]
+        ).xs
 
     with jax.default_device(gpu):
         out = jax.block_until_ready(
@@ -575,7 +576,7 @@ def test_float32_sde_runs_on_gpu():
             x_0,
             key=jax.random.key(0),
             n_steps=64,
-        ).xs[-1]
+        ).xs
 
     with jax.default_device(gpu):
         out = jax.block_until_ready(run(jnp.asarray(1.0, jnp.float32)))
