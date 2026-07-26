@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tinydiffeq"
-version = "2.2.0"
+version = "2.3.0"
 description = "Tiny differentiable ODE/SDE/DAE/SDAE solvers for JAX with static shapes and composable AD"
 readme = "README.md"
 license = "MIT"
@@ -50,9 +50,6 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-[tool.uv.sources]
-nlls-gram = { path = "../nlls_gram", editable = true }
 
 [dependency-groups]
 benchmark = [
