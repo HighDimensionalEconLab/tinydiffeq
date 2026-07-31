@@ -41,7 +41,8 @@ is useful as a correctness baseline for small systems.
 ## Matrix-free pytree operator
 
 `KrylovExponential` applies the exponential without constructing `A` or
-`exp(A)`. The callable sees and returns the original pytree:
+`exp(A)` when `krylov_dim` is smaller than the flattened state dimension. The
+callable sees and returns the original pytree:
 
 ```python
 from tinydiffeq import KrylovExponential
@@ -75,6 +76,13 @@ precision-scaled happy-breakdown test avoids normalizing roundoff after the
 Krylov subspace has closed. `solution.ok` combines finite-output checks with a
 leading-term Arnoldi error estimate. Increase `krylov_dim` or
 `num_substeps` if it is false.
+
+When `krylov_dim` reaches the full state dimension, the Krylov space is the
+whole linear space and the result is exactly the dense exponential action. In
+that small-system case Tinydiffeq materializes the operator and uses the dense
+action, avoiding the coordinate singularity of an Arnoldi basis at an early
+happy breakdown. The genuinely matrix-free regime remains
+`krylov_dim < ravel(x_0).size`.
 
 ## Adaptive matrix-free propagation
 
@@ -174,6 +182,13 @@ Ordinary traced Krylov AD remains available and differentiates the finite
 Arnoldi computation. Because Arnoldi normalizes its starting vector, that path
 assumes the initial state has nonzero norm. At exactly zero, use the hand-coded
 initial-state functions above or `DenseExponential`.
+
+At an exact early happy breakdown in a *truncated* Krylov space, the normalized
+basis itself changes nonsmoothly for directions outside the closed invariant
+subspace. Use `jvp_linear_ode` or `vjp_linear_ode` for the mathematical
+fixed-operator initial-state derivative in that case. Final-vector breakdowns
+have finite ordinary AD, and full-dimensional Krylov delegates to the exact
+dense derivative as described above.
 
 For the adaptive method, ordinary AD differentiates the numerical computation
 on the realized accepted/rejected path; the discrete controller decisions are

@@ -9,6 +9,8 @@ from tinydiffeq import (
     DiscreteMarkovChain,
     SaveAt,
     SequentialMarkov,
+    forecast_continuous_time_markov_chain,
+    forecast_markov_chain,
     simulate_continuous_time_markov_chain,
     simulate_markov_chain,
 )
@@ -36,6 +38,7 @@ def test_discrete_deterministic_path_and_save_modes():
     assert endpoint.xs == 0
     assert jnp.array_equal(selected.xs, jnp.asarray([0, 1, 0]))
     assert bool(steps.ok) and bool(jnp.all(steps.accepted))
+    assert int(steps.num_steps) == int(endpoint.num_steps) == 6
 
     passed_as_pytree = jax.jit(
         lambda prepared, random_key: (
@@ -71,8 +74,53 @@ def test_discrete_sequential_associative_and_vmap_match(dtype):
     assert jnp.array_equal(sequential, associative)
 
 
+@pytest.mark.parametrize("method", [SequentialMarkov(), AssociativeMarkov()])
+def test_float32_simulation_jaxprs_are_pure_under_x64(method):
+    discrete = DiscreteMarkovChain(jnp.asarray([[0.8, 0.2], [0.3, 0.7]], jnp.float32))
+    continuous = ContinuousTimeMarkovChain(
+        jnp.asarray([[-1.0, 1.0], [0.5, -0.5]], jnp.float32)
+    )
+    keys = jax.random.split(jax.random.key(91), 4)
+
+    def discrete_path(key):
+        return simulate_markov_chain(
+            discrete,
+            jnp.int32(0),
+            key=key,
+            num_steps=16,
+            method=method,
+            save_at=SaveAt(steps=True),
+        )
+
+    def continuous_path(key):
+        return simulate_continuous_time_markov_chain(
+            continuous,
+            jnp.asarray(0.0, jnp.float32),
+            jnp.asarray(2.0, jnp.float32),
+            jnp.int32(0),
+            key=key,
+            max_jumps=32,
+            method=method,
+            save_at=SaveAt(steps=True),
+        )
+
+    discrete_jaxpr = jax.make_jaxpr(jax.vmap(discrete_path))(keys)
+    continuous_jaxpr = jax.make_jaxpr(jax.vmap(continuous_path))(keys)
+    assert "f64" not in str(discrete_jaxpr), discrete_jaxpr
+    assert "f64" not in str(continuous_jaxpr), continuous_jaxpr
+
+    discrete_paths = jax.jit(jax.vmap(discrete_path))(keys)
+    continuous_paths = jax.jit(jax.vmap(continuous_path))(keys)
+    assert discrete_paths.xs.shape == (4, 17)
+    assert continuous_paths.ts.dtype == jnp.float32
+    assert bool(jnp.all(continuous_paths.ok))
+
+
 def test_discrete_one_step_distribution():
-    transition = jnp.asarray([[0.1, 0.3, 0.6], [0.2, 0.5, 0.3], [0.7, 0.2, 0.1]])
+    transition = jnp.asarray(
+        [[0.1, 0.3, 0.6], [0.2, 0.5, 0.3], [0.7, 0.2, 0.1]],
+        jnp.float32,
+    )
     chain = DiscreteMarkovChain(transition)
     keys = jax.random.split(jax.random.key(2), 30_000)
     samples = jax.jit(
@@ -139,6 +187,7 @@ def test_ctmc_methods_match_states_and_event_times(dtype):
     tolerance = 2e-4 if dtype == jnp.float32 else 1e-11
     assert jnp.allclose(sequential.ts, associative.ts, rtol=tolerance, atol=tolerance)
     assert sequential.num_accepted == associative.num_accepted
+    assert sequential.num_steps == associative.num_steps
     assert bool(sequential.ok) and bool(associative.ok)
 
 
@@ -193,15 +242,21 @@ def test_ctmc_absorbing_and_starved_contracts():
     )
     assert bool(absorbed.ok)
     assert int(absorbed.num_accepted) == 0
+    assert int(absorbed.num_steps) == 1
     assert jnp.all(absorbed.xs == 0)
     assert not bool(starved.ok)
+    assert int(starved.num_steps) == 1
     assert starved.ts < 1_000.0
 
 
 @pytest.mark.parametrize("method", [SequentialMarkov(), AssociativeMarkov()])
 def test_two_state_ctmc_endpoint_distribution(method):
-    rate_01, rate_10, horizon = 2.0, 1.0, 0.8
-    chain = ContinuousTimeMarkovChain([[-rate_01, rate_01], [rate_10, -rate_10]])
+    rate_01 = jnp.asarray(2.0, jnp.float32)
+    rate_10 = jnp.asarray(1.0, jnp.float32)
+    horizon = jnp.asarray(0.8, jnp.float32)
+    chain = ContinuousTimeMarkovChain(
+        jnp.asarray([[-rate_01, rate_01], [rate_10, -rate_10]], jnp.float32)
+    )
     keys = jax.random.split(jax.random.key(7), 20_000)
     solutions = jax.jit(
         jax.vmap(
@@ -256,4 +311,46 @@ def test_markov_static_argument_validation():
             key=jax.random.key(0),
             num_steps=2,
             save_at=SaveAt(steps=True, fill="inf"),
+        )
+
+
+def test_markov_save_at_exact_is_rejected_by_every_public_query_api():
+    discrete = DiscreteMarkovChain([[0.75, 0.25], [0.4, 0.6]])
+    continuous = ContinuousTimeMarkovChain([[-0.5, 0.5], [0.25, -0.25]])
+    discrete_queries = SaveAt(ts=jnp.asarray([0, 2], jnp.int32), exact=True)
+    continuous_queries = SaveAt(ts=jnp.asarray([0.0, 1.0]), exact=True)
+    match = "only supported by solve_ode"
+
+    with pytest.raises(ValueError, match=match):
+        simulate_markov_chain(
+            discrete,
+            jnp.int32(0),
+            key=jax.random.key(0),
+            num_steps=2,
+            save_at=discrete_queries,
+        )
+    with pytest.raises(ValueError, match=match):
+        simulate_continuous_time_markov_chain(
+            continuous,
+            0.0,
+            1.0,
+            jnp.int32(0),
+            key=jax.random.key(1),
+            max_jumps=8,
+            save_at=continuous_queries,
+        )
+    with pytest.raises(ValueError, match=match):
+        forecast_markov_chain(
+            discrete,
+            jnp.asarray([1.0, 0.0]),
+            num_steps=2,
+            save_at=discrete_queries,
+        )
+    with pytest.raises(ValueError, match=match):
+        forecast_continuous_time_markov_chain(
+            continuous,
+            0.0,
+            1.0,
+            jnp.asarray([1.0, 0.0]),
+            save_at=continuous_queries,
         )

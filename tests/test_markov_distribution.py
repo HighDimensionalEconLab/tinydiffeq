@@ -112,6 +112,48 @@ def test_dtmc_jvp_vjp_and_vmap_wrt_initial_distribution():
     assert jnp.allclose(batched, batch @ transition_power)
 
 
+def test_float32_forecast_transforms_are_pure_under_x64():
+    transition = jnp.asarray([[0.9, 0.1], [0.25, 0.75]], jnp.float32)
+    generator = jnp.asarray([[-2.0, 2.0], [1.0, -1.0]], jnp.float32)
+    discrete = DiscreteMarkovChain(transition)
+    continuous = ContinuousTimeMarkovChain(generator)
+    distribution = jnp.asarray([0.4, 0.6], jnp.float32)
+    tangent = jnp.asarray([0.2, -0.2], jnp.float32)
+    cotangent = jnp.asarray([0.7, -0.3], jnp.float32)
+    batch = jnp.asarray([[1.0, 0.0], [0.0, 1.0], [0.4, 0.6]], jnp.float32)
+
+    def discrete_endpoint(value):
+        return forecast_markov_chain(discrete, value, num_steps=12).probabilities
+
+    def continuous_endpoint(value):
+        return forecast_continuous_time_markov_chain(
+            continuous,
+            jnp.asarray(0.0, jnp.float32),
+            jnp.asarray(1.7, jnp.float32),
+            value,
+        ).probabilities
+
+    def transformed(value, direction, weights, values):
+        discrete_value, discrete_tangent = jax.jvp(
+            discrete_endpoint, (value,), (direction,)
+        )
+        continuous_value, continuous_pullback = jax.vjp(continuous_endpoint, value)
+        return (
+            discrete_value,
+            discrete_tangent,
+            continuous_value,
+            continuous_pullback(weights)[0],
+            jax.vmap(discrete_endpoint)(values),
+            jax.vmap(continuous_endpoint)(values),
+        )
+
+    jaxpr = jax.make_jaxpr(transformed)(distribution, tangent, cotangent, batch)
+    assert "f64" not in str(jaxpr), jaxpr
+    result = jax.jit(transformed)(distribution, tangent, cotangent, batch)
+    assert all(leaf.dtype == jnp.float32 for leaf in jax.tree.leaves(result))
+    assert all(bool(jnp.all(jnp.isfinite(leaf))) for leaf in jax.tree.leaves(result))
+
+
 def test_invalid_initial_distribution_reports_not_ok_with_finite_output():
     chain = DiscreteMarkovChain([[0.8, 0.2], [0.3, 0.7]])
     for distribution in (

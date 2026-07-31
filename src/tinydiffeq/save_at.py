@@ -17,6 +17,10 @@ class SaveAt:
       takes, so changing curvature never changes shapes or recompiles.
       ``ts`` is a data leaf; a different grid of the same length retraces
       nothing. ODE, deterministic DAE, and linear exponential solves only.
+      For an explicit constant-step ODE, ``exact=True`` instead requires every
+      query to coincide with an internal step endpoint. It gathers those states
+      directly and avoids both interpolation and its extra endpoint-slope field
+      evaluation.
     - ``steps=True``: the initial state and accepted internal steps as a
       chronological prefix of a ``max_steps + 1`` buffer. Rejected attempts
       are omitted. ``fill="last"`` (default) pads the tail with the final
@@ -30,6 +34,7 @@ class SaveAt:
     ts: ArrayLike | None = None
     steps: bool = field(default=False, metadata=dict(static=True))
     fill: str = field(default="last", metadata=dict(static=True))
+    exact: bool = field(default=False, metadata=dict(static=True))
 
     def __post_init__(self):
         modes = int(bool(self.t_1)) + int(self.ts is not None) + int(bool(self.steps))
@@ -39,3 +44,5 @@ class SaveAt:
             )
         if self.fill not in ("last", "inf"):
             raise ValueError('SaveAt fill must be "last" or "inf"')
+        if self.exact and self.ts is None:
+            raise ValueError("SaveAt exact=True requires ts=...")

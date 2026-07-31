@@ -244,6 +244,193 @@ for controller in (IController(), PIController()):
 """)
 
 
+def test_default_x64_disabled_representative_paths_stay_float32():
+    run_script(r"""
+import jax
+import jax.numpy as jnp
+
+from tinydiffeq import (
+    ContinuousTimeMarkovChain,
+    DenseExponential,
+    DiscreteMarkovChain,
+    EulerMaruyama,
+    IController,
+    SaveAt,
+    Tsit5,
+    forecast_continuous_time_markov_chain,
+    forecast_markov_chain,
+    simulate_continuous_time_markov_chain,
+    simulate_markov_chain,
+    solve_linear_ode,
+    solve_ode,
+    solve_sde,
+    solve_semi_explicit_dae,
+    solve_semi_explicit_sdae,
+)
+
+
+assert not jax.config.x64_enabled
+x_0 = jnp.asarray(1.0)
+parameter = jnp.asarray(0.2)
+
+
+def check_value_jvp_vjp(function, value):
+    jaxpr = jax.make_jaxpr(function)(value)
+    assert "f64" not in str(jaxpr), jaxpr
+    primal, tangent = jax.jvp(
+        function,
+        (value,),
+        (jax.tree.map(jnp.ones_like, value),),
+    )
+    _, pullback = jax.vjp(function, value)
+    cotangent = pullback(jax.tree.map(jnp.ones_like, primal))[0]
+    for leaf in jax.tree.leaves((primal, tangent, cotangent)):
+        if jnp.issubdtype(leaf.dtype, jnp.inexact):
+            assert leaf.dtype == jnp.float32, leaf.dtype
+            assert jnp.all(jnp.isfinite(leaf))
+
+
+def ode_endpoint(rate):
+    return solve_ode(
+        lambda x, t, args, p: p * x,
+        Tsit5(),
+        0.0,
+        0.5,
+        x_0,
+        p=rate,
+        dt_0=0.1,
+        controller=IController(),
+        max_steps=32,
+    ).xs
+
+
+def dae_endpoint(rate):
+    return solve_semi_explicit_dae(
+        lambda y, z, t, args, p: p * z,
+        lambda y, z: z - y,
+        Tsit5(),
+        0.0,
+        0.5,
+        x_0,
+        x_0,
+        p=rate,
+        dt_0=0.1,
+        controller=IController(),
+        max_steps=32,
+    ).ys
+
+
+def sde_endpoint(rate):
+    return solve_sde(
+        lambda x, t, args, p: p * x,
+        lambda x, t, args, p: jnp.asarray(0.1, x.dtype) * x,
+        EulerMaruyama(),
+        0.0,
+        0.5,
+        x_0,
+        p=rate,
+        key=jax.random.key(1),
+        n_steps=8,
+    ).xs
+
+
+def sdae_endpoint(rate):
+    return solve_semi_explicit_sdae(
+        lambda y, z, t, args, p: p * z,
+        lambda y, z, t, args, p: jnp.asarray(0.1, y.dtype) * z,
+        lambda y, z: z - y,
+        EulerMaruyama(),
+        0.0,
+        0.5,
+        x_0,
+        x_0,
+        p=rate,
+        key=jax.random.key(2),
+        n_steps=8,
+    ).ys
+
+
+def exponential_endpoint(rate):
+    return solve_linear_ode(
+        lambda x: rate * x,
+        DenseExponential(),
+        0.0,
+        0.5,
+        x_0,
+    ).xs
+
+
+for endpoint in (
+    ode_endpoint,
+    dae_endpoint,
+    sde_endpoint,
+    sdae_endpoint,
+    exponential_endpoint,
+):
+    check_value_jvp_vjp(endpoint, parameter)
+
+
+discrete = DiscreteMarkovChain(jnp.asarray([[0.8, 0.2], [0.3, 0.7]]))
+continuous = ContinuousTimeMarkovChain(jnp.asarray([[-1.0, 1.0], [0.5, -0.5]]))
+keys = jax.random.split(jax.random.key(3), 3)
+
+
+def discrete_path(key):
+    return simulate_markov_chain(
+        discrete,
+        jnp.int32(0),
+        key=key,
+        num_steps=8,
+        save_at=SaveAt(steps=True),
+    )
+
+
+def continuous_path(key):
+    return simulate_continuous_time_markov_chain(
+        continuous,
+        0.0,
+        2.0,
+        jnp.int32(0),
+        key=key,
+        max_jumps=32,
+        save_at=SaveAt(steps=True),
+    )
+
+
+for path in (discrete_path, continuous_path):
+    jaxpr = jax.make_jaxpr(jax.vmap(path))(keys)
+    assert "f64" not in str(jaxpr), jaxpr
+discrete_paths = jax.jit(jax.vmap(discrete_path))(keys)
+continuous_paths = jax.jit(jax.vmap(continuous_path))(keys)
+assert discrete.transition_matrix.dtype == jnp.float32
+assert continuous.generator.dtype == jnp.float32
+assert continuous_paths.ts.dtype == jnp.float32
+assert bool(jnp.all(continuous_paths.ok))
+
+
+distribution = jnp.asarray([0.4, 0.6])
+
+
+def discrete_forecast(value):
+    return forecast_markov_chain(
+        discrete, value, num_steps=4
+    ).probabilities
+
+
+def continuous_forecast(value):
+    return forecast_continuous_time_markov_chain(
+        continuous, 0.0, 1.0, value
+    ).probabilities
+
+
+for forecast in (discrete_forecast, continuous_forecast):
+    check_value_jvp_vjp(forecast, distribution)
+    probabilities = jax.jit(forecast)(distribution)
+    assert probabilities.dtype == jnp.float32
+    assert jnp.allclose(jnp.sum(probabilities), 1.0, atol=1e-5)
+""")
+
+
 def test_pytree_states_preserve_float32_and_float64():
     run_script(r"""
 import jax
@@ -390,6 +577,137 @@ assert mixed_jvp.dtype == jnp.float32
 assert mixed_vjp.dtype == jnp.float32
 assert jnp.allclose(mixed_jvp, mixed_vjp, rtol=1e-5, atol=1e-6)
 assert mixed.ok
+""")
+
+
+def test_float32_dae_and_sdae_lowerings_contain_no_float64_under_x64():
+    run_script(r"""
+import os
+os.environ["JAX_PLATFORMS"] = "cpu"
+import jax
+jax.config.update("jax_enable_x64", True)
+import jax.numpy as jnp
+
+from tinydiffeq import (
+    EulerMaruyama,
+    IController,
+    LMRootSolver,
+    RK4,
+    Tsit5,
+    solve_semi_explicit_dae,
+    solve_semi_explicit_sdae,
+)
+
+
+DTYPE = jnp.float32
+T_0 = jnp.asarray(0.0, DTYPE)
+T_1 = jnp.asarray(0.2, DTYPE)
+DT_0 = jnp.asarray(0.1, DTYPE)
+Y_0 = jnp.asarray(1.0, DTYPE)
+Z_0 = jnp.asarray(1.0, DTYPE)
+P = jnp.asarray(0.2, DTYPE)
+
+
+def differential(y, z, t, args, p):
+    return p * z
+
+
+def constraint(y, z, t, args, p):
+    return z - y
+
+
+def dae_endpoint(p, solver, root_solver, adaptive_loop="bounded"):
+    adaptive_options = {}
+    if isinstance(solver, Tsit5):
+        adaptive_options = {
+            "controller": IController(),
+            "adaptive_loop": adaptive_loop,
+        }
+    return solve_semi_explicit_dae(
+        differential,
+        constraint,
+        solver,
+        T_0,
+        T_1,
+        Y_0,
+        Z_0,
+        p=p,
+        dt_0=DT_0,
+        max_steps=4,
+        root_solver=root_solver,
+        **adaptive_options,
+    ).ys
+
+
+def sdae_endpoint(p):
+    return solve_semi_explicit_sdae(
+        differential,
+        lambda y, z, t, args, p: jnp.zeros_like(y),
+        constraint,
+        EulerMaruyama(),
+        T_0,
+        T_1,
+        Y_0,
+        Z_0,
+        p=p,
+        key=jax.random.key(0),
+        n_steps=2,
+        root_solver=LMRootSolver(),
+    ).ys
+
+
+def with_jvp(function):
+    return lambda p: jax.jvp(function, (p,), (jnp.ones_like(p),))
+
+
+def with_vjp(function):
+    def transformed(p):
+        value, pullback = jax.vjp(function, p)
+        return value, pullback(jnp.ones_like(value))[0]
+
+    return transformed
+
+
+def assert_pure_float32(name, function):
+    value = function(P)
+    for leaf in jax.tree.leaves(value):
+        if jnp.issubdtype(leaf.dtype, jnp.inexact):
+            assert leaf.dtype == DTYPE, (name, leaf.dtype)
+            assert jnp.all(jnp.isfinite(leaf)), (name, leaf)
+
+    jaxpr = str(jax.make_jaxpr(function)(P))
+    assert "f64" not in jaxpr, (name, jaxpr)
+    stablehlo = str(jax.jit(function).lower(P).compiler_ir("stablehlo"))
+    offending = [line for line in stablehlo.splitlines() if "f64" in line]
+    assert not offending, (name, offending[:10])
+
+
+default_root = LMRootSolver()
+configured_root = LMRootSolver(
+    solver_options={
+        "init_damping": 2e-3,
+        "damping_decrease": 0.4,
+        "damping_increase": 3.0,
+    }
+)
+dae_cases = {
+    "rk4_primal": lambda p: dae_endpoint(p, RK4(), default_root),
+    "tsit5_bounded_primal": lambda p: dae_endpoint(
+        p, Tsit5(), configured_root, "bounded"
+    ),
+    "tsit5_forward_primal": lambda p: dae_endpoint(
+        p, Tsit5(), configured_root, "forward"
+    ),
+}
+for name, function in dae_cases.items():
+    assert_pure_float32(name, function)
+    assert_pure_float32(name.replace("primal", "jvp"), with_jvp(function))
+    if "forward" not in name:
+        assert_pure_float32(name.replace("primal", "vjp"), with_vjp(function))
+
+assert_pure_float32("sdae_primal", sdae_endpoint)
+assert_pure_float32("sdae_jvp", with_jvp(sdae_endpoint))
+assert_pure_float32("sdae_vjp", with_vjp(sdae_endpoint))
 """)
 
 

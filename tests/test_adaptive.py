@@ -249,6 +249,224 @@ def test_adaptive_non_divisible_chunk_budget_preserves_result_and_ad():
     assert jnp.isfinite(gradient)
 
 
+@pytest.mark.parametrize(
+    "save_at",
+    [
+        SaveAt(t_1=True),
+        SaveAt(steps=True),
+        SaveAt(ts=jnp.linspace(0.0, 2.0, 11)),
+    ],
+)
+def test_forward_adaptive_loop_matches_bounded_primal_and_forward_ad(save_at):
+    def run(parameter, adaptive_loop):
+        return solve_ode(
+            lambda x, t, args, p: -p * x,
+            Tsit5(),
+            0.0,
+            2.0,
+            jnp.asarray(1.0),
+            p=parameter,
+            dt_0=0.1,
+            controller=IController(rtol=1e-9, atol=1e-11),
+            max_steps=96,
+            save_at=save_at,
+            has_aux=False,
+            adaptive_loop=adaptive_loop,
+        )
+
+    parameter = jnp.asarray(0.7)
+    bounded = run(parameter, "bounded")
+    forward = run(parameter, "forward")
+    assert bool(bounded.ok & forward.ok)
+    assert bounded.num_accepted == forward.num_accepted
+    if bounded.accepted is not None:
+        assert jnp.array_equal(bounded.accepted, forward.accepted)
+    assert jnp.allclose(bounded.ts, forward.ts, rtol=1e-8, atol=1e-10)
+    assert jnp.allclose(bounded.xs, forward.xs, rtol=1e-9, atol=1e-11)
+
+    def output(value, adaptive_loop):
+        return jnp.sum(run(value, adaptive_loop).xs)
+
+    tangent = jnp.ones_like(parameter)
+    bounded_jvp = jax.jvp(
+        lambda value: output(value, "bounded"), (parameter,), (tangent,)
+    )[1]
+    forward_jvp = jax.jvp(
+        lambda value: output(value, "forward"), (parameter,), (tangent,)
+    )[1]
+
+    def first_jvp(value, adaptive_loop):
+        return jax.jvp(
+            lambda inner: output(inner, adaptive_loop), (value,), (tangent,)
+        )[1]
+
+    bounded_second = jax.jvp(
+        lambda value: first_jvp(value, "bounded"), (parameter,), (tangent,)
+    )[1]
+    forward_second = jax.jvp(
+        lambda value: first_jvp(value, "forward"), (parameter,), (tangent,)
+    )[1]
+    assert jnp.allclose(bounded_jvp, forward_jvp, rtol=1e-12, atol=1e-12)
+    assert jnp.allclose(bounded_second, forward_second, rtol=1e-11, atol=1e-11)
+
+
+def test_forward_adaptive_loop_vmap_matches_bounded_lane_results():
+    initial_values = jnp.asarray([0.05, 1.0, 50.0])
+
+    def batched(adaptive_loop):
+        def one(initial):
+            return solve_ode(
+                lambda x: -0.4 * x,
+                Tsit5(),
+                0.0,
+                3.0,
+                initial,
+                dt_0=0.2,
+                controller=IController(rtol=1e-8, atol=1e-10),
+                max_steps=96,
+                save_at=SaveAt(steps=True),
+                has_aux=False,
+                adaptive_loop=adaptive_loop,
+            )
+
+        return jax.vmap(one)(initial_values)
+
+    bounded = batched("bounded")
+    forward = batched("forward")
+    assert bool(jnp.all(bounded.ok & forward.ok))
+    assert len(set(map(int, bounded.num_accepted))) > 1
+    assert jnp.array_equal(bounded.num_accepted, forward.num_accepted)
+    assert jnp.array_equal(bounded.accepted, forward.accepted)
+    assert jnp.allclose(bounded.ts, forward.ts, rtol=1e-8, atol=1e-10)
+    assert jnp.allclose(bounded.xs, forward.xs, rtol=1e-9, atol=1e-11)
+
+
+def test_forward_vmap_matches_bounded_with_mixed_budget_exhaustion():
+    rates = jnp.asarray([0.01, 0.1, 1.0, 10.0])
+
+    def batched(adaptive_loop):
+        def one(rate):
+            return solve_ode(
+                lambda x, t, args, p: -p * x,
+                Tsit5(),
+                0.0,
+                2.0,
+                jnp.asarray(1.0),
+                p=rate,
+                dt_0=0.2,
+                controller=IController(rtol=1e-7, atol=1e-9),
+                max_steps=4,
+                save_at=SaveAt(steps=True),
+                adaptive_loop=adaptive_loop,
+            )
+
+        return jax.vmap(one)(rates)
+
+    bounded = batched("bounded")
+    forward = batched("forward")
+    assert jnp.array_equal(bounded.ok, jnp.asarray([True, True, False, False]))
+    assert jnp.array_equal(forward.ok, bounded.ok)
+    assert jnp.array_equal(forward.num_steps, bounded.num_steps)
+    assert jnp.array_equal(forward.num_accepted, bounded.num_accepted)
+    assert jnp.array_equal(forward.accepted, bounded.accepted)
+    assert jnp.array_equal(forward.ts, bounded.ts)
+    assert jnp.array_equal(forward.xs, bounded.xs)
+
+
+def test_forward_adaptive_loop_documents_reverse_mode_boundary():
+    def endpoint(parameter):
+        return solve_ode(
+            lambda x, t, args, p: -p * x,
+            Tsit5(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0),
+            p=parameter,
+            dt_0=0.1,
+            controller=IController(rtol=1e-7, atol=1e-9),
+            max_steps=64,
+            has_aux=False,
+            adaptive_loop="forward",
+        ).xs
+
+    with pytest.raises(ValueError, match="Reverse-mode differentiation"):
+        jax.grad(endpoint)(jnp.asarray(0.7))
+
+
+def test_steps_mesh_is_frozen_and_residual_jacobian_is_exact_at_root():
+    theta_star = jnp.asarray(1.5)
+    controller = IController(rtol=1e-8, atol=1e-10)
+
+    def solve(theta):
+        return solve_ode(
+            lambda x, t, args, p: p * x,
+            Tsit5(),
+            0.0,
+            2.0,
+            jnp.asarray([1.0]),
+            p=theta,
+            dt_0=0.1,
+            controller=controller,
+            max_steps=128,
+            save_at=SaveAt(steps=True),
+        )
+
+    solution = solve(theta_star)
+    assert bool(solution.ok)
+    n_valid = int(solution.num_accepted) + 1
+
+    _, mesh_tangent = jax.jvp(
+        lambda theta: solve(theta).ts,
+        (theta_star,),
+        (jnp.ones_like(theta_star),),
+    )
+    assert jnp.array_equal(mesh_tangent, jnp.zeros_like(mesh_tangent))
+
+    epsilon = jnp.asarray(1e-5)
+    plus = solve(theta_star + epsilon)
+    minus = solve(theta_star - epsilon)
+    assert int(plus.num_accepted) == int(minus.num_accepted) == n_valid - 1
+    finite_difference_mesh = (plus.ts - minus.ts) / (2.0 * epsilon)
+    assert float(jnp.max(jnp.abs(finite_difference_mesh[:n_valid]))) > 0.1
+
+    def residual(theta):
+        candidate = solve(theta)
+        return (
+            (theta - theta_star)
+            * candidate.xs[:, 0]
+            * candidate.accepted.astype(theta.dtype)
+        )
+
+    _, frozen_jacobian = jax.jvp(
+        residual,
+        (theta_star,),
+        (jnp.ones_like(theta_star),),
+    )
+    finite_difference_jacobian = (
+        residual(theta_star + epsilon) - residual(theta_star - epsilon)
+    ) / (2.0 * epsilon)
+    np.testing.assert_allclose(
+        np.asarray(frozen_jacobian[:n_valid]),
+        np.asarray(finite_difference_jacobian[:n_valid]),
+        rtol=5e-9,
+        atol=1e-8,
+    )
+
+
+def test_invalid_adaptive_loop_is_rejected():
+    with pytest.raises(ValueError, match="adaptive_loop"):
+        solve_ode(
+            lambda x: -x,
+            Tsit5(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0),
+            dt_0=0.1,
+            controller=IController(),
+            adaptive_loop="unknown",
+        )
+
+
 def test_parity_tsit5_free():
     # Identical tolerances, budget, and dt_0 must reproduce the kernels
     # free-stepper's accepted trajectory bit-for-bit (project never binds

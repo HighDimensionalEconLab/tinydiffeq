@@ -86,9 +86,11 @@ random numbers. The key is not differentiable.
 Algebraic solves use the same `LMRootSolver` configuration and
 implicit-AD contract as deterministic DAEs; see
 [Nonlinear-solve and AD contract](dae.md#nonlinear-solve-and-ad-contract).
-`MAX_STEPS` is accepted by default; use
-`LMRootSolver(max_steps_is_success=False)` when every stochastic node must
-report nlls `CONVERGED`.
+nlls-gram supplies both the primal LM root and its implicit derivative, using
+direct `LU()` by default for the square derivative. `gtol` and `xtol` must
+remain zero, and every accepted iterate must report `CONVERGED` with Euclidean
+residual norm strictly below the root `atol`. `max_steps_is_success` is retained
+for source compatibility but does not make `MAX_STEPS` valid.
 The algebraic function may return `(residual, algebraic_aux)`; that internal
 context is passed to both drift and diffusion but is not stored. The drift may
 return `(drift_value, saved_aux)`, and only that saved aux becomes `sol.aux`.
@@ -101,10 +103,13 @@ stochastic step. In steps mode, invalid saved aux terminates at the previous
 consistent node. In endpoint mode, invalid final saved aux retains the
 endpoint state, returns zero aux, and sets `ok=False`.
 
+`sol.num_root_solves` counts logical active root calls, including the initial
+consistency solve and failures, while `sol.num_root_steps` sums their LM update
+counts. Both are path diagnostics with exact-zero tangents.
+
 Only `SaveAt(t_1=True)` and `SaveAt(steps=True)` are supported. Stochastic
 paths are rough, so deterministic dense interpolation between nodes would be
-mathematically wrong. A root status rejected by the configured policy freezes
-the last consistent prefix,
+mathematically wrong. A failed root freezes the last consistent prefix,
 sets `ok=False`, and pads the remaining static buffer. Failed roots have zero
 implicit tangents, and aux at a failed initial root is zero-filled, so masked
 lanes can preserve successful JVPs or VJPs under `vmap`. For that contract,

@@ -199,5 +199,6 @@ def test_steps_mode_shapes_and_flags():
     assert sol.xs.shape == (n + 1, 2)
     assert bool(sol.ok)
     assert int(sol.num_accepted) == n
+    assert int(sol.num_steps) == n
     assert bool(jnp.all(sol.accepted))
     assert sol.ts[0] == 0.0 and sol.ts[-1] == T
