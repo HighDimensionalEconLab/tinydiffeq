@@ -156,6 +156,9 @@ def test_nonlinear_dae_adaptive_constraint_accuracy_and_initial_root_only():
         save_at=SaveAt(steps=True),
     )
     assert bool(sol.ok)
+    assert int(sol.num_steps) > 1
+    assert int(sol.num_root_solves) == 1
+    assert 0 <= int(sol.num_root_steps) <= 1
     valid = sol.accepted
     assert jnp.max(jnp.abs(sol.zs[valid] ** 2 - sol.ys[valid] - 2.0)) < 2e-8
 
@@ -173,6 +176,78 @@ def test_nonlinear_dae_adaptive_constraint_accuracy_and_initial_root_only():
         ).ys
 
     assert jnp.abs(jax.grad(from_guess)(jnp.sqrt(jnp.asarray(3.0)))) < 1e-14
+
+
+def test_rodas5p_dae_forward_loop_matches_bounded_primal_and_jvp():
+    def run(rate, adaptive_loop):
+        return solve_semi_explicit_dae(
+            lambda y, z, t, args, p: p * z,
+            lambda y, z: z**2 - y - 2.0,
+            Rodas5P(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0),
+            jnp.sqrt(jnp.asarray(3.0)),
+            p=rate,
+            dt_0=0.2,
+            controller=IController(rtol=1e-8, atol=1e-10),
+            max_steps=64,
+            save_at=SaveAt(steps=True),
+            adaptive_loop=adaptive_loop,
+        )
+
+    rate = jnp.asarray(-0.2)
+    bounded = run(rate, "bounded")
+    forward = run(rate, "forward")
+    assert bool(bounded.ok & forward.ok)
+    assert bounded.num_accepted == forward.num_accepted
+    assert bounded.num_steps == forward.num_steps
+    assert bounded.num_root_solves == forward.num_root_solves == 1
+    assert bounded.num_root_steps == forward.num_root_steps
+    assert jnp.array_equal(bounded.accepted, forward.accepted)
+    assert jnp.allclose(bounded.ts, forward.ts, rtol=1e-8, atol=1e-10)
+    assert jnp.allclose(bounded.ys, forward.ys, rtol=1e-8, atol=1e-10)
+    assert jnp.allclose(bounded.zs, forward.zs, rtol=1e-8, atol=1e-10)
+
+    bounded_jvp = jax.jvp(
+        lambda value: run(value, "bounded").ys[-1],
+        (rate,),
+        (jnp.ones_like(rate),),
+    )[1]
+    forward_jvp = jax.jvp(
+        lambda value: run(value, "forward").ys[-1],
+        (rate,),
+        (jnp.ones_like(rate),),
+    )[1]
+    assert jnp.allclose(bounded_jvp, forward_jvp, rtol=2e-7, atol=2e-9)
+
+
+def test_float32_fixed_dae_is_invariant_to_nonbinding_budget():
+    dtype = jnp.float32
+
+    def run(max_steps):
+        return solve_semi_explicit_dae(
+            lambda y, z, t: jnp.sin(jnp.asarray(20.0, dtype) * t),
+            lambda y, z: z - y,
+            Rodas5P(),
+            jnp.asarray(0.0, dtype),
+            jnp.asarray(1.0, dtype),
+            jnp.asarray(0.0, dtype),
+            jnp.asarray(0.0, dtype),
+            dt_0=jnp.asarray(0.001, dtype),
+            max_steps=max_steps,
+            save_at=SaveAt(t_1=True),
+        )
+
+    exact_budget = run(1000)
+    extra_budget = run(4096)
+    assert bool(exact_budget.ok & extra_budget.ok)
+    assert int(exact_budget.num_accepted) == 1000
+    assert int(extra_budget.num_accepted) == 1000
+    assert exact_budget.ts == jnp.asarray(1.0, dtype)
+    assert extra_budget.ts == jnp.asarray(1.0, dtype)
+    assert jnp.allclose(exact_budget.ys, extra_budget.ys, rtol=2e-5, atol=2e-6)
+    assert jnp.allclose(exact_budget.zs, extra_budget.zs, rtol=2e-5, atol=2e-6)
 
 
 def test_dae_dense_state_aux_jvp_vjp_and_reverse_over_forward():

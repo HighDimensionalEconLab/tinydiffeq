@@ -115,20 +115,29 @@ not valid for rough paths.
 `SaveAt(steps=True)` stores it at the initial and accepted nodes and applies
 the same prefix/padding mask as the state.
 
-For `SaveAt(ts=grid)`, ODE and root-restored DAE aux uses normalized cubic
-Hermite interpolation. Endpoint aux slopes are JVPs along the full solution
-velocity, so they include direct parameter dependence and indirect dependence
-through the state and any implicit algebraic root. Rodas5P obtains endpoint
-state velocities from its published stiff-aware continuous extension, then
-uses the same JVP construction for aux. No requested-time algebraic root or
-aux recomputation is performed. See [Rodas5P](rodas5p.md) and
-[Semi-Explicit DAEs](dae.md) for the dense-output details and links to SciML's
-implementation.
+By default, `SaveAt(ts=grid)` uses normalized cubic Hermite interpolation for
+ODE and root-restored DAE aux. Endpoint aux slopes are JVPs along the full
+solution velocity, so they include direct parameter dependence and indirect
+dependence through the state and any implicit algebraic root. Rodas5P obtains
+endpoint state velocities from its published stiff-aware continuous extension,
+then uses the same JVP construction for aux. No requested-time algebraic root
+or aux recomputation is performed on this dense-output path. See
+[Rodas5P](rodas5p.md) and [Semi-Explicit DAEs](dae.md) for the dense-output
+details and links to SciML's implementation.
+
+For an explicit fixed-step ODE with `SaveAt(ts=grid, exact=True)`, every
+requested time must instead coincide with a realized solver knot. The solver
+selects those states without Hermite interpolation and evaluates aux directly
+at the requested knots. Saved-aux validity is therefore checked only at those
+requested knots on this exact path.
 
 Ordinary JAX transformations compose through every saved or interpolated aux
 leaf. This includes `jax.jvp`, reverse-mode VJP/`jax.grad`, `vmap`, and
 reverse-over-forward. Adaptive accept/reject decisions and mesh selection
-retain the package's frozen-controller derivative convention.
+retain the package's frozen-controller derivative convention. Consequently,
+adaptive `SaveAt(steps=True)` aux derivatives hold internal times fixed and
+omit mesh motion; fixed requested-grid aux does not have a moving output-time
+axis. See [Adaptive Stepping and AD](adaptive_ad.md#frozen-mesh-versus-a-moving-mesh-derivative).
 
 ## Failure behavior
 

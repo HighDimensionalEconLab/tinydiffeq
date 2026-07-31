@@ -68,6 +68,9 @@ def test_sdae_matches_reduced_sde_on_identical_noise_path():
         save_at=SaveAt(steps=True),
     )
     assert bool(full.ok)
+    assert int(full.num_steps) == n
+    assert int(full.num_root_solves) == n + 1
+    assert 0 <= int(full.num_root_steps) <= 8 * int(full.num_root_solves)
     assert jnp.allclose(full.ys, reduced.xs, atol=2e-6, rtol=2e-6)
     assert jnp.allclose(full.zs, full.ys, atol=2e-6)
     assert jnp.allclose(full.aux["scaled"], 2.0 * full.zs)
@@ -287,6 +290,7 @@ def test_sdae_nonfinite_initial_aux_fails_without_time_steps():
     )
     assert not bool(sol.ok)
     assert int(sol.num_accepted) == 0
+    assert int(sol.num_steps) == 0
     assert jnp.all(sol.accepted == jnp.asarray([True] + [False] * 8))
     assert jnp.all(sol.ys == 1.0)
     assert jnp.all(sol.aux["bad"] == 0.0)
@@ -316,5 +320,6 @@ def test_sdae_nonfinite_endpoint_aux_terminates_at_previous_node():
     )
     assert not bool(sol.ok)
     assert int(sol.num_accepted) == 0
+    assert int(sol.num_steps) == 1
     assert jnp.all(sol.ys == 0.0)
     assert jnp.all(sol.aux["limited"] == sol.aux["limited"][0])

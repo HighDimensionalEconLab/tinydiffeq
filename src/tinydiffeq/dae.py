@@ -7,7 +7,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax.flatten_util import ravel_pytree
-from nlls_gram import LevenbergMarquardt, LMStatus
+from nlls_gram import LevenbergMarquardt, LMState, LMStatus
 
 from tinydiffeq._aux import (
     make_safe_evaluator,
@@ -17,6 +17,7 @@ from tinydiffeq._aux import (
     split_algebraic_output,
     split_field_output,
 )
+from tinydiffeq._loop import forward_adaptive_while, select_step
 from tinydiffeq._rodas5p import rodas5p_step, rodas_dense_endpoint_derivatives
 from tinydiffeq._tree import (
     add_scaled,
@@ -88,19 +89,21 @@ class LMRootSolver:
     """Configuration for algebraic solves in a semi-explicit DAE.
 
     The implementation is :class:`nlls_gram.LevenbergMarquardt` at its
-    defaults: a dense ``Cholesky()`` forward solve, which takes the normal
-    form for a square DAE constraint, and ``ad_solver=None`` for the implicit
-    derivative, which matches the forward family.
+    defaults: dense ``Cholesky()`` for primal LM updates and the direct
+    nonsymmetric ``LU()`` implicit derivative that nlls selects automatically
+    for a square residual system.
 
     The fields here are the ones this package owns; all of them reach the nlls
     ``solve`` rather than its constructor. ``max_steps`` counts nonlinear
     iterations for one algebraic root and is independent of the integration's
-    time-step ``max_steps``. ``max_steps_is_success=True`` accepts the final
-    iterate when that budget is exhausted; set it to ``False`` to require an
-    nlls ``CONVERGED`` status. ``atol=None`` selects ``1e-6`` in float32 and
-    ``1e-10`` in float64. ``gtol`` and ``xtol`` default to zero (disabled);
-    root tolerances are deliberately independent of the outer integration
-    tolerances.
+    time-step ``max_steps``. Every accepted algebraic root must have Euclidean
+    residual norm strictly below the root ``atol``. Root solves therefore use
+    residual stopping only: ``gtol`` and ``xtol`` must remain zero, and a
+    ``MAX_STEPS`` iterate is never treated as a differentiable root.
+    ``max_steps_is_success`` remains in the configuration for source
+    compatibility but does not broaden root acceptance. ``atol=None`` selects
+    ``1e-6`` in float32 and ``1e-10`` in float64. Root tolerances are
+    deliberately independent of the outer integration tolerances.
 
     ``solver_options`` is the escape hatch for the rare root that needs a
     non-default algorithm: a mapping (or pairs) forwarded verbatim to the
@@ -114,15 +117,28 @@ class LMRootSolver:
     step. ``cache_jacobian`` and ``geodesic_acceleration`` are fixed to
     ``False`` and rejected here: each DAE stage changes the root problem, and
     the intended path is the ordinary dense LM step. Algebraic residuals do
-    not expose nlls aux.
+    not expose nlls aux. ``ad_solver`` remains an nlls-owned option; its default
+    is the direct square ``LU()`` rule.
+
+    ``predictor="previous"`` warm-starts every explicit RK stage from the most
+    recent successful root. ``predictor="secant"`` instead extrapolates from
+    the accepted-step root through the most recent successful stage at a later
+    time. The secant is used only for a strictly later target; duplicate RK4
+    stage times and failed stages fall back to the previous root. Predictor
+    values are differentiation-inert, so successful roots retain the same
+    implicit derivative. With multiple algebraic roots, however, a different
+    warm start can select a different branch; the secant mode is intended only
+    when the continued root is locally unique. A finite root-iteration budget
+    can also make predictor choice affect values or success status.
     """
 
     max_steps: int = field(default=8, metadata=dict(static=True))
-    max_steps_is_success: bool = field(default=True, metadata=dict(static=True))
+    max_steps_is_success: bool = field(default=False, metadata=dict(static=True))
     atol: float | None = field(default=None, metadata=dict(static=True))
     gtol: float = field(default=0.0, metadata=dict(static=True))
     xtol: float = field(default=0.0, metadata=dict(static=True))
     solver_options: Any = field(default=(), metadata=dict(static=True))
+    predictor: str = field(default="previous", metadata=dict(static=True))
 
     def __post_init__(self):
         if not isinstance(self.max_steps, int) or isinstance(self.max_steps, bool):
@@ -131,12 +147,18 @@ class LMRootSolver:
             raise ValueError("LMRootSolver.max_steps must be a positive int")
         if not isinstance(self.max_steps_is_success, bool):
             raise TypeError("LMRootSolver.max_steps_is_success must be a bool")
-        if self.atol is not None and self.atol < 0:
-            raise ValueError("LMRootSolver.atol must be nonnegative or None")
-        if self.gtol < 0:
-            raise ValueError("LMRootSolver.gtol must be nonnegative")
-        if self.xtol < 0:
-            raise ValueError("LMRootSolver.xtol must be nonnegative")
+        if self.atol is not None and self.atol <= 0:
+            raise ValueError("LMRootSolver.atol must be positive or None")
+        if self.gtol != 0:
+            raise ValueError("LMRootSolver.gtol must be zero for DAE root solves")
+        if self.xtol != 0:
+            raise ValueError("LMRootSolver.xtol must be zero for DAE root solves")
+        if not isinstance(self.predictor, str):
+            raise TypeError("LMRootSolver.predictor must be a string")
+        if self.predictor not in ("previous", "secant"):
+            raise ValueError(
+                'LMRootSolver.predictor must be either "previous" or "secant"'
+            )
         try:
             options = tuple(sorted(dict(self.solver_options).items()))
         except (TypeError, ValueError) as error:
@@ -255,20 +277,12 @@ def _get_algebraic_solver(g, config, has_algebraic_aux=False):
         return _build_algebraic_solver(g, config, has_algebraic_aux)
 
 
-@jax.custom_jvp
 def _inactive_safe_inputs(active, inputs, reference):
     return jax.tree.map(
         lambda value, reference_value: jnp.where(active, value, reference_value),
         inputs,
         reference,
     )
-
-
-@_inactive_safe_inputs.defjvp
-def _inactive_safe_inputs_jvp(primals, tangents):
-    active, inputs, reference = primals
-    _, inputs_dot, _ = tangents
-    return _inactive_safe_inputs(active, inputs, reference), inputs_dot
 
 
 def _prepare_failure_ad_reference(reference, y, z, t, p):
@@ -331,7 +345,7 @@ def _make_implicit_root_solver(
     args,
     has_algebraic_aux,
 ):
-    """Delegate root solving and status-safe implicit AD to nlls-gram."""
+    """Delegate the primal root and square implicit derivative to nlls-gram."""
 
     root_atol = root_solver.atol
     if root_atol is None:
@@ -358,22 +372,30 @@ def _make_implicit_root_solver(
             (y, z_guess, t, p),
             failure_ad_reference,
         )
+        root_p = (y_initial, t_initial, p_initial)
+        lm_state = LMState(
+            jnp.asarray(algebraic_solver.init_damping, z_dtype),
+            hyper=algebraic_solver.hyperparams(z_dtype),
+        )
+        root_tolerance = jnp.asarray(root_atol, z_dtype)
+        zero_tolerance = jnp.zeros((), z_dtype)
         result = algebraic_solver.solve(
             z_initial,
             args,
-            p=(y_initial, t_initial, p_initial),
+            p=root_p,
+            lm_state=lm_state,
             max_steps=root_solver.max_steps,
-            max_steps_is_success=root_solver.max_steps_is_success,
-            atol=root_atol,
-            gtol=root_solver.gtol,
-            xtol=root_solver.xtol,
+            max_steps_is_success=False,
+            atol=root_tolerance,
+            gtol=zero_tolerance,
+            xtol=zero_tolerance,
         )
-        ok = result.status == jnp.asarray(LMStatus.CONVERGED, result.status.dtype)
-        if root_solver.max_steps_is_success:
-            ok = ok | (
-                result.status == jnp.asarray(LMStatus.MAX_STEPS, result.status.dtype)
-            )
-        ok = active & ok
+        converged = result.status == jnp.asarray(
+            LMStatus.CONVERGED, result.status.dtype
+        )
+        residual_norm = jnp.sqrt(result.info.loss)
+        residual_ok = residual_norm < jnp.asarray(root_atol, residual_norm.dtype)
+        ok = active & residual_ok & converged
         value, dtype = asarray_state(result.x, "algebraic root")
         assert_same_structure(z_reference, value, "algebraic root")
         if dtype != z_dtype:
@@ -381,8 +403,15 @@ def _make_implicit_root_solver(
         # A failed root is not a solution. Returning the finite warm start
         # keeps the static failure prefix usable while `ok` carries validity.
         # The guess is never a differentiable algebraic state, including on
-        # failure; successful tangents come entirely from nlls implicit AD.
-        return where(ok, value, jax.lax.stop_gradient(z_guess)), ok
+        # failure; successful tangents come from nlls's direct square LU rule.
+        num_root_solves = jnp.asarray(active, jnp.int32)
+        num_root_steps = jnp.where(active, result.steps, jnp.asarray(0, jnp.int32))
+        return (
+            where(ok, value, jax.lax.stop_gradient(z_guess)),
+            ok,
+            num_root_solves,
+            num_root_steps,
+        )
 
     return solve_root, residual, algebraic_auxiliary
 
@@ -396,6 +425,8 @@ def _solve_rodas5p_dae(
     z_initial,
     aux_initial,
     initial_ok,
+    num_root_solves,
+    num_root_steps,
     p,
     failure_ad_reference,
     dt_0,
@@ -405,11 +436,11 @@ def _solve_rodas5p_dae(
     time_dtype,
     z_dtype,
     has_aux,
+    adaptive_loop,
 ):
     """Integrate a semi-explicit index-1 DAE with native Rodas5P stages."""
-    positive_time_floor = jnp.asarray(jnp.finfo(time_dtype).tiny, time_dtype)
-    t_eps = 4.0 * jnp.finfo(time_dtype).eps * jnp.maximum(1.0, jnp.abs(t_1))
-    t_slack = max_steps * t_eps
+    time_scale = jnp.maximum(jnp.maximum(1.0, jnp.abs(t_0)), jnp.abs(t_1))
+    t_eps = 4.0 * jnp.finfo(time_dtype).eps * time_scale
     y_flat, _ = ravel_pytree(y_0)
     z_flat, _ = ravel_pytree(z_initial)
     mass_diagonal = jnp.concatenate([jnp.ones_like(y_flat), jnp.zeros_like(z_flat)])
@@ -472,13 +503,18 @@ def _solve_rodas5p_dae(
             reached,
             failed,
             num_accepted,
+            num_steps,
             controller_state,
         ) = carry
-        remaining = t_1 - t
-        h = jnp.where(
-            remaining <= dt + t_slack,
-            jnp.maximum(remaining, positive_time_floor),
+        h, proposed_t, reaches_horizon = select_step(
+            t,
+            t_0,
+            t_1,
             dt,
+            dt_0,
+            num_steps,
+            constant=not controller.uses_error_estimate,
+            time_tolerance=t_eps,
         )
         state = (y, z)
         field_active = ~reached & ~failed
@@ -513,7 +549,7 @@ def _solve_rodas5p_dae(
                     aux_candidate, aux_ok = evaluate_aux(
                         y_1,
                         z_1,
-                        t + h,
+                        proposed_t,
                         p,
                         provisional_advance,
                         failure_ad_reference,
@@ -526,7 +562,7 @@ def _solve_rodas5p_dae(
                     y, z, t, left_dot, provisional_advance
                 )
                 aux_candidate, aux_ok, aux_right_dot = auxiliary_value_and_derivative(
-                    y_1, z_1, t + h, right_dot, provisional_advance
+                    y_1, z_1, proposed_t, right_dot, provisional_advance
                 )
                 return aux_candidate, aux_ok, aux_left_dot, aux_right_dot
 
@@ -545,7 +581,7 @@ def _solve_rodas5p_dae(
         y_new = where(advance, y_1, y)
         z_new = where(advance, z_1, z)
         aux_new = where(advance, aux_candidate, aux) if track_aux else None
-        t_new = jnp.where(advance, t + h, t)
+        t_new = jnp.where(advance, proposed_t, t)
         dt_new = jnp.where(reached | failed, dt, dt_next)
         controller_state_new = jax.tree.map(
             lambda old, new: jnp.where(step_ok, new, old),
@@ -557,8 +593,9 @@ def _solve_rodas5p_dae(
         else:
             failed_new = failed | ~step_ok
         failed_new = failed_new | (provisional_advance & ~aux_ok)
-        reached_new = reached | (t_new >= t_1 - t_eps)
+        reached_new = reached | (advance & reaches_horizon)
         num_new = num_accepted + advance.astype(jnp.int32)
+        num_steps_new = num_steps + (~reached & ~failed).astype(jnp.int32)
         carry_new = (
             t_new,
             y_new,
@@ -568,6 +605,7 @@ def _solve_rodas5p_dae(
             reached_new,
             failed_new,
             num_new,
+            num_steps_new,
             controller_state_new,
         )
         if save_at.t_1:
@@ -588,7 +626,7 @@ def _solve_rodas5p_dae(
         return carry_new, out
 
     def skip_step(carry):
-        t, y, z, aux, _, _, _, _, _ = carry
+        t, y, z, aux, _, _, _, _, _, _ = carry
         if save_at.t_1:
             out = None
         elif save_at.steps:
@@ -618,22 +656,31 @@ def _solve_rodas5p_dae(
         jnp.asarray(False),
         ~initial_ok,
         jnp.asarray(0, jnp.int32),
+        jnp.asarray(0, jnp.int32),
         controller_state_initial,
     )
+    if controller.uses_error_estimate and adaptive_loop == "forward":
+        final_carry, rows = forward_adaptive_while(
+            carry_0,
+            attempt_step=attempt_step,
+            skip_step=skip_step,
+            terminated=lambda carry: carry[5] | carry[6],
+            max_steps=max_steps,
+        )
+    else:
+        final_carry, rows = jax.lax.scan(body, carry_0, None, length=max_steps)
     (
-        (
-            t_final,
-            y_final,
-            z_final,
-            aux_final,
-            _,
-            reached,
-            failed,
-            num_accepted,
-            _,
-        ),
-        rows,
-    ) = jax.lax.scan(body, carry_0, None, length=max_steps)
+        t_final,
+        y_final,
+        z_final,
+        aux_final,
+        _,
+        reached,
+        failed,
+        num_accepted,
+        num_steps,
+        _,
+    ) = final_carry
     integration_ok = reached & ~failed
 
     if save_at.t_1:
@@ -655,7 +702,10 @@ def _solve_rodas5p_dae(
             zs=z_final,
             ok=integration_ok & aux_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             aux=aux_final,
+            num_root_solves=num_root_solves,
+            num_root_steps=num_root_steps,
         )
 
     if save_at.steps:
@@ -700,12 +750,15 @@ def _solve_rodas5p_dae(
             zs=fill_rows(compact_zs, accepted, last_z, save_at.fill),
             ok=integration_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             accepted=accepted,
             aux=(
                 fill_rows(compact_aux, accepted, last_aux, save_at.fill)
                 if track_aux
                 else None
             ),
+            num_root_solves=num_root_solves,
+            num_root_steps=num_root_steps,
         )
 
     query_times = jnp.asarray(save_at.ts, time_dtype)
@@ -732,7 +785,10 @@ def _solve_rodas5p_dae(
         zs=query_zs,
         ok=integration_ok,
         num_accepted=num_accepted,
+        num_steps=num_steps,
         aux=query_aux,
+        num_root_solves=num_root_solves,
+        num_root_steps=num_root_steps,
     )
 
 
@@ -755,6 +811,7 @@ def solve_semi_explicit_dae(
     has_algebraic_aux=None,
     failure_ad_reference=None,
     max_steps=4096,
+    adaptive_loop="bounded",
 ):
     """Integrate a semi-explicit index-1 DAE.
 
@@ -772,6 +829,9 @@ def solve_semi_explicit_dae(
     for initial consistency, then advances the block mass-matrix system with
     reused linear solves; later ``z`` values satisfy the constraint to the
     integration accuracy rather than the root tolerance.
+    ``sol.num_root_solves`` counts logical active nonlinear root calls and
+    ``sol.num_root_steps`` sums their LM update steps. Rodas5P therefore reports
+    one root call regardless of its number of integration attempts.
 
     ``args`` is fixed data by convention. All differentiated model parameters
     belong in ``p``. Initial consistency and explicit-method roots
@@ -796,9 +856,20 @@ def solve_semi_explicit_dae(
     time-step work. Saved aux is checked at the initial and accepted nodes in
     prefix/grid modes; endpoint mode checks it only after integration and
     retains the endpoint state with zero aux if that check fails.
+
+    ``adaptive_loop="bounded"`` keeps the reverse-mode-capable static scan.
+    ``adaptive_loop="forward"`` executes only actual adaptive attempts and,
+    under ``vmap``, stops after the slowest lane. It supports JVP and nested
+    forward mode but not ordinary reverse mode, matching JAX's dynamic-while
+    differentiation boundary.
     """
     if dt_0 is None:
         raise ValueError("dt_0 is required (tinydiffeq has no initial-step heuristic)")
+    if adaptive_loop not in ("bounded", "forward"):
+        raise ValueError(
+            'adaptive_loop must be either "bounded" or "forward", got '
+            f"{adaptive_loop!r}"
+        )
     if save_at is None:
         save_at = SaveAt(t_1=True)
     if controller is None:
@@ -814,6 +885,12 @@ def solve_semi_explicit_dae(
             f"{type(controller).__name__} needs an embedded error estimate, "
             f"which {type(solver).__name__} does not provide"
         )
+    if adaptive_loop == "forward" and not controller.uses_error_estimate:
+        raise ValueError(
+            'adaptive_loop="forward" requires an adaptive error controller'
+        )
+    if save_at.exact:
+        raise ValueError("SaveAt exact=True is only supported by solve_ode")
 
     y_0, time_dtype = asarray_state(y_0, "y_0")
     z_0, z_dtype = asarray_state(z_0, "z_0")
@@ -823,9 +900,8 @@ def solve_semi_explicit_dae(
     failure_ad_reference = _prepare_failure_ad_reference(
         failure_ad_reference, y_0, z_0, t_0, p
     )
-    positive_time_floor = jnp.asarray(jnp.finfo(time_dtype).tiny, time_dtype)
-    t_eps = 4.0 * jnp.finfo(time_dtype).eps * jnp.maximum(1.0, jnp.abs(t_1))
-    t_slack = max_steps * t_eps
+    time_scale = jnp.maximum(jnp.maximum(1.0, jnp.abs(t_0)), jnp.abs(t_1))
+    t_eps = 4.0 * jnp.finfo(time_dtype).eps * time_scale
 
     raw_f = f
     g_field = _canonicalize_dae_field(g, "g")
@@ -973,7 +1049,12 @@ def solve_semi_explicit_dae(
         aux_dot = where(active, aux_dot, zeros_like(aux_dot))
         return z_dot, aux_dot
 
-    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0, jnp.asarray(True))
+    (
+        z_initial,
+        initial_root_ok,
+        initial_root_solves,
+        initial_root_steps,
+    ) = solve_root(y_0, t_0, z_0, jnp.asarray(True))
     if has_algebraic_aux:
         _, initial_context_ok = evaluate_context(
             y_0, z_initial, t_0, p, initial_root_ok
@@ -1054,6 +1135,8 @@ def solve_semi_explicit_dae(
             z_initial,
             aux_initial,
             initial_ok,
+            initial_root_solves,
+            initial_root_steps,
             p,
             failure_ad_reference,
             dt_0,
@@ -1063,6 +1146,7 @@ def solve_semi_explicit_dae(
             time_dtype,
             z_dtype,
             has_aux,
+            adaptive_loop,
         )
 
     need_f = solver.fsal or (save_at.ts is not None)
@@ -1081,7 +1165,9 @@ def solve_semi_explicit_dae(
 
     def stage(y_stage, t_stage, z_guess, active, need_derivative=True):
         def evaluate():
-            z_stage, root_ok = solve_root(y_stage, t_stage, z_guess, active)
+            z_stage, root_ok, root_solves, root_steps = solve_root(
+                y_stage, t_stage, z_guess, active
+            )
             if need_derivative:
                 k_stage, field_ok = jax.lax.cond(
                     root_ok,
@@ -1096,28 +1182,174 @@ def solve_semi_explicit_dae(
                     )
                 else:
                     field_ok = root_ok
-            return z_stage, k_stage, root_ok & field_ok
+            return z_stage, k_stage, root_ok & field_ok, root_solves, root_steps
 
         def skip():
-            return z_guess, zeros_like(y_stage), jnp.asarray(False)
+            zero = jnp.asarray(0, jnp.int32)
+            return z_guess, zeros_like(y_stage), jnp.asarray(False), zero, zero
 
         return jax.lax.cond(active, evaluate, skip)
 
+    def predicted_stage(
+        y_stage,
+        t_stage,
+        z_previous,
+        t_base,
+        z_base,
+        t_latest,
+        z_latest,
+        has_later_stage,
+        active,
+        need_derivative=True,
+    ):
+        z_guess = z_previous
+        if root_solver.predictor == "secant":
+            distinct = has_later_stage & (t_latest > t_base)
+            strictly_later = distinct & (t_stage > t_latest)
+            denominator = jnp.where(distinct, t_latest - t_base, 1.0)
+            scale = (t_stage - t_base) / denominator
+            extrapolated = jax.tree.map(
+                lambda base, latest: (
+                    base + jnp.asarray(scale, dtype=base.dtype) * (latest - base)
+                ),
+                z_base,
+                z_latest,
+            )
+            z_guess = where(strictly_later, extrapolated, z_previous)
+            z_guess = jax.tree.map(jax.lax.stop_gradient, z_guess)
+
+        z_stage, k_stage, stage_ok, root_solves, root_steps = stage(
+            y_stage, t_stage, z_guess, active, need_derivative
+        )
+        if root_solver.predictor == "secant":
+            update_latest = stage_ok & (t_stage > t_base)
+            t_latest = jnp.where(update_latest, t_stage, t_latest)
+            z_latest = where(update_latest, z_stage, z_latest)
+            has_later_stage = has_later_stage | update_latest
+        return (
+            z_stage,
+            k_stage,
+            stage_ok,
+            root_solves,
+            root_steps,
+            t_latest,
+            z_latest,
+            has_later_stage,
+        )
+
     def rk4_step(t, y, z, h, f_cur):
         k_1 = differential(y, z, t)[0] if f_cur is None else f_cur
-        z_2, k_2, ok_2 = stage(add_scaled(y, (0.5 * h, k_1)), t + 0.5 * h, z, True)
-        z_3, k_3, ok_3 = stage(add_scaled(y, (0.5 * h, k_2)), t + 0.5 * h, z_2, ok_2)
-        z_4, k_4, ok_4 = stage(add_scaled(y, (h, k_3)), t + h, z_3, ok_2 & ok_3)
-        y_1 = add_scaled(y, (h / 6.0, weighted_sum((k_1, k_2, k_3, k_4), (1, 2, 2, 1))))
+        t_latest = t
+        z_latest = z
+        has_later_stage = jnp.asarray(False)
+        (
+            z_2,
+            k_2,
+            ok_2,
+            solves_2,
+            steps_2,
+            t_latest,
+            z_latest,
+            has_later_stage,
+        ) = predicted_stage(
+            add_scaled(y, (0.5 * h, k_1)),
+            t + 0.5 * h,
+            z,
+            t,
+            z,
+            t_latest,
+            z_latest,
+            has_later_stage,
+            True,
+        )
+        (
+            z_3,
+            k_3,
+            ok_3,
+            solves_3,
+            steps_3,
+            t_latest,
+            z_latest,
+            has_later_stage,
+        ) = predicted_stage(
+            add_scaled(y, (0.5 * h, k_2)),
+            t + 0.5 * h,
+            z_2,
+            t,
+            z,
+            t_latest,
+            z_latest,
+            has_later_stage,
+            ok_2,
+        )
+        (
+            z_4,
+            k_4,
+            ok_4,
+            solves_4,
+            steps_4,
+            t_latest,
+            z_latest,
+            has_later_stage,
+        ) = predicted_stage(
+            add_scaled(y, (h, k_3)),
+            t + h,
+            z_3,
+            t,
+            z,
+            t_latest,
+            z_latest,
+            has_later_stage,
+            ok_2 & ok_3,
+        )
+        y_1 = add_scaled(
+            y,
+            (h / 6.0, weighted_sum((k_1, k_2, k_3, k_4), (1, 2, 2, 1))),
+        )
         stage_ok = ok_2 & ok_3 & ok_4
-        z_1, f_1, endpoint_ok = stage(y_1, t + h, z_4, stage_ok, need_derivative=need_f)
-        return y_1, z_1, f_1, None, stage_ok & endpoint_ok
+        (
+            z_1,
+            f_1,
+            endpoint_ok,
+            endpoint_solves,
+            endpoint_steps,
+            _,
+            _,
+            _,
+        ) = predicted_stage(
+            y_1,
+            t + h,
+            z_4,
+            t,
+            z,
+            t_latest,
+            z_latest,
+            has_later_stage,
+            stage_ok,
+            need_derivative=need_f,
+        )
+        root_solves = solves_2 + solves_3 + solves_4 + endpoint_solves
+        root_steps = steps_2 + steps_3 + steps_4 + endpoint_steps
+        return (
+            y_1,
+            z_1,
+            f_1,
+            None,
+            stage_ok & endpoint_ok,
+            root_solves,
+            root_steps,
+        )
 
     def tsit5_step(t, y, z, h, f_cur):
         k_1 = differential(y, z, t)[0] if f_cur is None else f_cur
         ks = [k_1]
         z_stage = z
         stages_ok = jnp.asarray(True)
+        root_solves = jnp.asarray(0, jnp.int32)
+        root_steps = jnp.asarray(0, jnp.int32)
+        t_latest = t
+        z_latest = z
+        has_later_stage = jnp.asarray(False)
         rows = (
             ((A_21,), C_2),
             ((A_31, A_32), C_3),
@@ -1127,20 +1359,60 @@ def solve_semi_explicit_dae(
         )
         for coefficients, stage_time in rows:
             y_stage = add_scaled(y, (h, weighted_sum(ks, coefficients)))
-            z_stage, k_stage, root_ok = stage(
-                y_stage, t + stage_time * h, z_stage, stages_ok
+            (
+                z_stage,
+                k_stage,
+                root_ok,
+                stage_solves,
+                stage_steps,
+                t_latest,
+                z_latest,
+                has_later_stage,
+            ) = predicted_stage(
+                y_stage,
+                t + stage_time * h,
+                z_stage,
+                t,
+                z,
+                t_latest,
+                z_latest,
+                has_later_stage,
+                stages_ok,
             )
             stages_ok = stages_ok & root_ok
+            root_solves = root_solves + stage_solves
+            root_steps = root_steps + stage_steps
             ks.append(k_stage)
         y_1 = add_scaled(y, (h, weighted_sum(ks, (B_1, B_2, B_3, B_4, B_5, B_6))))
-        z_1, k_7, endpoint_ok = stage(y_1, t + h, z_stage, stages_ok)
+        (
+            z_1,
+            k_7,
+            endpoint_ok,
+            endpoint_solves,
+            endpoint_steps,
+            _,
+            _,
+            _,
+        ) = predicted_stage(
+            y_1,
+            t + h,
+            z_stage,
+            t,
+            z,
+            t_latest,
+            z_latest,
+            has_later_stage,
+            stages_ok,
+        )
+        root_solves = root_solves + endpoint_solves
+        root_steps = root_steps + endpoint_steps
         ks.append(k_7)
         root_ok = stages_ok & endpoint_ok
         err = jax.tree.map(
             lambda value: h * value,
             weighted_sum(ks, (E_1, E_2, E_3, E_4, E_5, E_6, E_7)),
         )
-        return y_1, z_1, k_7, err, root_ok
+        return y_1, z_1, k_7, err, root_ok, root_solves, root_steps
 
     def attempt_step(carry):
         (
@@ -1155,22 +1427,41 @@ def solve_semi_explicit_dae(
             reached,
             failed,
             num_accepted,
+            num_steps,
+            num_root_solves,
+            num_root_steps,
             controller_state,
         ) = carry
-        remaining = t_1 - t
-        h = jnp.where(
-            remaining <= dt + t_slack,
-            jnp.maximum(remaining, positive_time_floor),
+        h, proposed_t, reaches_horizon = select_step(
+            t,
+            t_0,
+            t_1,
             dt,
+            dt_0,
+            num_steps,
+            constant=not controller.uses_error_estimate,
+            time_tolerance=t_eps,
         )
         if isinstance(solver, RK4):
-            y_1, z_1, f_1, err, root_ok = rk4_step(
-                t, y, z, h, f_cur if need_f else None
-            )
+            (
+                y_1,
+                z_1,
+                f_1,
+                err,
+                root_ok,
+                attempt_root_solves,
+                attempt_root_steps,
+            ) = rk4_step(t, y, z, h, f_cur if need_f else None)
         else:
-            y_1, z_1, f_1, err, root_ok = tsit5_step(
-                t, y, z, h, f_cur if need_f else None
-            )
+            (
+                y_1,
+                z_1,
+                f_1,
+                err,
+                root_ok,
+                attempt_root_solves,
+                attempt_root_steps,
+            ) = tsit5_step(t, y, z, h, f_cur if need_f else None)
 
         if controller.uses_error_estimate:
             control_err = where(root_ok, err, full_like(err, jnp.inf))
@@ -1186,7 +1477,7 @@ def solve_semi_explicit_dae(
             def accepted_aux():
                 y_safe = where(provisional_advance, y_1, y)
                 z_safe = where(provisional_advance, z_1, z)
-                t_safe = jnp.where(provisional_advance, t + h, t)
+                t_safe = jnp.where(provisional_advance, proposed_t, t)
                 return evaluate_aux(
                     y_safe,
                     z_safe,
@@ -1207,7 +1498,7 @@ def solve_semi_explicit_dae(
         advance = provisional_advance & aux_ok
         y_new = where(advance, y_1, y)
         z_new = where(advance, z_1, z)
-        t_new = jnp.where(advance, t + h, t)
+        t_new = jnp.where(advance, proposed_t, t)
         f_new = where(advance, f_1, f_cur) if need_f else f_cur
         if track_aux:
             aux_new = where(advance, aux_candidate, aux)
@@ -1218,7 +1509,7 @@ def solve_semi_explicit_dae(
             def accepted_derivatives():
                 y_safe = where(advance, y_1, y)
                 z_safe = where(advance, z_1, z)
-                t_safe = jnp.where(advance, t + h, t)
+                t_safe = jnp.where(advance, proposed_t, t)
                 f_safe = where(advance, f_1, f_cur)
                 return algebraic_time_derivatives(
                     y_safe, z_safe, t_safe, f_safe, advance
@@ -1242,8 +1533,11 @@ def solve_semi_explicit_dae(
         else:
             failed_new = failed | ~root_ok
         failed_new = failed_new | (provisional_advance & ~aux_ok)
-        reached_new = reached | (t_new >= t_1 - t_eps)
+        reached_new = reached | (advance & reaches_horizon)
         num_new = num_accepted + advance.astype(jnp.int32)
+        num_steps_new = num_steps + (~reached & ~failed).astype(jnp.int32)
+        num_root_solves_new = num_root_solves + attempt_root_solves
+        num_root_steps_new = num_root_steps + attempt_root_steps
         carry_new = (
             t_new,
             y_new,
@@ -1256,6 +1550,9 @@ def solve_semi_explicit_dae(
             reached_new,
             failed_new,
             num_new,
+            num_steps_new,
+            num_root_solves_new,
+            num_root_steps_new,
             controller_state_next,
         )
         if save_at.t_1:
@@ -1276,7 +1573,7 @@ def solve_semi_explicit_dae(
         return carry_new, out
 
     def skip_step(carry):
-        t, y, z, aux, _, f_cur, z_dot, aux_dot, _, _, _, _ = carry
+        t, y, z, aux, _, f_cur, z_dot, aux_dot, _, _, _, _, _, _, _ = carry
         if save_at.t_1:
             out = None
         elif save_at.steps:
@@ -1310,25 +1607,38 @@ def solve_semi_explicit_dae(
         jnp.asarray(False),
         ~initial_ok,
         jnp.asarray(0, jnp.int32),
+        jnp.asarray(0, jnp.int32),
+        initial_root_solves,
+        initial_root_steps,
         controller_state_initial,
     )
+    if controller.uses_error_estimate and adaptive_loop == "forward":
+        final_carry, rows = forward_adaptive_while(
+            carry_0,
+            attempt_step=attempt_step,
+            skip_step=skip_step,
+            terminated=lambda carry: carry[8] | carry[9],
+            max_steps=max_steps,
+        )
+    else:
+        final_carry, rows = jax.lax.scan(body, carry_0, None, length=max_steps)
     (
-        (
-            t_final,
-            y_final,
-            z_final,
-            aux_final,
-            _,
-            _,
-            _,
-            _,
-            reached,
-            failed,
-            num_accepted,
-            _,
-        ),
-        rows,
-    ) = jax.lax.scan(body, carry_0, None, length=max_steps)
+        t_final,
+        y_final,
+        z_final,
+        aux_final,
+        _,
+        _,
+        _,
+        _,
+        reached,
+        failed,
+        num_accepted,
+        num_steps,
+        num_root_solves,
+        num_root_steps,
+        _,
+    ) = final_carry
     integration_ok = reached & ~failed
 
     if save_at.t_1:
@@ -1350,7 +1660,10 @@ def solve_semi_explicit_dae(
             zs=z_final,
             ok=integration_ok & aux_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             aux=aux_final,
+            num_root_solves=num_root_solves,
+            num_root_steps=num_root_steps,
         )
 
     if save_at.steps:
@@ -1387,12 +1700,15 @@ def solve_semi_explicit_dae(
             zs=fill_rows(compact_zs, accepted, last_z, save_at.fill),
             ok=integration_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             accepted=accepted,
             aux=(
                 fill_rows(compact_aux, accepted, last_aux, save_at.fill)
                 if track_aux
                 else None
             ),
+            num_root_solves=num_root_solves,
+            num_root_steps=num_root_steps,
         )
 
     fs_all = prepend(f_initial, fs_s)
@@ -1415,5 +1731,8 @@ def solve_semi_explicit_dae(
         zs=query_zs,
         ok=integration_ok,
         num_accepted=num_accepted,
+        num_steps=num_steps,
         aux=query_aux,
+        num_root_solves=num_root_solves,
+        num_root_steps=num_root_steps,
     )

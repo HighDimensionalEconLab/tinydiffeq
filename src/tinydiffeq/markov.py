@@ -243,6 +243,11 @@ class MarkovDistribution:
     ok: jax.Array
 
 
+def _reject_exact_save_at(save_at):
+    if save_at.exact:
+        raise ValueError("SaveAt exact=True is only supported by solve_ode")
+
+
 def _validate_simulation_inputs(chain, state_0, count, count_name, save_at):
     if not isinstance(count, int) or isinstance(count, bool):
         raise TypeError(f"{count_name} must be a static Python int")
@@ -250,6 +255,7 @@ def _validate_simulation_inputs(chain, state_0, count, count_name, save_at):
         raise ValueError(f"{count_name} must be at least 1")
     if save_at is None:
         save_at = SaveAt(t_1=True)
+    _reject_exact_save_at(save_at)
     if save_at.steps and save_at.fill != "last":
         raise ValueError(
             'Markov integer states require SaveAt(steps=True, fill="last")'
@@ -271,6 +277,21 @@ def _alias_sample(chain, state, uniform):
         column,
         chain.alias_index[state, column],
     ).astype(jnp.int32)
+
+
+def _unit_uniform(key, shape, dtype):
+    return jax.random.uniform(
+        key,
+        shape,
+        dtype=dtype,
+        minval=jnp.asarray(0.0, dtype),
+        maxval=jnp.asarray(1.0, dtype),
+    )
+
+
+def _unit_exponential(key, shape, dtype):
+    uniform = _unit_uniform(key, shape, dtype)
+    return -jnp.log1p(-uniform)
 
 
 def _random_maps(chain, uniforms):
@@ -326,20 +347,25 @@ def simulate_markov_chain(
     state_0, initial_ok, save_at = _validate_simulation_inputs(
         chain, state_0, num_steps, "num_steps", save_at
     )
-    uniforms = jax.random.uniform(
-        key, (num_steps,), dtype=chain.transition_matrix.dtype
-    )
+    uniforms = _unit_uniform(key, (num_steps,), chain.transition_matrix.dtype)
     step_states = _simulate_discrete_states(chain, state_0, uniforms, method)
     all_states = prepend(state_0, step_states)
     count = jnp.asarray(num_steps, jnp.int32)
     if save_at.t_1:
-        return Solution(ts=count, xs=step_states[-1], ok=initial_ok, num_accepted=count)
+        return Solution(
+            ts=count,
+            xs=step_states[-1],
+            ok=initial_ok,
+            num_accepted=count,
+            num_steps=count,
+        )
     if save_at.steps:
         return Solution(
             ts=jnp.arange(num_steps + 1, dtype=jnp.int32),
             xs=all_states,
             ok=initial_ok,
             num_accepted=count,
+            num_steps=count,
             accepted=jnp.ones((num_steps + 1,), dtype=bool),
         )
     query_steps = jnp.asarray(save_at.ts)
@@ -352,11 +378,13 @@ def simulate_markov_chain(
         xs=all_states[safe_queries],
         ok=initial_ok & queries_ok,
         num_accepted=count,
+        num_steps=count,
     )
 
 
 def _simulate_continuous_events(chain, state_0, exponentials, uniforms, method):
-    safe_rates = jnp.where(chain.exit_rates > 0, chain.exit_rates, jnp.inf)
+    infinity = jnp.asarray(jnp.inf, chain.exit_rates.dtype)
+    safe_rates = jnp.where(chain.exit_rates > 0, chain.exit_rates, infinity)
     if isinstance(method, SequentialMarkov):
 
         def step(carry, random_values):
@@ -365,7 +393,7 @@ def _simulate_continuous_events(chain, state_0, exponentials, uniforms, method):
             holding_time = jnp.where(
                 chain.exit_rates[state] > 0,
                 exponential / safe_rates[state],
-                jnp.inf,
+                infinity,
             )
             next_state = _alias_sample(chain, state, uniform)
             next_time = time + holding_time
@@ -382,7 +410,7 @@ def _simulate_continuous_events(chain, state_0, exponentials, uniforms, method):
         holding_times = jnp.where(
             chain.exit_rates[None, :] > 0,
             exponentials[:, None] / safe_rates[None, :],
-            jnp.inf,
+            infinity,
         )
 
         def compose(earlier, later):
@@ -433,13 +461,16 @@ def simulate_continuous_time_markov_chain(
     t_1 = jnp.asarray(t_1, dtype)
     time_ok = t_1 >= t_0
     exponential_key, transition_key = jax.random.split(key)
-    exponentials = jax.random.exponential(exponential_key, (max_jumps,), dtype=dtype)
-    uniforms = jax.random.uniform(transition_key, (max_jumps,), dtype=dtype)
+    exponentials = _unit_exponential(exponential_key, (max_jumps,), dtype)
+    uniforms = _unit_uniform(transition_key, (max_jumps,), dtype)
     states_after, elapsed_event_times = _simulate_continuous_events(
         chain, state_0, exponentials, uniforms, method
     )
     event_times = t_0 + elapsed_event_times
     num_jumps = jnp.sum(event_times <= t_1, dtype=jnp.int32)
+    # One event beyond the horizon is needed to establish endpoint coverage;
+    # a starved event budget has already attempted every available event.
+    num_steps = jnp.minimum(num_jumps + 1, jnp.asarray(max_jumps, jnp.int32))
     all_states = prepend(state_0, states_after)
     final_state = all_states[num_jumps]
     covered = event_times[-1] >= t_1
@@ -452,6 +483,7 @@ def simulate_continuous_time_markov_chain(
             xs=final_state,
             ok=integration_ok,
             num_accepted=num_jumps,
+            num_steps=num_steps,
         )
     if save_at.steps:
         accepted = jnp.arange(max_jumps + 1) <= num_jumps
@@ -463,6 +495,7 @@ def simulate_continuous_time_markov_chain(
             xs=output_states,
             ok=integration_ok,
             num_accepted=num_jumps,
+            num_steps=num_steps,
             accepted=accepted,
         )
     query_times = jnp.asarray(save_at.ts, dtype)
@@ -478,6 +511,7 @@ def simulate_continuous_time_markov_chain(
         xs=all_states[event_counts],
         ok=integration_ok & queries_ok,
         num_accepted=num_jumps,
+        num_steps=num_steps,
     )
 
 
@@ -601,6 +635,7 @@ def forecast_markov_chain(
         raise ValueError("num_steps must be nonnegative")
     if save_at is None:
         save_at = SaveAt(t_1=True)
+    _reject_exact_save_at(save_at)
     distribution_0, initial_ok = _prepare_distribution(chain, distribution_0)
 
     if save_at.t_1:
@@ -702,6 +737,7 @@ def forecast_continuous_time_markov_chain(
         )
     if save_at is None:
         save_at = SaveAt(t_1=True)
+    _reject_exact_save_at(save_at)
     if save_at.steps:
         raise ValueError("CTMC distribution forecasts require endpoint or SaveAt.ts")
     if is_dense:

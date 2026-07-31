@@ -18,6 +18,9 @@ class Solution:
       ``jnp.where(sol.ok, x, jnp.inf)`` over leaves.
     - ``num_accepted``: number of accepted steps (excluding the initial
       state).
+    - ``num_steps``: scalar integer array counting logical attempted steps,
+      including rejected attempts. Public solver outputs always populate it;
+      the optional default only preserves direct-construction compatibility.
     - ``accepted``: ``steps`` mode only (otherwise None): validity mask for
       the contiguous accepted-step prefix. Row 0 (the initial state) is
       always True, so ``accepted.sum() == num_accepted + 1``.
@@ -32,6 +35,7 @@ class Solution:
     num_accepted: jax.Array
     accepted: jax.Array | None = None
     aux: Any = None
+    num_steps: jax.Array | None = None
 
 
 @jax.tree_util.register_dataclass
@@ -49,7 +53,14 @@ class DAESolution:
     after its initial consistency root. Requested values are dense
     interpolants and need not satisfy the constraint exactly. ``ok`` is true
     only when initialization, all required stage and saved-output operations
-    succeeded, and the integration reached ``t_1``.
+    succeeded, and the integration reached ``t_1``. ``num_root_solves`` counts
+    logical active algebraic root calls, including failed calls and the initial
+    consistency solve. ``num_root_steps`` sums their nonlinear LM update steps.
+    ``num_steps`` counts logical attempted integration steps, including rejected
+    attempts, with the same semantics as :class:`Solution`.
+    All three are path diagnostics with exact-zero tangents. Under ``vmap``, masked
+    lanes may still execute physically even though they do not increment these
+    logical per-lane counters.
     """
 
     ts: jax.Array
@@ -59,3 +70,6 @@ class DAESolution:
     num_accepted: jax.Array
     accepted: jax.Array | None = None
     aux: Any = None
+    num_steps: jax.Array | None = None
+    num_root_solves: jax.Array | None = None
+    num_root_steps: jax.Array | None = None

@@ -61,6 +61,8 @@ def solve_semi_explicit_sdae(
     fixed uniform grid, then an algebraic root solve restores consistency at
     every node. This is Euler--Maruyama applied to the reduced SDE obtained
     from the locally unique root ``z = Z(y, t)``.
+    ``sol.num_root_solves`` counts logical active nonlinear root calls and
+    ``sol.num_root_steps`` sums their LM update steps.
 
     ``drift`` may return ``value`` or ``(value, saved_aux)``. If ``g`` returns
     ``(residual, algebraic_aux)``, that internal context is passed to both
@@ -195,7 +197,12 @@ def solve_semi_explicit_sdae(
             raise TypeError(f"{name} must preserve the y dtype")
         return value
 
-    z_initial, initial_root_ok = solve_root(y_0, t_0, z_0, jnp.asarray(True))
+    (
+        z_initial,
+        initial_root_ok,
+        initial_root_solves,
+        initial_root_steps,
+    ) = solve_root(y_0, t_0, z_0, jnp.asarray(True))
     if has_algebraic_aux:
         context_initial, initial_context_ok = evaluate_context(
             y_0, z_initial, t_0, initial_root_ok
@@ -224,7 +231,18 @@ def solve_semi_explicit_sdae(
         context_reference = None
 
     def attempt_step(carry, inputs):
-        y, z, context, aux, t, failed, num_accepted = carry
+        (
+            y,
+            z,
+            context,
+            aux,
+            t,
+            failed,
+            num_accepted,
+            num_steps,
+            num_root_solves,
+            num_root_steps,
+        ) = carry
         t_step, t_next, d_w_step = inputs
         active = ~failed
         y_ref, z_ref, t_ref, p_ref = failure_ad_reference
@@ -248,7 +266,9 @@ def solve_semi_explicit_sdae(
             (dt, drift_value),
             (1.0, multiply(diffusion_value, d_w_step)),
         )
-        z_candidate, root_ok = solve_root(y_candidate, t_next, z, active)
+        z_candidate, root_ok, root_solves, root_steps = solve_root(
+            y_candidate, t_next, z, active
+        )
         if has_algebraic_aux:
             context_candidate, context_ok = evaluate_context(
                 y_candidate, z_candidate, t_next, root_ok & active
@@ -304,14 +324,17 @@ def solve_semi_explicit_sdae(
             t_new,
             failed_new,
             num_new,
+            num_steps + jnp.asarray(1, jnp.int32),
+            num_root_solves + root_solves,
+            num_root_steps + root_steps,
         )
         out = (t_new, y_new, z_new, aux_new, advance) if save_at.steps else None
         return carry_new, out
 
     def skip_step(carry, _):
-        y, z, context, aux, t, failed, num_accepted = carry
+        y, z, context, aux, t, failed, num_accepted, _, _, _ = carry
         out = (t, y, z, aux, jnp.asarray(False)) if save_at.steps else None
-        return (y, z, context, aux, t, failed, num_accepted), out
+        return carry, out
 
     def body(carry, inputs):
         return jax.lax.cond(
@@ -329,6 +352,9 @@ def solve_semi_explicit_sdae(
         t_0,
         ~initial_ok,
         jnp.asarray(0, jnp.int32),
+        jnp.asarray(0, jnp.int32),
+        initial_root_solves,
+        initial_root_steps,
     )
     (
         (
@@ -339,6 +365,9 @@ def solve_semi_explicit_sdae(
             t_final,
             failed,
             num_accepted,
+            num_steps,
+            num_root_solves,
+            num_root_steps,
         ),
         rows,
     ) = jax.lax.scan(
@@ -361,7 +390,10 @@ def solve_semi_explicit_sdae(
             zs=z_final,
             ok=ok & aux_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             aux=aux_final,
+            num_root_solves=num_root_solves,
+            num_root_steps=num_root_steps,
         )
 
     ts_s, ys_s, zs_s, aux_s, advance_s = rows
@@ -385,8 +417,11 @@ def solve_semi_explicit_sdae(
         zs=fill_rows(all_zs, accepted, last_z, save_at.fill),
         ok=ok,
         num_accepted=num_accepted,
+        num_steps=num_steps,
         accepted=accepted,
         aux=(
             fill_rows(all_aux, accepted, last_aux, save_at.fill) if track_aux else None
         ),
+        num_root_solves=num_root_solves,
+        num_root_steps=num_root_steps,
     )

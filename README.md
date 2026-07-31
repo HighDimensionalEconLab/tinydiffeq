@@ -18,14 +18,13 @@ pytrees. The same dense and matrix-free backends are available directly through
 `solve_linear_ode` for any fixed homogeneous linear array or pytree operator;
 `jvp_linear_ode` and `vjp_linear_ode` apply the exact initial-state tangent and
 adjoint exponential actions without differentiating Arnoldi orthogonalization.
-Bounded `lax.scan` loops provide exactly `max_steps` attempt slots for fixed and
-adaptive stepping, so shapes are static, nothing recompiles as tolerances or
-curvature change, and every solve is differentiable in **both** forward and
-reverse mode — including reverse-over-forward, the pattern a
-Levenberg–Marquardt optimizer with geodesic acceleration needs when it
-differentiates through a rollout. Adaptive attempts are grouped into static
-chunks, allowing one `lax.cond` to
-skip solver and controller work for an entire padded chunk.
+Fixed stepping and the default adaptive path use bounded `lax.scan` loops with
+exactly `max_steps` attempt slots. Shapes stay static as tolerances or curvature
+change, and these solves support forward mode, reverse mode, and
+reverse-over-forward. Adaptive ODE and DAE solves may instead select
+`adaptive_loop="forward"`: a dynamic `lax.while_loop` that executes only actual
+attempts and supports JVP and nested forward AD, but not reverse mode. A vmapped
+forward loop runs until its slowest lane finishes.
 
 This is a deliberately small, jvp/vjp-friendly package. Rodas5P is a JAX
 adaptation of Steinebach's method and follows SciML's
@@ -35,8 +34,12 @@ implementation. Use [diffrax](https://docs.kidger.site/diffrax/) or
 matrices, fully implicit or higher-index DAEs, events, continuous solution
 objects, sparse/Krylov linear solvers for ODE/DAE stages, or specialized
 adjoints. Initial DAE consistency and explicit DAE stages use `nlls-gram`;
-`LMRootSolver` accepts a `MAX_STEPS` iterate by default and offers strict
-`CONVERGED`-only status via `max_steps_is_success=False`.
+the same nlls solve supplies the square root's implicit derivative, whose
+default is a direct nonsymmetric `LU()` solve. `LMRootSolver` requires
+residual-only stopping (`gtol=xtol=0`) and accepts only `CONVERGED` roots whose
+Euclidean residual norm is below the root `atol`. Its
+`max_steps_is_success` field remains for source compatibility but does not make
+`MAX_STEPS` a valid DAE root.
 
 The linear exponential-action API follows SciML
 [`ExponentialUtilities.expv`](https://docs.sciml.ai/ExponentialUtilities/stable/expv/).
@@ -45,6 +48,31 @@ the latter keeps the Krylov dimension static for predictable JAX compilation.
 SciML's
 [`ExponentialIntegrators.jl`](https://docs.sciml.ai/ExponentialIntegrators/stable/)
 is the reference for the broader nonlinear exponential-integrator family.
+
+## 2.4.0 migration note
+
+- `SaveAt(ts=..., exact=True)` now gathers realized knots for explicit
+  fixed-step ODEs. Every query must align with a knot; adaptive methods,
+  Rodas5P, DAEs, SDEs, and SDAEs continue to reject exact mode.
+- `Solution.num_steps` and `DAESolution.num_steps` count logical attempts,
+  including rejections. DAE results additionally expose `num_root_solves` and
+  `num_root_steps`; `num_accepted` retains its existing meaning.
+- Adaptive ODE and DAE solves may opt into `adaptive_loop="forward"` for an
+  actual-work loop. It supports primal, JVP, and nested forward AD but not
+  reverse mode; `adaptive_loop="bounded"` remains the reverse-mode-capable
+  default. Under `vmap`, the forward loop runs to the slowest lane.
+- `LMRootSolver(predictor="secant")` is an opt-in continuation warm start for
+  locally unique algebraic branches; `predictor="previous"` remains the
+  default.
+
+DAE root acceptance is stricter in 2.4.0. nlls-gram owns both the primal root
+solve and implicit derivative; square implicit AD defaults to direct `LU()`.
+Only `CONVERGED` roots whose residual norm is below `atol` are accepted, so
+`gtol` and `xtol` must both be zero. `max_steps_is_success` remains for source
+compatibility, now defaults to `False`, and never makes `MAX_STEPS` a valid
+root. Upgrading configurations should remove nonzero `gtol`/`xtol`; if they
+relied on budget exhaustion, increase the root budget or adjust the residual
+tolerance instead.
 
 ## Install
 
@@ -107,11 +135,16 @@ returns one time/state, `SaveAt(ts=...)` returns the requested grid, and
 a contiguous prefix of `max_steps + 1` rows. The remaining rows repeat the
 last accepted state by default; `sol.accepted` distinguishes data from
 padding. Rejected attempts never appear in the returned trajectory.
+`sol.num_steps` reports the number of attempts actually made, while
+`sol.num_accepted` excludes rejections.
 
 `SaveAt(ts=...)` also accepts a Python sequence. These are observation times:
 the adaptive controller still chooses its own internal mesh. Explicit methods
 use cubic Hermite interpolation; Rodas5P uses its published stiff-aware
-fourth-order continuous extension.
+fourth-order continuous extension. For an explicit fixed-step ODE,
+`SaveAt(ts=..., exact=True)` instead requires every requested time to be an
+internal knot and gathers the stored state directly. Exact mode does not apply
+to adaptive ODEs, Rodas5P, DAEs, SDEs, or SDAEs.
 
 ## Semi-explicit DAEs
 
@@ -154,10 +187,16 @@ initialization: it advances the corresponding block mass-matrix system using
 one reused LU factorization per attempt. Differential fields may return a
 floating saved-aux pytree stored at accepted nodes and interpolated on requested
 deterministic grids. Algebraic equations may separately return internal context
-passed to the dynamics. JVP, VJP, and reverse-over-forward propagate through both
-implicit initialization and the time integrator. See the
+passed to the dynamics. On the default bounded path, JVP, VJP, and
+reverse-over-forward propagate through both implicit initialization and the
+time integrator. See the
 [DAE documentation](https://highdimensionaleconlab.github.io/tinydiffeq/dae/)
 for root controls, `SaveAt`, and scope limits.
+
+DAE solutions expose `num_steps`, `num_root_solves`, and `num_root_steps` as
+logical per-trajectory work counters. Explicit methods default to reusing the
+previous algebraic root as the next stage guess; `LMRootSolver(predictor="secant")`
+is an opt-in continuation predictor for locally unique root branches.
 
 Fixed-step semi-explicit Itô SDAEs use the corresponding
 `solve_semi_explicit_sdae` interface with `EulerMaruyama`, a PRNG key, and
@@ -182,7 +221,9 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
 
 The step-size controller is wrapped in `stop_gradient` (accept/reject is
 non-differentiable either way, and the error-ratio power blows up at exactly
-zero error); the states differentiate fully through the solver stages. See the
+zero error); states differentiate through the solver stages on the realized,
+frozen mesh. In particular, adaptive `SaveAt(steps=True)` does not include mesh
+motion in its time or state derivatives. See the
 [docs](https://highdimensionaleconlab.github.io/tinydiffeq/) for the design
 contracts: static shapes and `SaveAt`, AD through adaptive stepping, SDE key
 semantics, and the package API.

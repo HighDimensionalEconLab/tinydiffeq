@@ -1,7 +1,9 @@
 import inspect
+import numbers
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax.flatten_util import ravel_pytree
 
 from tinydiffeq._aux import (
@@ -11,6 +13,7 @@ from tinydiffeq._aux import (
     split_field_output,
     zeros_from_shape,
 )
+from tinydiffeq._loop import forward_adaptive_while, select_step
 from tinydiffeq._rodas5p import rodas5p_step, rodas_dense_endpoint_derivatives
 from tinydiffeq._tree import (
     asarray_state,
@@ -33,6 +36,45 @@ from tinydiffeq.solution import Solution
 from tinydiffeq.solvers import Rodas5P
 
 ADAPTIVE_SCAN_CHUNK_SIZE = 16
+
+
+def _has_static_uniform_horizon(t_0, t_1, dt_0, max_steps, dtype):
+    """Return whether ordinary scalar inputs define the branch-free fixed grid.
+
+    JAX batches a data-dependent ``lax.cond`` by selecting between the results
+    of both branches. If those branches are complete scans, a ``vmap`` over
+    horizons therefore performs both integrations. Restrict the branch-free
+    scan to horizons known before tracing; traced or array-valued horizons use
+    the single clipped scan below.
+    """
+    values = (t_0, t_1, dt_0)
+    if not all(
+        isinstance(value, numbers.Real) and not isinstance(value, bool)
+        for value in values
+    ):
+        return False
+    try:
+        numpy_dtype = np.dtype(dtype)
+        t_0_value, t_1_value, dt_0_value = (numpy_dtype.type(value) for value in values)
+        if not dt_0_value > 0:
+            return False
+        nominal_final = numpy_dtype.type(
+            t_0_value + numpy_dtype.type(max_steps) * dt_0_value
+        )
+        nominal_penultimate = numpy_dtype.type(
+            t_0_value + numpy_dtype.type(max_steps - 1) * dt_0_value
+        )
+        scale = max(numpy_dtype.type(1.0), abs(t_0_value), abs(t_1_value))
+        tolerance = min(
+            numpy_dtype.type(4.0) * np.finfo(numpy_dtype).eps * scale,
+            numpy_dtype.type(0.25) * abs(dt_0_value),
+        )
+    except (TypeError, ValueError):
+        return False
+    penultimate_reaches = (nominal_penultimate >= t_1_value) or (
+        abs(nominal_penultimate - t_1_value) <= tolerance
+    )
+    return bool(abs(nominal_final - t_1_value) <= tolerance and not penultimate_reaches)
 
 
 def identity_project(x):
@@ -89,6 +131,7 @@ def solve_ode(
     project=None,
     has_aux=None,
     failure_ad_reference=None,
+    adaptive_loop="bounded",
 ):
     """Integrate ``dx/dt = f(x, t, args, p)`` from ``t_0`` to ``t_1 > t_0``.
 
@@ -99,10 +142,16 @@ def solve_ode(
     parameters (any pytree);
     jvp/vjp with respect to ``p`` and ``x_0`` are first-class.
 
-    Fixed and adaptive stepping use bounded ``lax.scan`` loops with exactly
-    ``max_steps`` attempt slots, so shapes are static and curvature-dependent
-    step counts never retrace. Adaptive attempts are grouped into static
-    chunks so one ``lax.cond`` skips an entire padded chunk after completion.
+    Fixed stepping and the default ``adaptive_loop="bounded"`` use bounded
+    ``lax.scan`` loops with exactly ``max_steps`` attempt slots, so shapes are
+    static and curvature-dependent step counts never retrace. Bounded adaptive
+    attempts are grouped into static chunks so one ``lax.cond`` skips an entire
+    padded chunk after completion. ``adaptive_loop="forward"`` instead uses a
+    true ``lax.while_loop`` and stops after the actual attempts. It supports
+    primal evaluation, JVP, and nested forward-mode AD; ordinary reverse mode
+    is unavailable because JAX cannot transpose a dynamic ``while_loop``.
+    Under ``vmap``, the forward loop advances lanes together until the slowest
+    live trajectory finishes rather than running every lane to ``max_steps``.
     ``dt_0`` is required (no auto-initial-step heuristic).
     Each attempt is clipped to the remaining horizon; the clipped step also
     feeds the controller's next-step proposal, which doubles as the growth
@@ -117,14 +166,21 @@ def solve_ode(
     detects the form with an abstract trace; ``has_aux=False`` selects the
     minimal no-aux path without that trace. Saved aux is a nonempty pytree of
     real floating arrays. It follows ``SaveAt`` and participates in JVP/VJP.
-    Requested-grid aux uses cubic Hermite interpolation with endpoint slopes
-    obtained by JVP, including for Rodas5P's dense state path.
+    By default, requested-grid aux uses cubic Hermite interpolation with
+    endpoint slopes obtained by JVP, including for Rodas5P's dense state path.
+    With ``SaveAt(ts=..., exact=True)``, an explicit fixed-step solve instead
+    selects realized knots and evaluates aux directly at those requested knots.
 
     The time dtype follows the state dtype; the library never
     sets ``jax_enable_x64`` — do that in your application.
     """
     if dt_0 is None:
         raise ValueError("dt_0 is required (tinydiffeq has no initial-step heuristic)")
+    if adaptive_loop not in ("bounded", "forward"):
+        raise ValueError(
+            'adaptive_loop must be either "bounded" or "forward", got '
+            f"{adaptive_loop!r}"
+        )
     if save_at is None:
         save_at = SaveAt(t_1=True)
     if controller is None:
@@ -136,21 +192,28 @@ def solve_ode(
             f"{type(controller).__name__} needs an embedded error estimate, "
             f"which {type(solver).__name__} does not provide"
         )
+    if adaptive_loop == "forward" and not controller.uses_error_estimate:
+        raise ValueError(
+            'adaptive_loop="forward" requires an adaptive error controller'
+        )
     f = canonicalize_field(f)
     is_rodas = isinstance(solver, Rodas5P)
     is_fixed = isinstance(controller, ConstantStepSize)
+    if save_at.exact and (not is_fixed or is_rodas):
+        raise ValueError(
+            "SaveAt exact=True requires an explicit solver with ConstantStepSize"
+        )
 
+    original_times = (t_0, t_1, dt_0)
     x_0, time_dtype = asarray_state(x_0, "x_0")
+    static_uniform_horizon = _has_static_uniform_horizon(
+        *original_times, max_steps, time_dtype
+    )
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt_0 = jnp.asarray(dt_0, time_dtype)
-    positive_time_floor = jnp.asarray(jnp.finfo(time_dtype).tiny, time_dtype)
-    t_eps = 4.0 * jnp.finfo(time_dtype).eps * jnp.maximum(1.0, jnp.abs(t_1))
-    # Summing ~max_steps rounded steps can leave t short of t_1 by up to
-    # ~max_steps * eps, so a step whose remaining horizon is within that
-    # slack of the desired dt is stretched to land on t_1 exactly; otherwise
-    # dt_0 = (t_1 - t_0)/n with max_steps = n would strand a one-ulp sliver.
-    t_slack = max_steps * t_eps
+    time_scale = jnp.maximum(jnp.maximum(1.0, jnp.abs(t_0)), jnp.abs(t_1))
+    t_eps = 4.0 * jnp.finfo(time_dtype).eps * time_scale
 
     def project_state(x):
         value, dtype = asarray_state(project(x), "project(x)")
@@ -202,9 +265,11 @@ def solve_ode(
         evaluate_aux = None
         zero_aux = None
 
-    need_f = not is_rodas and (solver.fsal or (save_at.ts is not None))
+    need_f = not is_rodas and (
+        solver.fsal or (save_at.ts is not None and not save_at.exact)
+    )
     f_init = g(x_0, t_0) if need_f else zeros_like(x_0)
-    track_aux = has_aux and not save_at.t_1
+    track_aux = has_aux and not save_at.t_1 and not save_at.exact
     if track_aux:
         aux_init, aux_init_ok = evaluate_aux(
             (x_0, t_0, p), jnp.asarray(True), failure_ad_reference
@@ -234,13 +299,18 @@ def solve_ode(
             done,
             failed,
             num_accepted,
+            num_steps,
             controller_state,
         ) = carry
-        remaining = t_1 - t
-        h = jnp.where(
-            remaining <= dt + t_slack,
-            jnp.maximum(remaining, positive_time_floor),
+        h, proposed_t, reaches_horizon = select_step(
+            t,
+            t_0,
+            t_1,
             dt,
+            dt_0,
+            num_steps,
+            constant=is_fixed,
+            time_tolerance=t_eps,
         )
         if is_rodas:
             x_1, err, dense, step_ok = rodas5p_step(
@@ -251,7 +321,7 @@ def solve_ode(
             step = solver.step_fixed if is_fixed else solver.step
             x_1, f_1, err = step(g, t, x, h, f_cur if need_f else None, project_state)
             if need_f and f_1 is None:
-                f_1 = g(x_1, t + h)
+                f_1 = g(x_1, proposed_t)
             dense = None
             step_ok = jnp.asarray(True)
         if is_rodas:
@@ -271,7 +341,7 @@ def solve_ode(
             def accepted_auxiliary():
                 if save_at.ts is None:
                     aux_candidate, aux_ok = evaluate_aux(
-                        (x_1, t + h, p),
+                        (x_1, proposed_t, p),
                         provisional_advance,
                         failure_ad_reference,
                     )
@@ -284,11 +354,11 @@ def solve_ode(
                         x, t, left_dot, provisional_advance
                     )
                     aux_candidate, aux_ok, aux_right_dot = aux_value_and_derivative(
-                        x_1, t + h, right_dot, provisional_advance
+                        x_1, proposed_t, right_dot, provisional_advance
                     )
                     return aux_candidate, aux_ok, aux_left_dot, aux_right_dot
                 aux_candidate, aux_ok, aux_right_dot = aux_value_and_derivative(
-                    x_1, t + h, f_1, provisional_advance
+                    x_1, proposed_t, f_1, provisional_advance
                 )
                 return aux_candidate, aux_ok, aux_dot, aux_right_dot
 
@@ -310,7 +380,7 @@ def solve_ode(
             if track_aux and save_at.ts is not None and not is_rodas
             else aux_dot
         )
-        t_new = jnp.where(advance, t + h, t)
+        t_new = jnp.where(advance, proposed_t, t)
         f_new = where(advance, f_1, f_cur) if need_f else f_cur
         dt_new = jnp.where(done | failed, dt, dt_next)
         controller_state_new = jax.tree.map(
@@ -318,10 +388,11 @@ def solve_ode(
             controller_state,
             controller_state_next,
         )
-        done_new = done | (t_new >= t_1 - t_eps)
+        done_new = done | (advance & reaches_horizon)
         failed_new = failed if controller.uses_error_estimate else failed | ~step_ok
         failed_new = failed_new | (provisional_advance & ~aux_ok)
         num_new = num_accepted + advance.astype(jnp.int32)
+        num_steps_new = num_steps + (~done & ~failed).astype(jnp.int32)
         carry_new = (
             t_new,
             x_new,
@@ -332,6 +403,7 @@ def solve_ode(
             done_new,
             failed_new,
             num_new,
+            num_steps_new,
             controller_state_new,
         )
         if save_at.t_1:
@@ -353,7 +425,7 @@ def solve_ode(
         return carry_new, out
 
     def skip_step(carry):
-        t, x, aux, aux_dot, _, f_cur, _, _, _, _ = carry
+        t, x, aux, aux_dot, _, f_cur, _, _, _, _, _ = carry
         if save_at.t_1:
             out = None
         elif save_at.steps:
@@ -377,23 +449,26 @@ def solve_ode(
 
     def fixed_attempt_step(carry):
         t, x, f_cur, done, num_accepted = carry
-        remaining = t_1 - t
-        h = jnp.where(
-            remaining <= dt_0 + t_slack,
-            jnp.maximum(remaining, positive_time_floor),
+        h, t_1_step, reaches_horizon = select_step(
+            t,
+            t_0,
+            t_1,
             dt_0,
+            dt_0,
+            num_accepted,
+            constant=True,
+            time_tolerance=t_eps,
         )
         x_1, f_1, _ = solver.step_fixed(
             g, t, x, h, f_cur if need_f else None, project_state
         )
         if need_f and f_1 is None:
-            f_1 = g(x_1, t + h)
-        t_1_step = t + h
-        done_1 = t_1_step >= t_1 - t_eps
+            f_1 = g(x_1, t_1_step)
+        done_1 = reaches_horizon
         carry_1 = (t_1_step, x_1, f_1 if need_f else f_cur, done_1, num_accepted + 1)
         if save_at.t_1:
             output = None
-        elif save_at.steps:
+        elif save_at.steps or save_at.exact:
             output = (t_1_step, x_1, jnp.asarray(True))
         else:
             output = (t_1_step, x_1, f_1, jnp.asarray(True))
@@ -403,7 +478,7 @@ def solve_ode(
         t, x, f_cur, _, _ = carry
         if save_at.t_1:
             output = None
-        elif save_at.steps:
+        elif save_at.steps or save_at.exact:
             output = (t, x, jnp.asarray(False))
         else:
             output = (t, x, f_cur, jnp.asarray(False))
@@ -411,6 +486,38 @@ def solve_ode(
 
     def fixed_body(carry, _):
         return jax.lax.cond(carry[3], fixed_skip_step, fixed_attempt_step, carry)
+
+    def uniform_fixed_body(carry, step_index):
+        t, x, f_cur, _, num_accepted = carry
+        h, t_1_step, reaches_horizon = select_step(
+            t,
+            t_0,
+            t_1,
+            dt_0,
+            dt_0,
+            step_index,
+            constant=True,
+            time_tolerance=t_eps,
+        )
+        x_1, f_1, _ = solver.step_fixed(
+            g, t, x, h, f_cur if need_f else None, project_state
+        )
+        if need_f and f_1 is None:
+            f_1 = g(x_1, t_1_step)
+        carry_1 = (
+            t_1_step,
+            x_1,
+            f_1 if need_f else f_cur,
+            reaches_horizon,
+            num_accepted + 1,
+        )
+        if save_at.t_1:
+            output = None
+        elif save_at.steps or save_at.exact:
+            output = (t_1_step, x_1, jnp.asarray(True))
+        else:
+            output = (t_1_step, x_1, f_1, jnp.asarray(True))
+        return carry_1, output
 
     def bounded_adaptive_scan(carry):
         chunk_size = min(ADAPTIVE_SCAN_CHUNK_SIZE, max_steps)
@@ -467,6 +574,7 @@ def solve_ode(
         jnp.asarray(False),
         ~aux_init_ok,
         jnp.asarray(0, jnp.int32),
+        jnp.asarray(0, jnp.int32),
         controller_state_init,
     )
     use_fast_fixed = is_fixed and not is_rodas and not track_aux
@@ -478,17 +586,69 @@ def solve_ode(
             jnp.asarray(False),
             jnp.asarray(0, jnp.int32),
         )
-        fixed_final, rows = jax.lax.scan(
-            fixed_body, fixed_carry_0, None, length=max_steps
-        )
+        if static_uniform_horizon:
+            step_indices = jnp.arange(max_steps, dtype=jnp.int32)
+            fixed_final, rows = jax.lax.scan(
+                uniform_fixed_body, fixed_carry_0, step_indices
+            )
+        else:
+            fixed_final, rows = jax.lax.scan(
+                fixed_body, fixed_carry_0, None, length=max_steps
+            )
         t_final, x_final, _, done, num_accepted = fixed_final
+        num_steps = num_accepted
         failed = jnp.asarray(False)
+    elif controller.uses_error_estimate and adaptive_loop == "forward":
+        final_carry, rows = forward_adaptive_while(
+            carry_0,
+            attempt_step=attempt_step,
+            skip_step=skip_step,
+            terminated=lambda carry: carry[6] | carry[7],
+            max_steps=max_steps,
+        )
+        (
+            t_final,
+            x_final,
+            _,
+            _,
+            _,
+            _,
+            done,
+            failed,
+            num_accepted,
+            num_steps,
+            _,
+        ) = final_carry
     elif controller.uses_error_estimate:
         final_carry, rows = bounded_adaptive_scan(carry_0)
-        (t_final, x_final, _, _, _, _, done, failed, num_accepted, _) = final_carry
+        (
+            t_final,
+            x_final,
+            _,
+            _,
+            _,
+            _,
+            done,
+            failed,
+            num_accepted,
+            num_steps,
+            _,
+        ) = final_carry
     else:
         final_carry, rows = jax.lax.scan(body, carry_0, None, length=max_steps)
-        (t_final, x_final, _, _, _, _, done, failed, num_accepted, _) = final_carry
+        (
+            t_final,
+            x_final,
+            _,
+            _,
+            _,
+            _,
+            done,
+            failed,
+            num_accepted,
+            num_steps,
+            _,
+        ) = final_carry
     integration_ok = done & ~failed
 
     if save_at.t_1:
@@ -504,10 +664,11 @@ def solve_ode(
             xs=x_final,
             ok=integration_ok & aux_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             aux=aux_final,
         )
 
-    if save_at.steps:
+    if save_at.steps or save_at.exact:
         if use_fast_fixed:
             ts_s, xs_s, adv_s = rows
             aux_s = None
@@ -532,6 +693,57 @@ def solve_ode(
             ts_s, xs_s, aux_s, fs_s, aux_dots_s, adv_s = rows
     all_times = jnp.concatenate([t_0[None], ts_s])
     all_states = prepend(x_0, xs_s)
+    if save_at.exact:
+        query_times = jnp.asarray(save_at.ts, time_dtype)
+        uniform_indices = jnp.rint((query_times - t_0) / dt_0).astype(jnp.int32)
+        uniform_indices = jnp.clip(uniform_indices, 0, max_steps)
+        uniform_times = all_times[uniform_indices]
+        final_index = jnp.clip(num_accepted, 0, max_steps)
+        final_times = jnp.broadcast_to(all_times[final_index], query_times.shape)
+        use_final = jnp.abs(query_times - final_times) < jnp.abs(
+            query_times - uniform_times
+        )
+        query_indices = jnp.where(use_final, final_index, uniform_indices)
+        exact_times = all_times[query_indices]
+        alignment_scale = jnp.maximum(
+            jnp.maximum(1.0, jnp.abs(t_0)),
+            jnp.maximum(jnp.abs(query_times), jnp.abs(exact_times)),
+        )
+        alignment_tolerance = jnp.minimum(
+            8.0 * jnp.finfo(time_dtype).eps * alignment_scale,
+            0.25 * jnp.abs(dt_0),
+        )
+        aligned = (
+            (query_times >= t_0)
+            & (query_times <= t_final)
+            & (jnp.abs(query_times - exact_times) <= alignment_tolerance)
+            & (query_indices <= num_accepted)
+        )
+        query_states = take(all_states, query_indices)
+        if has_aux:
+
+            def exact_auxiliary(x_value, t_value):
+                return evaluate_aux(
+                    (x_value, t_value, p),
+                    jnp.asarray(True),
+                    failure_ad_reference,
+                )
+
+            query_aux, query_aux_ok = jax.vmap(exact_auxiliary)(
+                query_states, exact_times
+            )
+            aux_ok = jnp.all(query_aux_ok)
+        else:
+            query_aux = None
+            aux_ok = jnp.asarray(True)
+        return Solution(
+            ts=query_times,
+            xs=query_states,
+            ok=integration_ok & jnp.all(aligned) & aux_ok,
+            num_accepted=num_accepted,
+            num_steps=num_steps,
+            aux=query_aux,
+        )
     all_aux = prepend(aux_init, aux_s) if has_aux else None
     raw_accepted = jnp.concatenate([jnp.ones((1,), bool), adv_s])
 
@@ -555,6 +767,7 @@ def solve_ode(
             xs=output_states,
             ok=integration_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             accepted=accepted,
             aux=(
                 fill_rows(compact_aux, accepted, last_aux, save_at.fill)
@@ -591,5 +804,6 @@ def solve_ode(
         xs=query_states,
         ok=integration_ok,
         num_accepted=num_accepted,
+        num_steps=num_steps,
         aux=query_aux,
     )

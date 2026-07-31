@@ -149,6 +149,7 @@ def solve_sde(
     if save_at.t_1 or not has_aux:
         x_final, step_states = jax.lax.scan(body, x_0, (time_grid[:-1], d_w))
         num_accepted = jnp.asarray(n_steps, jnp.int32)
+        num_steps = num_accepted
         ok = jnp.asarray(True)
 
     if save_at.t_1:
@@ -175,6 +176,7 @@ def solve_sde(
             xs=x_final,
             ok=ok & aux_ok,
             num_accepted=num_accepted,
+            num_steps=num_steps,
             aux=aux_final,
         )
 
@@ -191,7 +193,7 @@ def solve_sde(
         )
 
         def aux_attempt(carry, inputs):
-            x, aux, t, failed, count = carry
+            x, aux, t, failed, count, num_steps = carry
             t_step, t_next, d_w_step = inputs
             x_candidate = solver.step(
                 g_drift,
@@ -213,16 +215,18 @@ def solve_sde(
             t_new = jnp.where(advance, t_next, t)
             failed_new = failed | ~aux_ok
             count_new = count + advance.astype(jnp.int32)
+            num_steps_new = num_steps + jnp.asarray(1, jnp.int32)
             return (
                 x_new,
                 aux_new,
                 t_new,
                 failed_new,
                 count_new,
+                num_steps_new,
             ), (t_new, x_new, aux_new, advance)
 
         def aux_skip(carry, inputs):
-            x, aux, t, failed, count = carry
+            x, aux, t, failed, count, num_steps = carry
             return carry, (t, x, aux, jnp.asarray(False))
 
         def aux_body(carry, inputs):
@@ -239,12 +243,19 @@ def solve_sde(
             t_0,
             ~initial_ok,
             jnp.asarray(0, jnp.int32),
+            jnp.asarray(0, jnp.int32),
         )
-        (x_final, aux_final, t_final, failed, num_accepted), rows = jax.lax.scan(
-            aux_body,
-            carry_0,
-            (time_grid[:-1], time_grid[1:], d_w),
-        )
+        (
+            (
+                x_final,
+                aux_final,
+                t_final,
+                failed,
+                num_accepted,
+                num_steps,
+            ),
+            rows,
+        ) = jax.lax.scan(aux_body, carry_0, (time_grid[:-1], time_grid[1:], d_w))
         ts_s, xs_s, aux_s, advance_s = rows
         all_times = jnp.concatenate([t_0[None], ts_s])
         all_states = prepend(x_0, xs_s)
@@ -263,6 +274,7 @@ def solve_sde(
             xs=fill_rows(all_states, accepted, last_state, save_at.fill),
             ok=~failed & (num_accepted == n_steps),
             num_accepted=num_accepted,
+            num_steps=num_steps,
             accepted=accepted,
             aux=fill_rows(all_aux, accepted, last_aux, save_at.fill),
         )
@@ -274,5 +286,6 @@ def solve_sde(
         xs=all_states,
         ok=ok,
         num_accepted=num_accepted,
+        num_steps=num_steps,
         accepted=accepted,
     )

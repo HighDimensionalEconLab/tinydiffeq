@@ -167,6 +167,15 @@ def test_linear_exponential_input_validation():
         solve_linear_ode(
             jnp.eye(2), DenseExponential(), 0.0, 1.0, x_0, save_at=SaveAt(steps=True)
         )
+    with pytest.raises(ValueError, match="only supported by solve_ode"):
+        solve_linear_ode(
+            jnp.eye(2),
+            DenseExponential(),
+            0.0,
+            1.0,
+            x_0,
+            save_at=SaveAt(ts=jnp.asarray([0.0, 1.0]), exact=True),
+        )
     outside = solve_linear_ode(
         jnp.eye(2),
         DenseExponential(),
@@ -346,6 +355,7 @@ def test_adaptive_krylov_rejects_then_meets_endpoint_tolerance(dtype):
     expected = jnp.exp(2 * eigenvalues)
     assert bool(solution.ok)
     assert 1 < int(solution.num_accepted) < method.max_steps
+    assert int(solution.num_steps) > int(solution.num_accepted)
     assert jnp.linalg.norm(solution.xs - expected) <= 2 * tolerance
 
 
@@ -366,6 +376,7 @@ def test_adaptive_krylov_attempt_budget_failure_is_fast_and_finite():
     )
     assert not bool(solution.ok)
     assert int(solution.num_accepted) == 0
+    assert int(solution.num_steps) == 1
     assert jnp.all(jnp.isfinite(solution.xs))
     assert jnp.array_equal(solution.xs, initial)
 
@@ -430,6 +441,125 @@ def test_adaptive_krylov_pytree_vmap_and_handcoded_derivatives():
     )
     assert jnp.allclose(traced_tangent, exponential @ flatten(tangent), atol=3e-5)
     assert jnp.allclose(traced_cotangent, exponential.T @ flatten(cotangent), atol=3e-5)
+
+
+@pytest.mark.parametrize("dtype", [jnp.float32, jnp.float64])
+@pytest.mark.parametrize("adaptive", [False, True])
+def test_full_space_krylov_happy_breakdowns_have_dense_ad(dtype, adaptive):
+    tolerance = 3e-5 if dtype == jnp.float32 else 3e-11
+    cases = (
+        # A generic two-dimensional Krylov space breaks down only after its
+        # final useful Arnoldi vector. This was the float32 reverse-mode NaN.
+        (
+            jnp.asarray([[-0.4, 0.2], [0.1, -0.3]], dtype),
+            jnp.asarray([1.0, -0.2], dtype),
+            jnp.asarray([0.3, 0.4], dtype),
+            jnp.asarray([-0.2, 0.7], dtype),
+        ),
+        # An eigenvector initial state breaks down after the first vector,
+        # before the full three-dimensional basis has been constructed.
+        (
+            jnp.diag(jnp.asarray([-0.4, -0.3, -0.6], dtype)),
+            jnp.asarray([1.0, 0.0, 0.0], dtype),
+            jnp.asarray([0.3, 0.4, -0.2], dtype),
+            jnp.asarray([-0.2, 0.7, 0.5], dtype),
+        ),
+    )
+
+    for matrix, initial, tangent, cotangent in cases:
+        krylov_dim = initial.size
+        method = (
+            AdaptiveKrylovExponential(krylov_dim=krylov_dim, max_steps=8)
+            if adaptive
+            else KrylovExponential(krylov_dim=krylov_dim)
+        )
+
+        def endpoint(current_initial, matrix=matrix, method=method):
+            return solve_linear_ode(matrix, method, 0.0, 0.2, current_initial).xs
+
+        def dense_endpoint(current_initial, matrix=matrix):
+            return solve_linear_ode(
+                matrix, DenseExponential(), 0.0, 0.2, current_initial
+            ).xs
+
+        value, output_tangent = jax.jvp(endpoint, (initial,), (tangent,))
+        dense_value, dense_tangent = jax.jvp(dense_endpoint, (initial,), (tangent,))
+        _, pullback = jax.vjp(endpoint, initial)
+        _, dense_pullback = jax.vjp(dense_endpoint, initial)
+        input_cotangent = pullback(cotangent)[0]
+        dense_cotangent = dense_pullback(cotangent)[0]
+        batch = jnp.stack([initial, 0.7 * initial])
+        batched = jax.jit(jax.vmap(endpoint))(batch)
+        dense_batched = jax.jit(jax.vmap(dense_endpoint))(batch)
+
+        for actual in (value, output_tangent, input_cotangent, batched):
+            assert actual.dtype == dtype
+            assert bool(jnp.all(jnp.isfinite(actual)))
+        assert jnp.allclose(value, dense_value, rtol=tolerance, atol=tolerance)
+        assert jnp.allclose(
+            output_tangent, dense_tangent, rtol=tolerance, atol=tolerance
+        )
+        assert jnp.allclose(
+            input_cotangent, dense_cotangent, rtol=tolerance, atol=tolerance
+        )
+        assert jnp.allclose(batched, dense_batched, rtol=tolerance, atol=tolerance)
+
+
+@pytest.mark.parametrize("dtype", [jnp.float32, jnp.float64])
+@pytest.mark.parametrize("adaptive", [False, True])
+def test_truncated_krylov_final_breakdown_has_finite_ad(dtype, adaptive):
+    # The first two coordinates form an invariant subspace, so a two-vector
+    # Arnoldi run in a three-dimensional state breaks down on its final step.
+    # Keeping tangents and cotangents in that invariant subspace gives an exact
+    # dense comparison while directly exercising the matrix-free norm guard.
+    matrix = jnp.asarray([[-0.4, 0.2, 0.0], [0.1, -0.3, 0.0], [0.0, 0.0, -0.7]], dtype)
+    initial = jnp.asarray([1.0, -0.2, 0.0], dtype)
+    tangent = jnp.asarray([0.3, 0.4, 0.0], dtype)
+    cotangent = jnp.asarray([-0.2, 0.7, 0.0], dtype)
+    method = (
+        AdaptiveKrylovExponential(krylov_dim=2, max_steps=8)
+        if adaptive
+        else KrylovExponential(krylov_dim=2)
+    )
+
+    def endpoint(current_initial):
+        return solve_linear_ode(matrix, method, 0.0, 0.2, current_initial).xs
+
+    def dense_endpoint(current_initial):
+        return solve_linear_ode(
+            matrix, DenseExponential(), 0.0, 0.2, current_initial
+        ).xs
+
+    value, output_tangent = jax.jvp(endpoint, (initial,), (tangent,))
+    dense_value, dense_tangent = jax.jvp(dense_endpoint, (initial,), (tangent,))
+    _, pullback = jax.vjp(endpoint, initial)
+    _, dense_pullback = jax.vjp(dense_endpoint, initial)
+    input_cotangent = pullback(cotangent)[0]
+    dense_cotangent = dense_pullback(cotangent)[0]
+    tolerance = 4e-5 if dtype == jnp.float32 else 3e-11
+
+    assert bool(jnp.all(jnp.isfinite(output_tangent)))
+    assert bool(jnp.all(jnp.isfinite(input_cotangent)))
+    assert jnp.allclose(value, dense_value, rtol=tolerance, atol=tolerance)
+    assert jnp.allclose(output_tangent, dense_tangent, rtol=tolerance, atol=tolerance)
+    assert jnp.allclose(
+        input_cotangent, dense_cotangent, rtol=tolerance, atol=tolerance
+    )
+
+
+def test_adaptive_krylov_float32_jaxpr_contains_no_float64():
+    # conftest enables x64, so this catches Python-float fallbacks that would
+    # otherwise be silently float32 when the application leaves x64 disabled.
+    matrix = jnp.asarray(
+        [[-0.4, 0.2, 0.0], [0.1, -0.3, 0.1], [0.0, 0.2, -0.5]],
+        jnp.float32,
+    )
+    initial = jnp.asarray([1.0, -0.2, 0.4], jnp.float32)
+    method = AdaptiveKrylovExponential(krylov_dim=2, max_steps=8)
+    jaxpr = jax.make_jaxpr(
+        lambda state: solve_linear_ode(matrix, method, 0.0, 0.2, state).xs
+    )(initial)
+    assert "f64" not in str(jaxpr), jaxpr
 
 
 def test_adaptive_krylov_constructor_validation():

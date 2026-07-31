@@ -4,10 +4,11 @@
 finite-state Markov simulators for JAX: fixed-step Euler and RK4, adaptive Tsit5 with integral or
 proportional-integral step-size control, linearly implicit Rodas5P for stiff
 ODEs and index-1 DAEs, and fixed-step Euler–Maruyama for Itô SDEs and SDAEs.
-Time integration uses bounded `lax.scan` loops with static shapes, and every solve is
-differentiable in **both** forward and reverse mode — including
-reverse-over-forward, the pattern a Levenberg–Marquardt optimizer with
-geodesic acceleration needs when it differentiates through a rollout.
+Fixed stepping and the default adaptive path use bounded `lax.scan` loops with
+static shapes. These solves support forward mode, reverse mode, and
+reverse-over-forward. Adaptive ODE and DAE solves also offer
+`adaptive_loop="forward"`, a dynamic actual-work loop for primal, JVP, and
+nested forward AD; JAX cannot reverse-transpose this path.
 Finite-state DTMC/CTMC simulation is primal-only and offers chronological scan
 and associative parallel-prefix methods. Fixed-chain probability forecasts use
 binary matrix powers for DTMC endpoints, dense exponentials for small CTMCs, or
@@ -28,9 +29,36 @@ implementation and Steinebach's published method. **Use SciML or
 - dense output / continuous interpolation objects
 - checkpointed or backsolve adjoints for long horizons
 
-tinydiffeq ships only the O(max_steps)-memory bounded-scan approach, because
-that is the one that composes cleanly with `jax.jvp`, `jax.vjp`, `jax.vmap`,
-and reverse-over-forward without custom adjoint machinery.
+Use the default bounded loop when reverse mode is required. Use the forward
+loop when the actual adaptive attempt count is much smaller than `max_steps`
+and the caller needs only primal or forward-mode execution. Both retain static
+public output shapes; under `vmap`, a dynamic loop still runs until the slowest
+lane finishes.
+
+## 2.4.0 migration note
+
+- `SaveAt(ts=..., exact=True)` now gathers realized knots for explicit
+  fixed-step ODEs. Every query must align with a knot; adaptive methods,
+  Rodas5P, DAEs, SDEs, and SDAEs continue to reject exact mode.
+- `Solution.num_steps` and `DAESolution.num_steps` count logical attempts,
+  including rejections. DAE results additionally expose `num_root_solves` and
+  `num_root_steps`; `num_accepted` retains its existing meaning.
+- Adaptive ODE and DAE solves may opt into `adaptive_loop="forward"` for an
+  actual-work loop. It supports primal, JVP, and nested forward AD but not
+  reverse mode; `adaptive_loop="bounded"` remains the reverse-mode-capable
+  default. Under `vmap`, the forward loop runs to the slowest lane.
+- `LMRootSolver(predictor="secant")` is an opt-in continuation warm start for
+  locally unique algebraic branches; `predictor="previous"` remains the
+  default.
+
+DAE root acceptance is stricter in 2.4.0. nlls-gram owns both the primal root
+solve and implicit derivative; square implicit AD defaults to direct `LU()`.
+Only `CONVERGED` roots whose residual norm is below `atol` are accepted, so
+`gtol` and `xtol` must both be zero. `max_steps_is_success` remains for source
+compatibility, now defaults to `False`, and never makes `MAX_STEPS` a valid
+root. Upgrading configurations should remove nonzero `gtol`/`xtol`; if they
+relied on budget exhaustion, increase the root budget or adjust the residual
+tolerance instead.
 
 ## Install
 
@@ -136,6 +164,18 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
   `SaveAt(steps=True)`, which returns `max_steps + 1` padded rows including
   the initial state. Accepted steps form a contiguous prefix; rejected
   attempts are omitted and the tail repeats the last accepted state.
+  `sol.num_steps` reports actual attempts and `sol.num_accepted` reports
+  successful advances.
+- **Fixed-step times do not depend on the attempt budget.** They are formed
+  arithmetically from the accepted-step index, with only a small local endpoint
+  snap. Increasing a nonbinding `max_steps` therefore does not change the
+  numerical method.
+- **Exact fixed-step output is explicit-ODE-only.**
+  `SaveAt(ts=grid, exact=True)` gathers internal knots without interpolation;
+  every query must align with a realized knot.
+- **Adaptive loop choice is an AD choice.** `adaptive_loop="bounded"` is the
+  reverse-mode-capable default. `adaptive_loop="forward"` executes actual
+  attempts but supports only primal, JVP, and nested forward mode.
 - **Forward time only**: `t_1 > t_0`.
 - **Never poisons.** `sol.ok` reports whether `t_1` was reached and every
   requested output was valid; callers that want diverging residuals can map
@@ -148,7 +188,7 @@ jax.grad(lambda p: jax.jvp(endpoint, (p,), (jnp.asarray(1.0),))[1])(
   registered as pytrees: numeric fields (tolerances, grids, `dt_0`, `x_0`) are
   data leaves, so changing them never recompiles.
 
-Read next: [Static Shapes](static_shapes.md) for the bounded-scan design and
+Read next: [Static Shapes](static_shapes.md) for the loop and
 `SaveAt`, [Adaptive Stepping and AD](adaptive_ad.md) for what is and is not
 differentiated, [Auxiliary Outputs](aux.md), [Rodas5P](rodas5p.md) for the SciML-derived linearly implicit
 method, [DAEs](dae.md), [SDEs](sde.md), [SDAEs](sdae.md), and the [API

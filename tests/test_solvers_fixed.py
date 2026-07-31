@@ -24,6 +24,8 @@ def test_linear_system_vs_expm():
     euler = solve_ode(f, Euler(), 0.0, T, x_0, dt_0=T / n, max_steps=n)
     rk4 = solve_ode(f, RK4(), 0.0, T, x_0, dt_0=T / n, max_steps=n)
     assert bool(euler.ok) and bool(rk4.ok)
+    assert int(euler.num_steps) == int(euler.num_accepted) == n
+    assert int(rk4.num_steps) == int(rk4.num_accepted) == n
     assert jnp.max(jnp.abs(euler.xs - exact)) < 2e-3
     assert jnp.max(jnp.abs(rk4.xs - exact)) < 1e-12
 
@@ -89,6 +91,67 @@ def test_completed_solve_skips_post_horizon_field_evaluations():
     jax.block_until_ready(sol.xs)
     assert bool(sol.ok)
     assert evaluation_times == [0.0, 0.25, 0.5, 0.75]
+
+
+def test_fixed_traced_horizon_uses_one_clipped_scan_with_static_branch_parity():
+    def traced_solve(horizon):
+        return solve_ode(
+            lambda x: -x,
+            RK4(),
+            0.0,
+            horizon,
+            jnp.asarray(1.0),
+            dt_0=0.25,
+            max_steps=4,
+            has_aux=False,
+        )
+
+    static = solve_ode(
+        lambda x: -x,
+        RK4(),
+        0.0,
+        1.0,
+        jnp.asarray(1.0),
+        dt_0=0.25,
+        max_steps=4,
+        has_aux=False,
+    )
+    traced = jax.jit(traced_solve)(jnp.asarray(1.0))
+    assert jnp.array_equal(traced.ts, static.ts)
+    assert jnp.array_equal(traced.xs, static.xs)
+    assert traced.ok == static.ok
+    assert traced.num_accepted == static.num_accepted
+    assert traced.num_steps == static.num_steps
+
+    horizons = jnp.asarray([0.75, 1.0])
+    batched = jax.jit(jax.vmap(traced_solve))(horizons)
+    for index, horizon in enumerate(horizons):
+        scalar = jax.jit(traced_solve)(horizon)
+        assert jnp.array_equal(batched.ts[index], scalar.ts)
+        assert jnp.array_equal(batched.xs[index], scalar.xs)
+        assert batched.ok[index] == scalar.ok
+        assert batched.num_accepted[index] == scalar.num_accepted
+
+    # A batched cond over two complete scans executes both branches. The traced
+    # horizon path must instead contain only the one clipped integration scan.
+    jaxpr = str(jax.make_jaxpr(jax.vmap(traced_solve))(horizons))
+    assert jaxpr.count("scan[") == 1
+
+    def static_uniform(initial):
+        return solve_ode(
+            lambda x: -x,
+            RK4(),
+            0.0,
+            1.0,
+            initial,
+            dt_0=0.25,
+            max_steps=4,
+            has_aux=False,
+        ).xs
+
+    static_jaxpr = str(jax.make_jaxpr(static_uniform)(jnp.asarray(1.0)))
+    assert static_jaxpr.count("scan[") == 1
+    assert "cond[" not in static_jaxpr
 
 
 def test_scalar_vs_vector_shapes():
