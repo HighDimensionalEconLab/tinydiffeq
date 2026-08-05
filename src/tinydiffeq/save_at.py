@@ -7,27 +7,17 @@ from jax.typing import ArrayLike
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
 class SaveAt:
-    """What ``solve_ode``/``solve_sde`` return. Exactly one mode must be set.
+    """What the solve functions return. Exactly one mode must be set.
 
-    - ``t_1=True``: the endpoint only (the default in the solve functions).
-    - ``ts=grid``: dense interpolation of the internal steps onto a fixed,
-      sorted query grid in ``[t_0, t_1]``. Explicit methods use cubic Hermite;
-      Rodas5P uses its stiff-aware fourth-order extension. Output shape is
-      ``(len(ts), ...)`` regardless of how many internal steps the controller
-      takes, so changing curvature never changes shapes or recompiles.
-      ``ts`` is a data leaf; a different grid of the same length retraces
-      nothing. ODE, deterministic DAE, and linear exponential solves only.
-      For an explicit constant-step ODE, ``exact=True`` instead requires every
-      query to coincide with an internal step endpoint. It gathers those states
-      directly and avoids both interpolation and its extra endpoint-slope field
-      evaluation.
-    - ``steps=True``: the initial state and accepted internal steps as a
-      chronological prefix of a ``max_steps + 1`` buffer. Rejected attempts
-      are omitted. ``fill="last"`` (default) pads the tail with the final
-      valid row; ``fill="inf"`` pads the tail with ``inf``. The returned
-      ``Solution.accepted`` mask distinguishes the valid prefix from padding.
-
-    ``fill`` only applies to ``steps=True``.
+    ``t_1=True`` (the solver default) returns the endpoint only. ``ts=grid``
+    interpolates the internal steps onto a fixed query grid — output shape is
+    ``(len(ts), ...)`` however many steps the controller takes, and ``ts`` is
+    a data leaf; with ``exact=True`` an explicit constant-step ODE instead
+    gathers states at queries that must coincide with realized knots.
+    ``steps=True`` returns the initial state and accepted steps as the valid
+    prefix of a ``max_steps + 1`` buffer, padded with the last valid row
+    (``fill="last"``) or ``inf`` (``fill="inf"``) and masked by
+    ``Solution.accepted``.
     """
 
     t_1: bool = field(default=False, metadata=dict(static=True))

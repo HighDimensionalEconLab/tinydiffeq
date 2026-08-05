@@ -65,14 +65,10 @@ class IController:
     Accept iff ``E = max(|err| / (atol + rtol * max(|x_0|, |x_1|))) <= 1``
     (forced accept once the step reaches ``dt_min``), and propose
     ``dt_next = dt_used * clip(safety * E**(-1/order), factor_min, factor_max)``
-    clipped to ``[dt_min, dt_max]``. This is the classic integral controller —
-    equal to diffrax's ``PIDController`` at its default coefficients
-    (p_coeff=0, d_coeff=0); there is no proportional term, hence the name.
-
-    If omitted, ``rtol``/``atol`` default to ``1e-4``/``1e-6`` for float32
-    states and ``1e-7``/``1e-9`` for float64 states. Explicit tolerances are
-    cast to the state dtype. ``dt_min`` defaults to ten machine epsilons in the
-    time dtype, scaled by ``max(1, |t_1|)``.
+    clipped to ``[dt_min, dt_max]``. Omitted ``rtol``/``atol`` default to
+    ``1e-4``/``1e-6`` for float32 states and ``1e-7``/``1e-9`` for float64;
+    ``dt_min`` defaults to ten machine epsilons in the time dtype, scaled by
+    ``max(1, |t_1|)``.
     """
 
     rtol: float | None = None
@@ -126,19 +122,12 @@ class PIController:
     """Proportional-integral step-size controller with max-norm error.
 
     In addition to the current scaled error ``E``, this controller carries the
-    previous accepted step's error ``E_prev`` and proposes
-
+    previous accepted step's error ``E_prev`` (starting at one) and proposes
     ``dt_next = dt_used * clip(safety * E**(-(p_coeff+i_coeff)/order)``
-    ``* E_prev**(p_coeff/order), factor_min, factor_max)``.
-
-    ``E_prev`` starts at one and changes only after an accepted step. The
-    defaults ``p_coeff=0.4`` and ``i_coeff=0.3`` damp step-size oscillations on
-    harder problems; ``p_coeff=0, i_coeff=1`` reproduces :class:`IController`.
-    The error ratios and step-size update are stop-gradiented, while states
-    remain fully differentiable through the solver stages. If omitted,
-    ``rtol``/``atol`` default to ``1e-4``/``1e-6`` for float32 states and
-    ``1e-7``/``1e-9`` for float64 states. ``dt_min`` defaults to ten machine
-    epsilons in the time dtype, scaled by ``max(1, |t_1|)``.
+    ``* E_prev**(p_coeff/order), factor_min, factor_max)``. The defaults
+    ``p_coeff=0.4`` and ``i_coeff=0.3`` damp step-size oscillations;
+    ``p_coeff=0, i_coeff=1`` reproduces :class:`IController`, and the
+    tolerance and ``dt_min`` defaults match it.
     """
 
     rtol: float | None = None

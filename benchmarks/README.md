@@ -1,5 +1,10 @@
 # Benchmarks
 
+`gpu_trajectories.py` measures vmapped trajectory ensembles (SRA1/EM SDEs and
+fixed RK4, primal and reverse-mode, explicit or key-drawn noise) and is meant
+for GPU nodes; run `python -m benchmarks.gpu_trajectories --help` for the
+sweep axes. Committed results live under `results/`.
+
 Run the opt-in CPU suite with:
 
 ```bash

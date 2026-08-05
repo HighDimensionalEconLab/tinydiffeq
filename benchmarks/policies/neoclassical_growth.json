@@ -1,0 +1,21 @@
+{
+  "num_layers": 3,
+  "homothetic": true,
+  "log_z_scale": 0.0,
+  "log_k_scale": 0.0,
+  "k_scale": 1.0,
+  "structural": {
+    "a": 0.3333333333333333,
+    "delta": 0.1,
+    "rho_hat": 0.041817831615435494,
+    "sigma_crra": 2.0,
+    "g": 0.0,
+    "z_0": [
+      1.0
+    ],
+    "k_0": [
+      1.0
+    ]
+  },
+  "gelu_approximate": true
+}

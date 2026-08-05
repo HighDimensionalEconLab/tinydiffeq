@@ -1,4 +1,4 @@
-"""Fixed-step Euler--Maruyama for semi-explicit index-1 SDAEs."""
+"""Fixed-step stochastic integration for semi-explicit index-1 SDAEs."""
 
 import jax
 import jax.numpy as jnp
@@ -20,6 +20,7 @@ from tinydiffeq._tree import (
     take,
     where,
 )
+from tinydiffeq._unvmap import unvmap_all
 from tinydiffeq.dae import (
     LMRootSolver,
     _canonicalize_cached_dae_field,
@@ -29,9 +30,8 @@ from tinydiffeq.dae import (
     _prepare_failure_ad_reference,
 )
 from tinydiffeq.save_at import SaveAt
-from tinydiffeq.sde import _diagonal_brownian_increments
 from tinydiffeq.solution import DAESolution
-from tinydiffeq.solvers import EulerMaruyama
+from tinydiffeq.solvers import INV_SQRT_3, SRA1, EulerMaruyama
 
 
 def solve_semi_explicit_sdae(
@@ -56,41 +56,23 @@ def solve_semi_explicit_sdae(
 ):
     """Integrate a semi-explicit index-1 Ito SDAE with diagonal noise.
 
-    The system is ``dy = drift(y, z, t) dt + diffusion(y, z, t) dW`` and
-    ``0 = g(y, z, t)``. Euler--Maruyama advances the differential state on a
-    fixed uniform grid, then an algebraic root solve restores consistency at
-    every node. This is Euler--Maruyama applied to the reduced SDE obtained
-    from the locally unique root ``z = Z(y, t)``.
-    ``sol.num_root_solves`` counts logical active nonlinear root calls and
-    ``sol.num_root_steps`` sums their LM update steps.
-
-    ``drift`` may return ``value`` or ``(value, saved_aux)``. If ``g`` returns
-    ``(residual, algebraic_aux)``, that internal context is passed to both
-    ``drift(y, z, t, args, p, algebraic_aux)`` and the corresponding
-    six-argument ``diffusion``. Only drift-owned ``saved_aux`` is exposed as
-    ``sol.aux`` and it is stored at consistent stochastic nodes; stochastic
-    interpolation is deliberately unsupported. ``has_aux`` and
-    ``has_algebraic_aux`` default to abstract auto-detection, while explicit
-    ``False`` selects the minimal no-aux paths.
-
-    A fixed key defines
-    one common-random-number path for JVP/VJP with respect to ``y_0`` and
-    ``p``. ``z_0`` is only a root guess and has zero tangent by contract.
-    ``failure_ad_reference=(y, z, t, p)`` may provide a domain-safe point for
-    already-inactive ``vmap`` lanes and model aux/field evaluation. A newly
-    attempted root still requires its actual ``(y, z_guess, t, p)`` to be
-    JVP-safe; the reference does not replace an active root after it fails.
-    A nonfinite inexact algebraic-aux leaf at initialization prevents all
-    stochastic time-step work. Saved aux is checked at every node in steps
-    mode; endpoint mode checks it only after integration and retains the
-    endpoint state with zero aux if that check fails.
+    The system is ``dy = drift(y, z, t) dt + diffusion(y, z, t) dW`` with
+    ``0 = g(y, z, t)``. ``solver`` is ``EulerMaruyama`` or ``SRA1``, applied
+    to the reduced SDE obtained from the locally unique root ``z = Z(y, t)``:
+    the differential state advances on a fixed uniform grid of ``n_steps``
+    steps, and a root solve restores consistency at every node and at SRA1's
+    drift stage. SRA1's strong order 1.5 requires a diffusion that depends
+    only on time. A fixed ``key`` defines one common-random-numbers path;
+    JVP/VJP with respect to ``y_0`` and ``p`` are pathwise, and ``z_0`` is a
+    root guess with zero tangent. Aux contracts, ``failure_ad_reference``,
+    and failure behavior follow ``solve_semi_explicit_dae``.
     """
     if not isinstance(n_steps, int) or isinstance(n_steps, bool):
         raise TypeError("n_steps must be a static Python int")
     if n_steps < 1:
         raise ValueError("n_steps must be at least 1")
-    if not isinstance(solver, EulerMaruyama):
-        raise TypeError("semi-explicit SDAEs currently support EulerMaruyama")
+    if not isinstance(solver, (EulerMaruyama, SRA1)):
+        raise TypeError("semi-explicit SDAEs support EulerMaruyama and SRA1")
     if save_at is None:
         save_at = SaveAt(t_1=True)
     if save_at.ts is not None:
@@ -112,7 +94,8 @@ def solve_semi_explicit_sdae(
     )
     dt = (t_1 - t_0) / n_steps
     time_grid = jnp.linspace(t_0, t_1, n_steps + 1)
-    d_w = _diagonal_brownian_increments(y_0, key, n_steps, dt, time_dtype)
+    noise = solver.sample_noise(y_0, key, n_steps, dt, time_dtype)
+    is_sra1 = isinstance(solver, SRA1)
 
     raw_drift = drift
     raw_diffusion = diffusion
@@ -243,7 +226,7 @@ def solve_semi_explicit_sdae(
             num_root_solves,
             num_root_steps,
         ) = carry
-        t_step, t_next, d_w_step = inputs
+        t_step, t_next, noise_step = inputs
         active = ~failed
         y_ref, z_ref, t_ref, p_ref = failure_ad_reference
         y_eval = where(active, y, y_ref)
@@ -261,14 +244,79 @@ def solve_semi_explicit_sdae(
             diffusion_output(y_eval, z_eval, t_eval, p_eval, context_eval),
             "diffusion(y, z, t)",
         )
-        y_candidate = add_scaled(
-            y,
-            (dt, drift_value),
-            (1.0, multiply(diffusion_value, d_w_step)),
-        )
-        z_candidate, root_ok, root_solves, root_steps = solve_root(
-            y_candidate, t_next, z, active
-        )
+        if is_sra1:
+            d_w_step, d_z_step = noise_step
+            chi = jax.tree.map(
+                lambda w, v: 0.5 * (w + v * INV_SQRT_3), d_w_step, d_z_step
+            )
+            # Additive-noise contract: the diffusion may depend only on time,
+            # so its endpoint evaluation reuses the node's (y, z, context).
+            t_next_eval = jnp.where(active, t_next, t_ref)
+            diffusion_next = checked_value(
+                diffusion_output(y_eval, z_eval, t_next_eval, p_eval, context_eval),
+                "diffusion(y, z, t)",
+            )
+            t_stage = t_step + 0.75 * dt
+            y_stage = add_scaled(
+                y,
+                (0.75 * dt, drift_value),
+                (1.5, multiply(diffusion_next, chi)),
+            )
+            z_stage, stage_root_ok, stage_solves, stage_steps = solve_root(
+                y_stage, t_stage, z, active
+            )
+            if has_algebraic_aux:
+                context_stage, stage_context_ok = evaluate_context(
+                    y_stage, z_stage, t_stage, stage_root_ok
+                )
+                stage_ok = stage_root_ok & stage_context_ok
+            else:
+                context_stage = None
+                stage_ok = stage_root_ok
+            y_stage_eval = where(stage_ok, y_stage, y_ref)
+            z_stage_eval = where(stage_ok, z_stage, z_ref)
+            t_stage_eval = jnp.where(stage_ok, t_stage, t_ref)
+            context_stage_eval = (
+                where(stage_ok, context_stage, context_reference)
+                if has_algebraic_aux
+                else None
+            )
+            stage_drift_raw, _ = split_field_output(
+                drift_output(
+                    y_stage_eval,
+                    z_stage_eval,
+                    t_stage_eval,
+                    p_eval,
+                    context_stage_eval,
+                ),
+                has_aux,
+            )
+            stage_drift_value = checked_value(stage_drift_raw, "drift(y, z, t)")
+            y_candidate = add_scaled(
+                y,
+                (dt / 3.0, drift_value),
+                (2.0 * dt / 3.0, stage_drift_value),
+                (1.0, multiply(diffusion_next, d_w_step)),
+                (
+                    1.0,
+                    multiply(add_scaled(diffusion_value, (-1.0, diffusion_next)), chi),
+                ),
+            )
+            z_candidate, endpoint_ok, endpoint_solves, endpoint_steps = solve_root(
+                y_candidate, t_next, z_stage, stage_ok
+            )
+            root_ok = stage_ok & endpoint_ok
+            root_solves = stage_solves + endpoint_solves
+            root_steps = stage_steps + endpoint_steps
+        else:
+            y_candidate = add_scaled(
+                y,
+                (dt, drift_value),
+                (1.0, multiply(diffusion_value, noise_step)),
+            )
+            z_candidate, root_ok, root_solves, root_steps = solve_root(
+                y_candidate, t_next, z, active
+            )
         if has_algebraic_aux:
             context_candidate, context_ok = evaluate_context(
                 y_candidate, z_candidate, t_next, root_ok & active
@@ -337,10 +385,18 @@ def solve_semi_explicit_sdae(
         return carry, out
 
     def body(carry, inputs):
+        def live_lanes(pair):
+            return jax.lax.cond(
+                pair[0][5],
+                lambda pair: skip_step(*pair),
+                lambda pair: attempt_step(*pair),
+                pair,
+            )
+
         return jax.lax.cond(
-            carry[5],
+            unvmap_all(carry[5]),
             lambda pair: skip_step(*pair),
-            lambda pair: attempt_step(*pair),
+            live_lanes,
             (carry, inputs),
         )
 
@@ -373,7 +429,7 @@ def solve_semi_explicit_sdae(
     ) = jax.lax.scan(
         body,
         carry_0,
-        (time_grid[:-1], time_grid[1:], d_w),
+        (time_grid[:-1], time_grid[1:], noise),
     )
     ok = ~failed & (num_accepted == n_steps)
     if save_at.t_1:

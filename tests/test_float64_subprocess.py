@@ -431,6 +431,60 @@ for forecast in (discrete_forecast, continuous_forecast):
 """)
 
 
+def test_sra1_with_x64_disabled_stays_float32_and_differentiable():
+    run_script(r"""
+import jax
+import jax.numpy as jnp
+
+from tinydiffeq import SRA1, solve_sde
+
+
+assert not jax.config.x64_enabled
+n = 32
+x_0 = jnp.asarray(1.0)
+key = jax.random.key(0)
+noise = SRA1().sample_noise(x_0, key, n, jnp.asarray(1.0 / n), x_0.dtype)
+
+
+def endpoint(x_0, noise):
+    return solve_sde(
+        lambda x: -0.5 * x,
+        lambda x: 0.1 * jnp.ones_like(x),
+        SRA1(),
+        0.0,
+        1.0,
+        x_0,
+        noise=noise,
+        n_steps=n,
+    ).xs
+
+
+jaxpr = jax.make_jaxpr(endpoint)(x_0, noise)
+assert "f64" not in str(jaxpr), jaxpr
+
+value = jax.jit(endpoint)(x_0, noise)
+keyed = solve_sde(
+    lambda x: -0.5 * x,
+    lambda x: 0.1 * jnp.ones_like(x),
+    SRA1(),
+    0.0,
+    1.0,
+    x_0,
+    key=key,
+    n_steps=n,
+).xs
+assert value.dtype == jnp.float32
+assert jnp.array_equal(value, keyed)
+
+grad_x, grad_noise = jax.grad(endpoint, argnums=(0, 1))(x_0, noise)
+assert grad_x.dtype == jnp.float32
+assert jnp.isfinite(grad_x)
+for leaf in jax.tree.leaves(grad_noise):
+    assert leaf.dtype == jnp.float32
+    assert jnp.all(jnp.isfinite(leaf))
+""")
+
+
 def test_pytree_states_preserve_float32_and_float64():
     run_script(r"""
 import jax

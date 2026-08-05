@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import jax
+import jax.numpy as jnp
 
 from tinydiffeq._tree import add_scaled, multiply, weighted_sum
 
@@ -185,14 +186,13 @@ class Tsit5:
 class Rodas5P:
     """Fifth-order Rodas5P Rosenbrock--Wanner method.
 
-    Rodas5P is an eight-stage, linearly implicit method with an embedded
-    error estimate and a stiff-aware fourth-order continuous extension. It is
-    supported by :func:`tinydiffeq.solve_ode` and
-    :func:`tinydiffeq.solve_semi_explicit_dae`; both use one dense LU
-    factorization per attempted step and reuse it across all stages.
-
-    The implementation follows Steinebach (2023) and SciML's
-    ``OrdinaryDiffEqRosenbrock.Rodas5P`` implementation:
+    An eight-stage, linearly implicit method with an embedded error estimate
+    and a stiff-aware fourth-order continuous extension, supported by
+    :func:`tinydiffeq.solve_ode` and
+    :func:`tinydiffeq.solve_semi_explicit_dae` with one dense LU
+    factorization reused across the stages of each attempted step. The
+    implementation follows Steinebach (2023) and SciML's
+    ``OrdinaryDiffEqRosenbrock.Rodas5P``:
 
     - https://doi.org/10.1007/s10543-023-00967-x
     - https://github.com/SciML/OrdinaryDiffEq.jl/tree/master/lib/OrdinaryDiffEqRosenbrock
@@ -203,14 +203,137 @@ class Rodas5P:
     has_error_estimate = True
 
 
+def diagonal_brownian_increments(x_0, key, n_steps, dt, dtype):
+    """Draw ``n_steps`` diagonal Brownian increments ``sqrt(dt) * N(0, 1)``.
+
+    Arrays retain the exact ``(n_steps,) + x_0.shape`` draw. Pytree states use
+    one shared flat draw, partitioned into leaves in JAX's deterministic
+    pytree leaf order.
+    """
+    leaves, treedef = jax.tree.flatten(x_0)
+    if treedef == jax.tree.structure(0):
+        return jnp.sqrt(dt) * jax.random.normal(
+            key, (n_steps,) + x_0.shape, dtype=dtype
+        )
+    sizes = [leaf.size for leaf in leaves]
+    flat_noise = jnp.sqrt(dt) * jax.random.normal(
+        key, (n_steps, sum(sizes)), dtype=dtype
+    )
+    noise_leaves = []
+    start = 0
+    for leaf, size in zip(leaves, sizes, strict=True):
+        noise_leaves.append(
+            flat_noise[:, start : start + size].reshape((n_steps,) + leaf.shape)
+        )
+        start += size
+    return jax.tree.unflatten(treedef, noise_leaves)
+
+
+# SDE steppers share the contract
+# `step(g_drift, g_diffusion, t, x, dt, noise, project) -> x_1` where `noise`
+# is one per-step slice of the pytree produced by the solver's own
+# `sample_noise(x_0, key, n_steps, dt, dtype)`, so explicit noise handed to
+# `solve_sde` is validated against exactly what the solver expects.
+
+
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
 class EulerMaruyama:
-    """Euler-Maruyama for Ito SDEs with diagonal noise. Fixed-step only."""
+    """Euler-Maruyama for Ito SDEs with diagonal noise. Fixed-step only.
+
+    Strong order 0.5 for multiplicative noise. ``sample_noise`` returns the
+    Brownian increments with the same pytree structure as the state and a
+    leading ``n_steps`` axis.
+    """
 
     order = 1
+    strong_order = 0.5
 
-    def step(self, g_drift, g_diffusion, t, x, dt, d_w, project):
+    def sample_noise(self, x_0, key, n_steps, dt, dtype):
+        return diagonal_brownian_increments(x_0, key, n_steps, dt, dtype)
+
+    def step(self, g_drift, g_diffusion, t, x, dt, noise, project):
         return project(
-            add_scaled(x, (dt, g_drift(x, t)), (1.0, multiply(g_diffusion(x, t), d_w)))
+            add_scaled(
+                x, (dt, g_drift(x, t)), (1.0, multiply(g_diffusion(x, t), noise))
+            )
+        )
+
+
+@jax.tree_util.register_dataclass
+@dataclass(frozen=True)
+class Milstein:
+    """Milstein for Ito SDEs with diagonal noise. Fixed-step only.
+
+    Strong order 1.0 under the diagonal commutativity condition: each
+    diffusion component may depend only on its own state component. The
+    correction ``(1/2) g g' (d_w^2 - dt)`` evaluates ``g g'`` as the
+    forward-mode derivative of the diffusion field in the direction of its
+    own value, which equals the diagonal term exactly in that case.
+    ``sample_noise`` matches ``EulerMaruyama``.
+    """
+
+    order = 1
+    strong_order = 1.0
+
+    def sample_noise(self, x_0, key, n_steps, dt, dtype):
+        return diagonal_brownian_increments(x_0, key, n_steps, dt, dtype)
+
+    def step(self, g_drift, g_diffusion, t, x, dt, noise, project):
+        g_value = g_diffusion(x, t)
+        _, dg_g = jax.jvp(lambda state: g_diffusion(state, t), (x,), (g_value,))
+        correction = jax.tree.map(lambda dg, w: 0.5 * dg * (w * w - dt), dg_g, noise)
+        return project(
+            add_scaled(
+                x,
+                (dt, g_drift(x, t)),
+                (1.0, multiply(g_value, noise)),
+                (1.0, correction),
+            )
+        )
+
+
+INV_SQRT_3 = 3.0**-0.5
+
+
+@jax.tree_util.register_dataclass
+@dataclass(frozen=True)
+class SRA1:
+    """Rossler SRA1 stochastic Runge-Kutta for Ito SDEs with additive
+    diagonal noise. Fixed-step only.
+
+    Strong order 1.5 when the diffusion is independent of the state (it may
+    depend on time). ``sample_noise`` returns ``(d_w, d_z)``: two independent
+    ``sqrt(dt) * N(0, 1)`` draws per step. The time-Wiener integral
+    ``I_10 / dt`` is realized internally as ``(d_w + d_z / sqrt(3)) / 2``,
+    reproducing its variance ``dt^3 / 3`` and covariance ``dt^2 / 2`` with
+    the increment.
+    """
+
+    order = 2
+    strong_order = 1.5
+
+    def sample_noise(self, x_0, key, n_steps, dt, dtype):
+        key_w, key_z = jax.random.split(key)
+        return (
+            diagonal_brownian_increments(x_0, key_w, n_steps, dt, dtype),
+            diagonal_brownian_increments(x_0, key_z, n_steps, dt, dtype),
+        )
+
+    def step(self, g_drift, g_diffusion, t, x, dt, noise, project):
+        d_w, d_z = noise
+        g_0 = g_diffusion(x, t)
+        g_1 = g_diffusion(x, t + dt)
+        chi = jax.tree.map(lambda w, z: 0.5 * (w + z * INV_SQRT_3), d_w, d_z)
+        k_1 = g_drift(x, t)
+        stage = add_scaled(x, (0.75 * dt, k_1), (1.5, multiply(g_1, chi)))
+        k_2 = g_drift(stage, t + 0.75 * dt)
+        return project(
+            add_scaled(
+                x,
+                (dt / 3.0, k_1),
+                (2.0 * dt / 3.0, k_2),
+                (1.0, multiply(g_1, d_w)),
+                (1.0, multiply(add_scaled(g_0, (-1.0, g_1)), chi)),
+            )
         )

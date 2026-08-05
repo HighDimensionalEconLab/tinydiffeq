@@ -420,18 +420,13 @@ def solve_linear_ode(operator, method, t_0, t_1, x_0, *, save_at=None):
     """Solve ``dx/dt = A(x)`` for a fixed homogeneous linear operator.
 
     ``operator`` is either a square matrix using the column convention
-    ``A @ x`` or a callable that maps the state pytree to an identically
+    ``A @ x`` or a callable mapping the state pytree to an identically
     structured pytree. ``DenseExponential`` materializes a callable operator
-    with forward-mode Jacobian columns before applying a dense matrix
-    exponential. ``KrylovExponential`` and ``AdaptiveKrylovExponential`` only
-    evaluate operator actions and are therefore suitable for structured
-    matrix-free pytrees.
-
-    Endpoint output is the default. ``SaveAt(ts=...)`` evaluates independent
-    exponential actions at the requested times. The solve supports ordinary
-    JVPs and VJPs through the initial state and through differentiable arrays
-    used by the operator. The operator must be autonomous, homogeneous, and
-    linear; affine and nonlinear exponential methods are a separate problem.
+    before a dense matrix exponential; the Krylov methods evaluate only
+    operator actions. Endpoint output is the default, and ``SaveAt(ts=...)``
+    evaluates independent exponential actions at the requested times. JVPs
+    and VJPs flow through the initial state and differentiable operator
+    arrays. The operator must be autonomous, homogeneous, and linear.
     """
     if not isinstance(method, _EXPONENTIAL_METHODS):
         raise TypeError(
