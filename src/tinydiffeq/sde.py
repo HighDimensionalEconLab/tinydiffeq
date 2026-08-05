@@ -20,27 +20,6 @@ from tinydiffeq.save_at import SaveAt
 from tinydiffeq.solution import Solution
 
 
-def _diagonal_brownian_increments(x_0, key, n_steps, dt, dtype):
-    """Generate one diagonal-noise draw for an array or pytree state."""
-    leaves, treedef = jax.tree.flatten(x_0)
-    if treedef == jax.tree.structure(0):
-        return jnp.sqrt(dt) * jax.random.normal(
-            key, (n_steps,) + x_0.shape, dtype=dtype
-        )
-    sizes = [leaf.size for leaf in leaves]
-    flat_noise = jnp.sqrt(dt) * jax.random.normal(
-        key, (n_steps, sum(sizes)), dtype=dtype
-    )
-    noise_leaves = []
-    start = 0
-    for leaf, size in zip(leaves, sizes, strict=True):
-        noise_leaves.append(
-            flat_noise[:, start : start + size].reshape((n_steps,) + leaf.shape)
-        )
-        start += size
-    return jax.tree.unflatten(treedef, noise_leaves)
-
-
 def solve_sde(
     drift,
     diffusion,
@@ -49,43 +28,42 @@ def solve_sde(
     t_1,
     x_0,
     *,
-    key,
+    key=None,
     n_steps,
+    noise=None,
     p=None,
     args=None,
     save_at=None,
     project=None,
     has_aux=None,
     failure_ad_reference=None,
+    unroll=1,
 ):
-    """Integrate the Ito SDE ``dx = drift dt + diffusion d_w`` (diagonal noise)
-    on the fixed grid of ``n_steps`` uniform steps from ``t_0`` to ``t_1 > t_0``.
+    """Integrate the Ito SDE ``dx = drift dt + diffusion d_w`` with diagonal
+    noise on a fixed grid of ``n_steps`` uniform steps from ``t_0`` to
+    ``t_1 > t_0``.
 
     ``drift`` and ``diffusion`` follow the same signature convention as
-    ``solve_ode`` — ``(x)``, ``(x, t)``, ``(x, t, args)``, or
-    ``(x, t, args, p)``. ``n_steps`` must be a static Python int (the honest
-    static-shape contract; there is currently no adaptive SDE stepping). The
-    Brownian increments are presampled from ``key``. Arrays retain the exact
-    ``(n_steps,) + x_0.shape`` random draw. Pytree states use one shared flat
-    draw, partitioned into leaves in JAX's deterministic pytree leaf order.
-    Thus a fixed key gives a fixed noise process: reproducible across calls
-    and differentiable with respect to ``x_0`` and ``p`` (not ``key``).
-
-    ``SaveAt(ts=...)`` raises — cubic Hermite interpolation is wrong for
-    rough paths; use ``t_1`` (default) or ``steps`` (here ``n_steps + 1``
-    rows unless a saved-aux failure terminates the accepted prefix).
-
-    ``drift`` may return either its value or ``(value, aux)``. The optional
-    real-floating aux pytree is stored at the same fixed nodes as ``xs`` and
-    is differentiated pathwise under the fixed random key. ``diffusion`` is
-    value-only. ``has_aux=None`` auto-detects the drift form;
-    ``has_aux=False`` avoids the abstract detection trace and selects the
-    original no-aux scan.
+    ``solve_ode``. ``solver`` is ``EulerMaruyama``, ``Milstein``, or ``SRA1``,
+    each declaring its per-step noise through
+    ``solver.sample_noise(x_0, key, n_steps, dt, dtype)``. Exactly one of
+    ``key`` and ``noise`` must be provided: a fixed ``key`` presamples a
+    fixed, reproducible noise process, differentiable with respect to ``x_0``
+    and ``p``; an explicit ``noise`` pytree (validated against the solver's
+    spec) is additionally differentiable as data. ``SaveAt(ts=...)`` raises —
+    interpolation is wrong for rough paths. ``drift`` may return
+    ``(value, aux)``; ``diffusion`` is value-only. ``unroll`` (a static int)
+    unrolls that many steps per iteration of the underlying ``lax.scan`` —
+    identical values, fewer/larger GPU dispatches, more compile time.
     """
     if not isinstance(n_steps, int):
         raise TypeError("n_steps must be a static Python int")
     if n_steps < 1:
         raise ValueError("n_steps must be at least 1")
+    if not isinstance(unroll, int) or isinstance(unroll, bool) or unroll < 1:
+        raise ValueError("unroll must be a static int of at least 1")
+    if (key is None) == (noise is None):
+        raise ValueError("solve_sde requires exactly one of key or noise")
     if save_at is None:
         save_at = SaveAt(t_1=True)
     if save_at.ts is not None:
@@ -102,7 +80,36 @@ def solve_sde(
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt = (t_1 - t_0) / n_steps
-    d_w = _diagonal_brownian_increments(x_0, key, n_steps, dt, time_dtype)
+    if noise is None:
+        noise = solver.sample_noise(x_0, key, n_steps, dt, time_dtype)
+    else:
+        # sample_noise only reads shapes from x_0, so the abstract trace is
+        # the solver's authoritative noise spec.
+        reference = jax.eval_shape(
+            lambda noise_key: solver.sample_noise(
+                x_0, noise_key, n_steps, dt, time_dtype
+            ),
+            jax.random.key(0),
+        )
+        noise = jax.tree.map(jnp.asarray, noise)
+        if jax.tree.structure(noise) != jax.tree.structure(reference):
+            raise ValueError(
+                "noise must match the pytree structure of "
+                "solver.sample_noise(x_0, key, n_steps, dt, dtype)"
+            )
+        for leaf, ref in zip(
+            jax.tree.leaves(noise), jax.tree.leaves(reference), strict=True
+        ):
+            if leaf.shape != ref.shape:
+                raise ValueError(
+                    f"noise leaf shape {leaf.shape} does not match the "
+                    f"solver's expected {ref.shape}"
+                )
+            if leaf.dtype != ref.dtype:
+                raise TypeError(
+                    f"noise leaf dtype {leaf.dtype} must match the state "
+                    f"dtype {ref.dtype}"
+                )
     time_grid = jnp.linspace(t_0, t_1, n_steps + 1)
 
     def project_state(x):
@@ -142,12 +149,14 @@ def solve_sde(
         return value
 
     def body(x, inputs):
-        t, d_w_step = inputs
-        x_1 = solver.step(g_drift, g_diffusion, t, x, dt, d_w_step, project_state)
+        t, noise_step = inputs
+        x_1 = solver.step(g_drift, g_diffusion, t, x, dt, noise_step, project_state)
         return x_1, x_1 if save_at.steps else None
 
     if save_at.t_1 or not has_aux:
-        x_final, step_states = jax.lax.scan(body, x_0, (time_grid[:-1], d_w))
+        x_final, step_states = jax.lax.scan(
+            body, x_0, (time_grid[:-1], noise), unroll=unroll
+        )
         num_accepted = jnp.asarray(n_steps, jnp.int32)
         num_steps = num_accepted
         ok = jnp.asarray(True)
@@ -194,14 +203,14 @@ def solve_sde(
 
         def aux_attempt(carry, inputs):
             x, aux, t, failed, count, num_steps = carry
-            t_step, t_next, d_w_step = inputs
+            t_step, t_next, noise_step = inputs
             x_candidate = solver.step(
                 g_drift,
                 g_diffusion,
                 t_step,
                 x,
                 dt,
-                d_w_step,
+                noise_step,
                 project_state,
             )
             aux_candidate, aux_ok = evaluate_aux(
@@ -255,7 +264,9 @@ def solve_sde(
                 num_steps,
             ),
             rows,
-        ) = jax.lax.scan(aux_body, carry_0, (time_grid[:-1], time_grid[1:], d_w))
+        ) = jax.lax.scan(
+            aux_body, carry_0, (time_grid[:-1], time_grid[1:], noise), unroll=unroll
+        )
         ts_s, xs_s, aux_s, advance_s = rows
         all_times = jnp.concatenate([t_0[None], ts_s])
         all_states = prepend(x_0, xs_s)

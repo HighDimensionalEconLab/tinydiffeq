@@ -1,31 +1,17 @@
 """Tiny differentiable ODE/SDE/DAE/SDAE solvers for JAX.
 
 solve_ode integrates dx/dt = f(x, t, args, p) with fixed-step (Euler, RK4),
-adaptive explicit Tsit5, or linearly implicit Rodas5P methods. Fixed stepping
-and the default adaptive path use bounded lax.scan loops with exactly max_steps
-attempt slots and support forward/reverse AD, including reverse-over-forward.
-Adaptive ODE/DAE solves may instead use an actual-work lax.while_loop for
-primal, JVP, and nested forward AD; reverse mode is unsupported on that path.
-SaveAt picks the endpoint, dense interpolation onto a fixed grid, accepted
-internal steps with padding, or exact knot gathering for explicit fixed-step
-ODEs. max_steps bounds attempted steps; Solution.num_steps reports actual work,
-and arithmetic fixed-step times are independent of a nonbinding budget.
-solve_sde is fixed-step
-Euler-Maruyama with presampled
-diagonal noise. solve_semi_explicit_dae handles index-1 systems with either
-root-restored explicit methods or the stiff Rodas5P mass-matrix formulation,
-plus differentiable saved differential-field aux and internal algebraic
-context. DAESolution also reports nonlinear-root calls and LM update counts;
-LMRootSolver delegates primal roots and square implicit derivatives to
-nlls-gram, requires residual-only stopping, and offers previous-root and secant
-stage predictors.
-solve_semi_explicit_sdae applies fixed-step Euler-Maruyama to the reduced
-index-1 stochastic system. solve_linear_ode applies dense, fixed-Krylov, or
-adaptive matrix-free exponential actions to fixed homogeneous linear systems.
-States may be arrays or pytrees of same-dtype real floating arrays. Fully
-implicit solvers, general mass
-matrices, full derivative-term PID control, events, continuous interpolation
-objects, and adjoint methods are non-goals.
+adaptive Tsit5, or linearly implicit Rodas5P methods on bounded lax.scan loops
+with static shapes and composable forward/reverse AD. solve_sde integrates
+diagonal-noise Ito SDEs (EulerMaruyama, Milstein, SRA1) from a PRNG key or an
+explicit, differentiable noise pytree. solve_semi_explicit_dae and
+solve_semi_explicit_sdae handle index-1 systems, delegating algebraic roots
+and their implicit derivatives to nlls-gram. solve_linear_ode applies dense or
+matrix-free Krylov exponential actions to fixed homogeneous linear systems,
+and the Markov tools simulate and forecast finite-state chains. States may be
+arrays or pytrees of same-dtype real floating arrays. Fully implicit solvers,
+general mass matrices, events, continuous interpolation objects, and adjoint
+methods are non-goals.
 """
 
 from tinydiffeq.controllers import ConstantStepSize, IController, PIController
@@ -58,7 +44,16 @@ from tinydiffeq.save_at import SaveAt
 from tinydiffeq.sdae import solve_semi_explicit_sdae
 from tinydiffeq.sde import solve_sde
 from tinydiffeq.solution import DAESolution, Solution
-from tinydiffeq.solvers import RK4, Euler, EulerMaruyama, Rodas5P, Tsit5
+from tinydiffeq.solvers import (
+    RK4,
+    SRA1,
+    Euler,
+    EulerMaruyama,
+    Milstein,
+    Rodas5P,
+    Tsit5,
+    diagonal_brownian_increments,
+)
 
 __all__ = [
     "solve_ode",
@@ -73,6 +68,9 @@ __all__ = [
     "Tsit5",
     "Rodas5P",
     "EulerMaruyama",
+    "Milstein",
+    "SRA1",
+    "diagonal_brownian_increments",
     "ConstantStepSize",
     "IController",
     "PIController",

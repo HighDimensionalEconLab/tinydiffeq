@@ -3,15 +3,19 @@ import jax.numpy as jnp
 import pytest
 
 from tinydiffeq import (
+    RK4,
+    SRA1,
     AdaptiveKrylovExponential,
     AssociativeMarkov,
     ContinuousTimeMarkovChain,
     DenseExponential,
     DiscreteMarkovChain,
+    Euler,
     EulerMaruyama,
     IController,
     KrylovExponential,
     MatrixFreeContinuousTimeMarkovChain,
+    Milstein,
     Rodas5P,
     SaveAt,
     Tsit5,
@@ -623,6 +627,192 @@ def test_float32_dae_value_and_grad_run_on_gpu():
         assert leaf.dtype == jnp.float32
         assert leaf.devices().pop().platform == "gpu"
         assert bool(jnp.isfinite(leaf))
+
+
+def test_float32_fixed_euler_rk4_ode_on_gpu():
+    gpu = gpu_devices()[0]
+    n = 128
+
+    @jax.jit
+    def run(x_0):
+        euler = solve_ode(
+            lambda x: -F32_DECAY * x, Euler(), 0.0, 1.0, x_0, dt_0=1.0 / n, max_steps=n
+        ).xs
+        rk4 = solve_ode(
+            lambda x: -F32_DECAY * x, RK4(), 0.0, 1.0, x_0, dt_0=1.0 / n, max_steps=n
+        ).xs
+        return euler, rk4
+
+    with jax.default_device(gpu):
+        euler, rk4 = jax.block_until_ready(run(jnp.asarray(1.0, jnp.float32)))
+
+    exact = float(jnp.exp(-F32_DECAY))
+    for out, tol in ((euler, 1e-3), (rk4, 1e-5)):
+        assert out.dtype == jnp.float32
+        assert out.devices().pop().platform == "gpu"
+        assert abs(float(out) - exact) < tol
+
+
+@pytest.mark.parametrize(
+    ("solver", "diffusion"),
+    [
+        (Milstein(), lambda x: 0.1 * x),
+        (SRA1(), lambda x: 0.1 * jnp.ones_like(x)),
+    ],
+    ids=["milstein", "sra1"],
+)
+def test_float32_milstein_and_sra1_run_on_gpu(solver, diffusion):
+    gpu = gpu_devices()[0]
+
+    @jax.jit
+    def run(x_0):
+        return solve_sde(
+            lambda x: -F32_DECAY * x,
+            diffusion,
+            solver,
+            0.0,
+            1.0,
+            x_0,
+            key=jax.random.key(0),
+            n_steps=64,
+        ).xs
+
+    with jax.default_device(gpu):
+        out = jax.block_until_ready(run(jnp.asarray(1.0, jnp.float32)))
+
+    assert out.dtype == jnp.float32
+    assert out.devices().pop().platform == "gpu"
+    assert bool(jnp.isfinite(out))
+    assert abs(float(out)) < 10.0
+
+
+# The kernels use case: vmap over B trajectories with per-trajectory x_0 and
+# explicit noise, jit the whole batch, and take reverse-mode gradients of a
+# scalar residual with respect to (x_0, p, noise). n_steps covers 31 and 127
+# so both a scan XLA may unroll and one it will not take the same paths.
+
+
+def sra1_batch_noise(batch, n_steps, dtype, seed):
+    keys = jax.random.split(jax.random.key(seed), batch)
+    dt = jnp.asarray(1.0 / n_steps, dtype)
+    return jax.vmap(
+        lambda k: SRA1().sample_noise(jnp.zeros((), dtype), k, n_steps, dt, dtype)
+    )(keys)
+
+
+@pytest.mark.parametrize("n_steps", [31, 127])
+def test_float32_vmapped_sra1_ensemble_matches_per_trajectory_on_gpu(n_steps):
+    gpu = gpu_devices()[0]
+    dtype = jnp.float32
+    batch = 8
+    x_0s = jnp.linspace(0.5, 2.0, batch, dtype=dtype)
+    noise = sra1_batch_noise(batch, n_steps, dtype, seed=3)
+
+    def one(x_0, w, z):
+        return solve_sde(
+            lambda x: -F32_DECAY * x,
+            lambda x: jnp.asarray(0.1, x.dtype) * jnp.ones_like(x),
+            SRA1(),
+            0.0,
+            1.0,
+            x_0,
+            noise=(w, z),
+            n_steps=n_steps,
+        ).xs
+
+    with jax.default_device(gpu):
+        batched = jax.block_until_ready(jax.jit(jax.vmap(one))(x_0s, *noise))
+        looped = jnp.stack(
+            [one(x_0s[i], noise[0][i], noise[1][i]) for i in range(batch)]
+        )
+
+    assert batched.dtype == dtype
+    assert batched.devices().pop().platform == "gpu"
+    assert jnp.allclose(batched, looped, atol=1e-5)
+
+
+@pytest.mark.parametrize("n_steps", [31, 127])
+def test_float32_grad_of_vmapped_sra1_ensemble_on_gpu(n_steps):
+    gpu = gpu_devices()[0]
+    dtype = jnp.float32
+    batch = 8
+    x_0s = jnp.linspace(0.5, 2.0, batch, dtype=dtype)
+    theta = jnp.asarray(0.7, dtype)
+    noise = sra1_batch_noise(batch, n_steps, dtype, seed=11)
+
+    def endpoint(x_0, p, w, z):
+        return solve_sde(
+            lambda x, t, args, p: -p * x,
+            lambda x, t, args, p: jnp.asarray(0.1, x.dtype) * jnp.ones_like(x),
+            SRA1(),
+            0.0,
+            1.0,
+            x_0,
+            p=p,
+            noise=(w, z),
+            n_steps=n_steps,
+        ).xs
+
+    def loss(x_0s, p, noise):
+        endpoints = jax.vmap(lambda x_0, w, z: endpoint(x_0, p, w, z))(x_0s, *noise)
+        return jnp.sum((endpoints - 1.0) ** 2)
+
+    with jax.default_device(gpu):
+        value, (grad_x, grad_p, grad_noise) = jax.block_until_ready(
+            jax.jit(jax.value_and_grad(loss, argnums=(0, 1, 2)))(x_0s, theta, noise)
+        )
+
+    for leaf in jax.tree.leaves((value, grad_x, grad_p, grad_noise)):
+        assert leaf.dtype == dtype
+        assert leaf.devices().pop().platform == "gpu"
+        assert bool(jnp.all(jnp.isfinite(leaf)))
+
+    def one_loss(x_0, w, z):
+        return (endpoint(x_0, theta, w, z) - 1.0) ** 2
+
+    per_trajectory = jnp.stack(
+        [jax.grad(one_loss)(x_0s[i], noise[0][i], noise[1][i]) for i in range(batch)]
+    )
+    assert jnp.allclose(grad_x, per_trajectory, atol=1e-4)
+
+
+@pytest.mark.parametrize("n_steps", [31, 127])
+def test_float32_grad_of_vmapped_rk4_ensemble_on_gpu(n_steps):
+    gpu = gpu_devices()[0]
+    dtype = jnp.float32
+    batch = 8
+    x_0s = jnp.linspace(0.5, 2.0, batch, dtype=dtype)
+    theta = jnp.asarray(0.7, dtype)
+
+    def endpoint(x_0, p):
+        return solve_ode(
+            lambda x, t, args, p: -p * x,
+            RK4(),
+            0.0,
+            1.0,
+            x_0,
+            p=p,
+            dt_0=1.0 / n_steps,
+            max_steps=n_steps,
+        ).xs
+
+    def loss(x_0s, p):
+        endpoints = jax.vmap(lambda x_0: endpoint(x_0, p))(x_0s)
+        return jnp.sum((endpoints - 1.0) ** 2)
+
+    with jax.default_device(gpu):
+        grad_x, grad_p = jax.block_until_ready(
+            jax.jit(jax.grad(loss, argnums=(0, 1)))(x_0s, theta)
+        )
+
+    decay = jnp.exp(-theta)
+    expected_x = 2.0 * (x_0s * decay - 1.0) * decay
+    expected_p = jnp.sum(-2.0 * (x_0s * decay - 1.0) * x_0s * decay)
+    for leaf in (grad_x, grad_p):
+        assert leaf.dtype == dtype
+        assert leaf.devices().pop().platform == "gpu"
+    assert jnp.allclose(grad_x, expected_x, atol=1e-3)
+    assert jnp.allclose(grad_p, expected_p, atol=1e-2)
 
 
 def test_float32_y_with_float64_z_keeps_the_tight_root_tolerance_on_gpu():

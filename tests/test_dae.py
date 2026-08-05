@@ -46,7 +46,6 @@ def test_lm_root_solver_uses_nlls_defaults_and_forwards_options():
         return z - y
 
     defaults = _build_algebraic_solver(constraint, LMRootSolver(), False)
-    assert not LMRootSolver().max_steps_is_success
     # Everything algorithmic is nlls-gram's default; only the two invariants
     # this package owns are pinned.
     assert isinstance(defaults.linear_solver, Cholesky)
@@ -109,7 +108,7 @@ def test_lm_root_solver_options_normalize_and_reject_fixed_keys():
 
 
 def test_max_steps_policy_requires_root_residual_and_strict_batched_derivative():
-    def one_lane(z_0, p, max_steps_is_success):
+    def one_lane(z_0, p):
         return solve_semi_explicit_dae(
             lambda y, z: jnp.zeros_like(y),
             lambda y, z, t, args, p: z - p,
@@ -121,26 +120,20 @@ def test_max_steps_policy_requires_root_residual_and_strict_batched_derivative()
             p=p,
             dt_0=0.1,
             max_steps=1,
-            root_solver=LMRootSolver(
-                max_steps=1,
-                max_steps_is_success=max_steps_is_success,
-                atol=1e-12,
-            ),
+            root_solver=LMRootSolver(max_steps=1, atol=1e-12),
         )
 
     p = jnp.asarray(1.0)
-    forgiving = one_lane(jnp.asarray(-1e6), p, True)
-    strict = one_lane(jnp.asarray(0.0), p, False)
-    assert not bool(forgiving.ok)
+    starved = one_lane(jnp.asarray(-1e6), p)
+    strict = one_lane(jnp.asarray(0.0), p)
+    assert not bool(starved.ok)
     assert not bool(strict.ok)
-    assert int(forgiving.num_root_solves) == 1
-    assert int(forgiving.num_root_steps) == 1
-    assert forgiving.zs == jnp.asarray(-1e6)
+    assert int(starved.num_root_solves) == 1
+    assert int(starved.num_root_steps) == 1
+    assert starved.zs == jnp.asarray(-1e6)
 
     def strict_batch(parameter):
-        return jax.vmap(lambda z_0: one_lane(z_0, parameter, False))(
-            jnp.asarray([1.0, 0.0])
-        )
+        return jax.vmap(lambda z_0: one_lane(z_0, parameter))(jnp.asarray([1.0, 0.0]))
 
     def endpoint(parameter):
         result = strict_batch(parameter)
@@ -162,7 +155,7 @@ def test_dae_roots_reject_nonresidual_stopping_rules():
         LMRootSolver(xtol=1e-6)
 
 
-def test_compat_max_steps_success_does_not_broaden_nlls_root_ad():
+def test_root_budget_exhaustion_is_never_a_differentiable_root():
     guesses = jnp.asarray([1.0, 0.0])
 
     def solve_one(parameter, guess):
@@ -177,11 +170,7 @@ def test_compat_max_steps_success_does_not_broaden_nlls_root_ad():
             p=parameter,
             dt_0=0.1,
             max_steps=1,
-            root_solver=LMRootSolver(
-                max_steps=1,
-                max_steps_is_success=True,
-                atol=1e-12,
-            ),
+            root_solver=LMRootSolver(max_steps=1, atol=1e-12),
         )
 
     def endpoints(parameters):
@@ -803,7 +792,7 @@ def test_initial_root_failure_and_time_budget_failure():
         jnp.asarray(0.0),
         dt_0=0.1,
         max_steps=10,
-        root_solver=LMRootSolver(max_steps_is_success=False),
+        root_solver=LMRootSolver(),
     )
     assert not bool(failed_root.ok)
     assert int(failed_root.num_accepted) == 0
@@ -842,7 +831,6 @@ def test_adaptive_stage_root_failure_retries_with_smaller_step(predictor):
         controller=IController(),
         root_solver=LMRootSolver(
             max_steps=1,
-            max_steps_is_success=False,
             atol=1e-8,
             predictor=predictor,
         ),
@@ -872,7 +860,7 @@ def test_masked_failed_lane_has_safe_implicit_root_jvp_and_vjp():
             p=p,
             dt_0=0.1,
             max_steps=1,
-            root_solver=LMRootSolver(max_steps_is_success=False),
+            root_solver=LMRootSolver(),
             failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
         )
 
@@ -949,8 +937,6 @@ def test_validation():
         LMRootSolver(max_steps=0)
     with pytest.raises(ValueError, match="atol must be positive or None"):
         LMRootSolver(atol=0.0)
-    with pytest.raises(TypeError, match="max_steps_is_success must be a bool"):
-        LMRootSolver(max_steps_is_success=1)
     with pytest.raises(ValueError, match="gtol must be zero"):
         LMRootSolver(gtol=-1.0)
     with pytest.raises(ValueError, match="xtol must be zero"):

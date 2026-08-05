@@ -2,18 +2,23 @@ import jax
 import jax.numpy as jnp
 import jax.scipy.linalg as jsp_linalg
 import numpy as np
+import pytest
 from kernels_reference import rk4_grid
 
-from tinydiffeq import RK4, Euler, SaveAt, solve_ode
+from tinydiffeq import RK4, Euler, IController, SaveAt, Tsit5, solve_ode
 
 
 def logistic_exact(x_0, t):
     return x_0 * jnp.exp(t) / (1.0 + x_0 * (jnp.exp(t) - 1.0))
 
 
-def test_linear_system_vs_expm():
-    A = jnp.asarray([[0.0, 1.0], [-1.0, -0.3]])
-    x_0 = jnp.asarray([1.0, 0.5])
+@pytest.mark.parametrize(
+    ("dtype", "euler_tol", "rk4_tol"),
+    [(jnp.float32, 4e-3, 1e-4), (jnp.float64, 2e-3, 1e-12)],
+)
+def test_linear_system_vs_expm(dtype, euler_tol, rk4_tol):
+    A = jnp.asarray([[0.0, 1.0], [-1.0, -0.3]], dtype)
+    x_0 = jnp.asarray([1.0, 0.5], dtype)
     T = 2.0
     exact = jsp_linalg.expm(A * T) @ x_0
 
@@ -24,20 +29,26 @@ def test_linear_system_vs_expm():
     euler = solve_ode(f, Euler(), 0.0, T, x_0, dt_0=T / n, max_steps=n)
     rk4 = solve_ode(f, RK4(), 0.0, T, x_0, dt_0=T / n, max_steps=n)
     assert bool(euler.ok) and bool(rk4.ok)
+    assert euler.xs.dtype == dtype and rk4.xs.dtype == dtype
     assert int(euler.num_steps) == int(euler.num_accepted) == n
     assert int(rk4.num_steps) == int(rk4.num_accepted) == n
-    assert jnp.max(jnp.abs(euler.xs - exact)) < 2e-3
-    assert jnp.max(jnp.abs(rk4.xs - exact)) < 1e-12
+    assert jnp.max(jnp.abs(euler.xs - exact)) < euler_tol
+    assert jnp.max(jnp.abs(rk4.xs - exact)) < rk4_tol
 
 
-def test_logistic_closed_form():
-    x_0 = jnp.asarray(0.1)
+@pytest.mark.parametrize(
+    ("dtype", "tol"),
+    [(jnp.float32, 2e-5), (jnp.float64, 1e-9)],
+)
+def test_logistic_closed_form(dtype, tol):
+    x_0 = jnp.asarray(0.1, dtype)
     T = 3.0
     n = 300
     sol = solve_ode(
         lambda x: x * (1.0 - x), RK4(), 0.0, T, x_0, dt_0=T / n, max_steps=n
     )
-    assert jnp.abs(sol.xs - logistic_exact(x_0, T)) < 1e-9
+    assert sol.xs.dtype == dtype
+    assert jnp.abs(sol.xs - logistic_exact(x_0, jnp.asarray(T, dtype))) < tol
 
 
 def test_convergence_slopes():
@@ -57,6 +68,64 @@ def test_convergence_slopes():
             dts.append(T / n)
         slope = np.polyfit(np.log(dts), np.log(errors), 1)[0]
         assert abs(slope - expected) < 0.3, (type(solver).__name__, slope)
+
+
+def test_unroll_matches_rolled_and_requires_fixed_stepping():
+    x_0 = jnp.asarray(0.1)
+    n = 16
+
+    def solve(unroll):
+        return solve_ode(
+            lambda x: x * (1.0 - x),
+            RK4(),
+            0.0,
+            1.0,
+            x_0,
+            dt_0=1.0 / n,
+            max_steps=n,
+            save_at=SaveAt(steps=True),
+            unroll=unroll,
+        )
+
+    rolled, unrolled = solve(1), solve(4)
+    assert jnp.array_equal(rolled.xs, unrolled.xs)
+    assert jnp.array_equal(rolled.ts, unrolled.ts)
+    grad_rolled = jax.grad(
+        lambda x: (
+            solve_ode(
+                lambda v: v * (1.0 - v), RK4(), 0.0, 1.0, x, dt_0=1.0 / n, max_steps=n
+            ).xs
+        )
+    )(x_0)
+    grad_unrolled = jax.grad(
+        lambda x: (
+            solve_ode(
+                lambda v: v * (1.0 - v),
+                RK4(),
+                0.0,
+                1.0,
+                x,
+                dt_0=1.0 / n,
+                max_steps=n,
+                unroll=4,
+            ).xs
+        )
+    )(x_0)
+    assert jnp.allclose(grad_rolled, grad_unrolled, rtol=1e-12, atol=1e-12)
+    with pytest.raises(ValueError, match="fixed stepping"):
+        solve_ode(
+            lambda x: -x,
+            Tsit5(),
+            0.0,
+            1.0,
+            x_0,
+            dt_0=0.1,
+            controller=IController(),
+            max_steps=32,
+            unroll=4,
+        )
+    with pytest.raises(ValueError, match="at least 1"):
+        solve(0)
 
 
 def test_non_dividing_dt_0_lands_on_t_1():

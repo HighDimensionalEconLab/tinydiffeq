@@ -86,54 +86,24 @@ _FIXED_SOLVER_OPTIONS = frozenset({"cache_jacobian", "geodesic_acceleration"})
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
 class LMRootSolver:
-    """Configuration for algebraic solves in a semi-explicit DAE.
+    """Configuration for algebraic root solves in semi-explicit DAEs/SDAEs.
 
     The implementation is :class:`nlls_gram.LevenbergMarquardt` at its
-    defaults: dense ``Cholesky()`` for primal LM updates and the direct
-    nonsymmetric ``LU()`` implicit derivative that nlls selects automatically
-    for a square residual system.
-
-    The fields here are the ones this package owns; all of them reach the nlls
-    ``solve`` rather than its constructor. ``max_steps`` counts nonlinear
-    iterations for one algebraic root and is independent of the integration's
-    time-step ``max_steps``. Every accepted algebraic root must have Euclidean
-    residual norm strictly below the root ``atol``. Root solves therefore use
-    residual stopping only: ``gtol`` and ``xtol`` must remain zero, and a
-    ``MAX_STEPS`` iterate is never treated as a differentiable root.
-    ``max_steps_is_success`` remains in the configuration for source
-    compatibility but does not broaden root acceptance. ``atol=None`` selects
-    ``1e-6`` in float32 and ``1e-10`` in float64. Root tolerances are
-    deliberately independent of the outer integration tolerances.
-
-    ``solver_options`` is the escape hatch for the rare root that needs a
-    non-default algorithm: a mapping (or pairs) forwarded verbatim to the
+    defaults. ``max_steps`` bounds one algebraic root's nonlinear iterations,
+    independently of the integration's time-step budget. Roots use residual
+    stopping only: ``gtol`` and ``xtol`` must remain zero, and every accepted
+    root must report ``CONVERGED`` with Euclidean residual norm strictly below
+    ``atol`` (``None`` selects ``1e-6`` in float32, ``1e-10`` in float64).
+    ``solver_options`` is a mapping (or pairs) forwarded verbatim to the
     ``LevenbergMarquardt`` constructor, e.g.
-    ``solver_options={"linear_solver": QR()}``. Names and semantics are
-    nlls-gram's, not this package's, so they track it across versions instead
-    of being mirrored here. It is normalized to a sorted tuple so equal
-    configurations stay hashable and share one compiled solver -- an
-    unhashable config silently rebuilds the solver per call, and nlls-gram
-    keys its compiled loop on solver identity, so that would retrace every
-    step. ``cache_jacobian`` and ``geodesic_acceleration`` are fixed to
-    ``False`` and rejected here: each DAE stage changes the root problem, and
-    the intended path is the ordinary dense LM step. Algebraic residuals do
-    not expose nlls aux. ``ad_solver`` remains an nlls-owned option; its default
-    is the direct square ``LU()`` rule.
-
-    ``predictor="previous"`` warm-starts every explicit RK stage from the most
-    recent successful root. ``predictor="secant"`` instead extrapolates from
-    the accepted-step root through the most recent successful stage at a later
-    time. The secant is used only for a strictly later target; duplicate RK4
-    stage times and failed stages fall back to the previous root. Predictor
-    values are differentiation-inert, so successful roots retain the same
-    implicit derivative. With multiple algebraic roots, however, a different
-    warm start can select a different branch; the secant mode is intended only
-    when the continued root is locally unique. A finite root-iteration budget
-    can also make predictor choice affect values or success status.
+    ``solver_options={"linear_solver": QR()}``; ``cache_jacobian`` and
+    ``geodesic_acceleration`` are fixed to ``False``. ``predictor`` selects
+    the explicit-stage warm start: ``"previous"`` reuses the most recent
+    successful root, ``"secant"`` extrapolates it to a strictly later stage
+    time and assumes the continued root is locally unique.
     """
 
     max_steps: int = field(default=8, metadata=dict(static=True))
-    max_steps_is_success: bool = field(default=False, metadata=dict(static=True))
     atol: float | None = field(default=None, metadata=dict(static=True))
     gtol: float = field(default=0.0, metadata=dict(static=True))
     xtol: float = field(default=0.0, metadata=dict(static=True))
@@ -145,8 +115,6 @@ class LMRootSolver:
             raise ValueError("LMRootSolver.max_steps must be a positive int")
         if self.max_steps <= 0:
             raise ValueError("LMRootSolver.max_steps must be a positive int")
-        if not isinstance(self.max_steps_is_success, bool):
-            raise TypeError("LMRootSolver.max_steps_is_success must be a bool")
         if self.atol is not None and self.atol <= 0:
             raise ValueError("LMRootSolver.atol must be positive or None")
         if self.gtol != 0:
@@ -815,53 +783,21 @@ def solve_semi_explicit_dae(
 ):
     """Integrate a semi-explicit index-1 DAE.
 
-    The system is ``dy/dt = f(y, z, t, args, p)`` and
-    ``0 = g(y, z, t, args, p)``, with a square nonsingular algebraic Jacobian
-    ``dg/dz``. ``z_0`` is a root-finding guess: the initial algebraic state is
-    made consistent automatically, and its derivative is determined by the
-    constraint rather than by the guess.
-
-    RK4 with fixed control, Tsit5 with fixed or adaptive control, and the
-    linearly implicit Rodas5P method with fixed or adaptive control are
-    supported. The outer ``max_steps`` bounds attempted time steps;
-    :class:`LMRootSolver.max_steps` separately bounds algebraic solves. RK4
-    and Tsit5 restore ``g=0`` at every stage. Rodas5P uses the root solver only
-    for initial consistency, then advances the block mass-matrix system with
-    reused linear solves; later ``z`` values satisfy the constraint to the
-    integration accuracy rather than the root tolerance.
-    ``sol.num_root_solves`` counts logical active nonlinear root calls and
-    ``sol.num_root_steps`` sums their LM update steps. Rodas5P therefore reports
-    one root call regardless of its number of integration attempts.
-
-    ``args`` is fixed data by convention. All differentiated model parameters
-    belong in ``p``. Initial consistency and explicit-method roots
-    differentiate implicitly with respect to ``(y, t, p)``; Rodas5P then
-    differentiates its discrete Jacobians and uses implicit derivatives for
-    its linear solves.
-
-    ``f`` may return ``dy`` or ``(dy, saved_aux)``. If ``g`` returns
-    ``(residual, algebraic_aux)``, that second value is internal context and
-    ``f`` must take the full six-argument form
-    ``f(y, z, t, args, p, algebraic_aux)``. Only ``saved_aux`` is returned as
-    ``sol.aux``. It is stored at accepted nodes and interpolated on requested
-    deterministic grids; algebraic aux is never stored or interpolated.
-    ``has_aux`` and ``has_algebraic_aux`` default to abstract auto-detection;
-    explicit ``False`` selects the minimal paths without those traces.
-
-    ``failure_ad_reference=(y, z, t, p)`` may provide a domain-safe point for
-    already-inactive ``vmap`` lanes and model aux/field evaluation. A newly
-    attempted root still requires its actual ``(y, z_guess, t, p)`` to be
-    JVP-safe; the reference does not replace an active root after it fails.
-    A nonfinite inexact algebraic-aux leaf at initialization prevents all
-    time-step work. Saved aux is checked at the initial and accepted nodes in
-    prefix/grid modes; endpoint mode checks it only after integration and
-    retains the endpoint state with zero aux if that check fails.
-
-    ``adaptive_loop="bounded"`` keeps the reverse-mode-capable static scan.
-    ``adaptive_loop="forward"`` executes only actual adaptive attempts and,
-    under ``vmap``, stops after the slowest lane. It supports JVP and nested
-    forward mode but not ordinary reverse mode, matching JAX's dynamic-while
-    differentiation boundary.
+    The system is ``dy/dt = f(y, z, t, args, p)`` with
+    ``0 = g(y, z, t, args, p)`` and a square nonsingular ``dg/dz``. ``z_0``
+    is a root guess: initial consistency is solved automatically and its
+    derivative comes from the constraint. RK4 and Tsit5 restore ``g = 0`` at
+    every stage through :class:`LMRootSolver`; Rodas5P advances the block
+    mass-matrix system with one reused LU factorization per attempted step,
+    so its later ``z`` values satisfy the constraint to integration accuracy.
+    Roots and their implicit derivatives are delegated to nlls-gram. ``f``
+    may return ``(dy, saved_aux)``; ``g`` may return
+    ``(residual, algebraic_aux)``, in which case ``f`` takes
+    ``(y, z, t, args, p, algebraic_aux)``.
+    ``failure_ad_reference=(y, z, t, p)`` provides a domain-safe point for
+    inactive ``vmap`` lanes. ``adaptive_loop`` follows
+    :func:`tinydiffeq.solve_ode`. Returns a :class:`DAESolution` with
+    root-solve diagnostics.
     """
     if dt_0 is None:
         raise ValueError("dt_0 is required (tinydiffeq has no initial-step heuristic)")

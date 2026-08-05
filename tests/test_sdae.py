@@ -4,8 +4,10 @@ import numpy as np
 import pytest
 
 from tinydiffeq import (
+    SRA1,
     EulerMaruyama,
     LMRootSolver,
+    Milstein,
     SaveAt,
     solve_sde,
     solve_semi_explicit_sdae,
@@ -26,7 +28,7 @@ def constraint(y, z, t, args, p):
     return z - y, {"scaled": p["scale"] * z, "square": z**2}
 
 
-def sdae(key, n_steps, *, save_at=None, y_0=Y_0, p=None):
+def sdae(key, n_steps, *, save_at=None, y_0=Y_0, p=None, solver=None):
     if p is None:
         p = {
             "mu": jnp.asarray(MU),
@@ -37,7 +39,7 @@ def sdae(key, n_steps, *, save_at=None, y_0=Y_0, p=None):
         drift,
         diffusion,
         constraint,
-        EulerMaruyama(),
+        EulerMaruyama() if solver is None else solver,
         0.0,
         T,
         jnp.asarray(y_0),
@@ -118,6 +120,83 @@ def test_sdae_strong_half_order_against_same_path_exact_solution():
     errors = [path_error(n) for n in levels]
     slope = np.polyfit(np.log([T / n for n in levels]), np.log(errors), 1)[0]
     assert 0.35 < slope < 0.7, (slope, errors)
+
+
+def additive_sigma(t, p):
+    # Time-dependent but state-independent, so SRA1's additive contract holds
+    # for the reduced SDE and its endpoint diffusion evaluation is exercised.
+    return p["sigma"] * (1.0 + 0.5 * t)
+
+
+def test_sra1_sdae_matches_reduced_sde_on_identical_noise_path():
+    key = jax.random.key(12)
+    n = 32
+    p = {"mu": jnp.asarray(MU), "sigma": jnp.asarray(SIGMA)}
+    full = solve_semi_explicit_sdae(
+        lambda y, z, t, args, p: p["mu"] * z,
+        lambda y, z, t, args, p: additive_sigma(t, p) * jnp.ones_like(y),
+        lambda y, z: z - y,
+        SRA1(),
+        0.0,
+        T,
+        jnp.asarray(Y_0),
+        jnp.asarray(0.7),
+        key=key,
+        n_steps=n,
+        p=p,
+        save_at=SaveAt(steps=True),
+    )
+    reduced = solve_sde(
+        lambda y, t, args, p: p["mu"] * y,
+        lambda y, t, args, p: additive_sigma(t, p) * jnp.ones_like(y),
+        SRA1(),
+        0.0,
+        T,
+        jnp.asarray(Y_0),
+        key=key,
+        n_steps=n,
+        p=p,
+        save_at=SaveAt(steps=True),
+    )
+    assert bool(full.ok)
+    assert int(full.num_steps) == n
+    # One initial consistency root, then a stage and an endpoint root per step.
+    assert int(full.num_root_solves) == 2 * n + 1
+    assert jnp.allclose(full.ys, reduced.xs, atol=1e-7, rtol=1e-7)
+    assert jnp.allclose(full.zs, full.ys, atol=1e-7)
+
+
+def test_sra1_sdae_aux_and_state_jvp_vjp_under_fixed_key():
+    key = jax.random.key(21)
+
+    def output(mu):
+        p = {"mu": mu, "sigma": jnp.asarray(SIGMA), "scale": mu}
+        sol = sdae(key, 64, p=p, save_at=SaveAt(steps=True), solver=SRA1())
+        return jnp.sum(sol.ys + sol.zs + sol.aux["scaled"])
+
+    mu = jnp.asarray(MU)
+    tangent = jax.jvp(output, (mu,), (jnp.ones_like(mu),))[1]
+    cotangent = jax.grad(output)(mu)
+    eps = 1e-6
+    finite_difference = (output(mu + eps) - output(mu - eps)) / (2 * eps)
+    assert jnp.abs(tangent - finite_difference) < 2e-5
+    assert jnp.abs(cotangent - finite_difference) < 2e-5
+
+
+def test_sdae_rejects_milstein():
+    with pytest.raises(TypeError, match="EulerMaruyama and SRA1"):
+        solve_semi_explicit_sdae(
+            lambda y, z: z,
+            lambda y, z: 0.0 * y,
+            lambda y, z: z - y,
+            Milstein(),
+            0.0,
+            1.0,
+            jnp.asarray(1.0),
+            jnp.asarray(1.0),
+            key=jax.random.key(0),
+            n_steps=4,
+        )
 
 
 def test_sdae_root_guess_has_zero_tangent_and_ts_raises():
@@ -203,7 +282,7 @@ def test_sdae_root_failure_returns_consistent_prefix_and_padding():
         save_at=SaveAt(steps=True),
         has_aux=True,
         has_algebraic_aux=True,
-        root_solver=LMRootSolver(max_steps_is_success=False),
+        root_solver=LMRootSolver(),
     )
     assert not bool(sol.ok)
     assert int(sol.accepted.sum()) == int(sol.num_accepted) + 1
@@ -244,7 +323,7 @@ def test_sdae_masked_failed_lane_has_safe_aux_jvp_and_vjp(save_at, multiplicity)
             save_at=save_at,
             has_aux=True,
             has_algebraic_aux=True,
-            root_solver=LMRootSolver(max_steps_is_success=False),
+            root_solver=LMRootSolver(),
             failure_ad_reference=(1.0, 1.0, 0.0, 0.0),
         )
 

@@ -132,47 +132,25 @@ def solve_ode(
     has_aux=None,
     failure_ad_reference=None,
     adaptive_loop="bounded",
+    unroll=1,
 ):
     """Integrate ``dx/dt = f(x, t, args, p)`` from ``t_0`` to ``t_1 > t_0``.
 
-    The vector field may be declared ``f(x)``, ``f(x, t)``, ``f(x, t, args)``,
-    or ``f(x, t, args, p)`` — always in that order. ``x`` is a pytree whose
-    nonempty leaves share one real floating dtype. ``args`` is pass-through
-    data that is by convention not an AD target, and ``p`` holds differentiable
-    parameters (any pytree);
-    jvp/vjp with respect to ``p`` and ``x_0`` are first-class.
-
-    Fixed stepping and the default ``adaptive_loop="bounded"`` use bounded
-    ``lax.scan`` loops with exactly ``max_steps`` attempt slots, so shapes are
-    static and curvature-dependent step counts never retrace. Bounded adaptive
-    attempts are grouped into static chunks so one ``lax.cond`` skips an entire
-    padded chunk after completion. ``adaptive_loop="forward"`` instead uses a
-    true ``lax.while_loop`` and stops after the actual attempts. It supports
-    primal evaluation, JVP, and nested forward-mode AD; ordinary reverse mode
-    is unavailable because JAX cannot transpose a dynamic ``while_loop``.
-    Under ``vmap``, the forward loop advances lanes together until the slowest
-    live trajectory finishes rather than running every lane to ``max_steps``.
-    ``dt_0`` is required (no auto-initial-step heuristic).
-    Each attempt is clipped to the remaining horizon; the clipped step also
-    feeds the controller's next-step proposal, which doubles as the growth
-    guard — near-flat fields otherwise grow steps into quarter-horizon leaps.
-    ``project`` (e.g. a positivity clamp, assumed idempotent) is applied at
-    every point where ``f`` is evaluated and to every accepted state. Returns
-    a :class:`Solution`; ``sol.ok`` is False if the budget ran out before
-    ``t_1`` or a required saved output was invalid (outputs remain a finite
-    reached prefix or endpoint, never poisoned).
-
-    The field may return either ``dx`` or ``(dx, aux)``. ``has_aux=None``
-    detects the form with an abstract trace; ``has_aux=False`` selects the
-    minimal no-aux path without that trace. Saved aux is a nonempty pytree of
-    real floating arrays. It follows ``SaveAt`` and participates in JVP/VJP.
-    By default, requested-grid aux uses cubic Hermite interpolation with
-    endpoint slopes obtained by JVP, including for Rodas5P's dense state path.
-    With ``SaveAt(ts=..., exact=True)``, an explicit fixed-step solve instead
-    selects realized knots and evaluates aux directly at those requested knots.
-
-    The time dtype follows the state dtype; the library never
-    sets ``jax_enable_x64`` — do that in your application.
+    The field may be declared ``f(x)``, ``f(x, t)``, ``f(x, t, args)``, or
+    ``f(x, t, args, p)``; ``x`` is an array or pytree with one real floating
+    dtype, ``args`` is inert data, and ``p`` holds differentiable parameters.
+    ``dt_0`` is required. Fixed stepping and the default
+    ``adaptive_loop="bounded"`` use bounded ``lax.scan`` loops with exactly
+    ``max_steps`` attempt slots and support forward and reverse AD;
+    ``adaptive_loop="forward"`` runs a dynamic ``lax.while_loop`` (primal,
+    JVP, and nested forward mode only). ``project`` (an idempotent clamp) is
+    applied at every field evaluation and accepted state. The field may
+    return ``(dx, aux)``; saved aux follows ``SaveAt`` and participates in
+    AD. ``unroll`` (a static int, fixed stepping only) unrolls that many
+    steps per iteration of the integration scan — identical values,
+    fewer/larger GPU dispatches, more compile time. Returns a
+    :class:`Solution`; ``sol.ok`` reports whether ``t_1`` was reached with
+    every requested output valid — outputs are never poisoned.
     """
     if dt_0 is None:
         raise ValueError("dt_0 is required (tinydiffeq has no initial-step heuristic)")
@@ -196,6 +174,10 @@ def solve_ode(
         raise ValueError(
             'adaptive_loop="forward" requires an adaptive error controller'
         )
+    if not isinstance(unroll, int) or isinstance(unroll, bool) or unroll < 1:
+        raise ValueError("unroll must be a static int of at least 1")
+    if unroll != 1 and controller.uses_error_estimate:
+        raise ValueError("unroll requires fixed stepping (ConstantStepSize)")
     f = canonicalize_field(f)
     is_rodas = isinstance(solver, Rodas5P)
     is_fixed = isinstance(controller, ConstantStepSize)
@@ -589,11 +571,11 @@ def solve_ode(
         if static_uniform_horizon:
             step_indices = jnp.arange(max_steps, dtype=jnp.int32)
             fixed_final, rows = jax.lax.scan(
-                uniform_fixed_body, fixed_carry_0, step_indices
+                uniform_fixed_body, fixed_carry_0, step_indices, unroll=unroll
             )
         else:
             fixed_final, rows = jax.lax.scan(
-                fixed_body, fixed_carry_0, None, length=max_steps
+                fixed_body, fixed_carry_0, None, length=max_steps, unroll=unroll
             )
         t_final, x_final, _, done, num_accepted = fixed_final
         num_steps = num_accepted
@@ -635,7 +617,9 @@ def solve_ode(
             _,
         ) = final_carry
     else:
-        final_carry, rows = jax.lax.scan(body, carry_0, None, length=max_steps)
+        final_carry, rows = jax.lax.scan(
+            body, carry_0, None, length=max_steps, unroll=unroll
+        )
         (
             t_final,
             x_final,
