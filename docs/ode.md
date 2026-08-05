@@ -51,7 +51,13 @@ conditions never recompiles (pinned by `tests/test_recompile.py`).
 `adaptive_loop="forward"` instead runs a dynamic `lax.while_loop` that
 executes only actual attempts; it supports primal evaluation, JVP, and nested
 forward mode, but JAX cannot transpose it, so reverse mode requires the
-bounded loop. Under `vmap`, both run until the slowest lane finishes.
+bounded loop. Under `vmap`, both run until the slowest lane finishes: the
+bounded loop's skip conds are gated on a scalar all-lanes predicate whose
+batching rule reduces over the batch axis, so the frozen tail after the
+slowest lane is genuinely skipped rather than lowered to a both-branches
+select — a vmapped adaptive solve costs actual attempts, not `max_steps`
+(reverse mode still stores per-slot scan residuals, so keep budgets
+realistic when differentiating).
 
 Exactly one `SaveAt` mode is set:
 
@@ -75,6 +81,36 @@ If the budget runs out before `t_1`, `sol.ok` is `False` and the outputs hold
 the reached prefix. Nothing is poisoned; callers that want diverging
 residuals map `jnp.where(sol.ok, x, jnp.inf)`. `sol.num_steps` counts
 attempts, `sol.num_accepted` counts advances.
+
+### Residuals on adaptive output
+
+Collocation-style residuals evaluated on an adaptive
+`SaveAt(steps=True)` rollout keep a static shape by evaluating the pointwise
+residual on **every** padded row and zeroing the tail with the `accepted`
+mask. With the default `fill="last"`, padded rows repeat the last accepted
+state, so the residual there is finite wherever the endpoint is — a single
+`where` is safe for both values and gradients (no double-`where` needed):
+
+```python
+sol = jax.vmap(solve_one)(x_0s)            # SaveAt(steps=True), (B, rows, ...)
+rows = pointwise_residual(sol.xs, p)       # evaluated on all rows in parallel
+masked = jnp.where(sol.accepted, rows, 0.0)
+count = jax.lax.stop_gradient(sol.accepted.sum())      # actual points, inert
+residual = jnp.where(
+    sol.ok[:, None], masked / jnp.sqrt(count.astype(masked.dtype)), jnp.inf
+).reshape(-1)                              # static length B * rows
+```
+
+Zero rows contribute nothing to a least-squares objective, so this is
+exactly the fixed-shape analogue of dropping rejected steps. Two properties
+to choose deliberately: normalizing by the accepted count makes the loss a
+mean over actual collocation points but changes discontinuously when the
+mesh changes, and lanes with more accepted steps contribute more rows — the
+adaptive mesh curvature-weights the collocation. When the residual
+definition needs fixed sample times and a smoother parameter dependence,
+use `SaveAt(ts=fixed_grid)` instead: no mask, no mesh-dependent weighting,
+and the output times carry none of the frozen-mesh ambiguity of adaptive
+internal knots.
 
 `project` (an idempotent clamp, e.g. positivity) is applied at every point
 where the field is evaluated and to every accepted state.

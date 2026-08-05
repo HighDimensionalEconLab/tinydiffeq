@@ -20,6 +20,7 @@ from tinydiffeq._tree import (
     take,
     where,
 )
+from tinydiffeq._unvmap import unvmap_all
 from tinydiffeq.dae import (
     LMRootSolver,
     _canonicalize_cached_dae_field,
@@ -384,10 +385,18 @@ def solve_semi_explicit_sdae(
         return carry, out
 
     def body(carry, inputs):
+        def live_lanes(pair):
+            return jax.lax.cond(
+                pair[0][5],
+                lambda pair: skip_step(*pair),
+                lambda pair: attempt_step(*pair),
+                pair,
+            )
+
         return jax.lax.cond(
-            carry[5],
+            unvmap_all(carry[5]),
             lambda pair: skip_step(*pair),
-            lambda pair: attempt_step(*pair),
+            live_lanes,
             (carry, inputs),
         )
 

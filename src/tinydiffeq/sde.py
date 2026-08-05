@@ -15,6 +15,7 @@ from tinydiffeq._tree import (
     take,
     where,
 )
+from tinydiffeq._unvmap import unvmap_all
 from tinydiffeq.ode import canonicalize_field, identity_project
 from tinydiffeq.save_at import SaveAt
 from tinydiffeq.solution import Solution
@@ -239,10 +240,20 @@ def solve_sde(
             return carry, (t, x, aux, jnp.asarray(False))
 
         def aux_body(carry, inputs):
+            # Scalar-predicate outer cond under vmap (see _unvmap): once every
+            # lane has failed, the frozen tail skips for real.
+            def live_lanes(pair):
+                return jax.lax.cond(
+                    pair[0][3],
+                    lambda pair: aux_skip(*pair),
+                    lambda pair: aux_attempt(*pair),
+                    pair,
+                )
+
             return jax.lax.cond(
-                carry[3],
+                unvmap_all(carry[3]),
                 lambda pair: aux_skip(*pair),
-                lambda pair: aux_attempt(*pair),
+                live_lanes,
                 (carry, inputs),
             )
 

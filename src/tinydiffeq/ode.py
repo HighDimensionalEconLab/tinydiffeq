@@ -25,6 +25,7 @@ from tinydiffeq._tree import (
     zero_tangent,
     zeros_like,
 )
+from tinydiffeq._unvmap import unvmap_all
 from tinydiffeq.controllers import ConstantStepSize
 from tinydiffeq.interpolation import (
     hermite_interpolate,
@@ -427,7 +428,15 @@ def solve_ode(
         return carry, out
 
     def body(carry, _):
-        return jax.lax.cond(carry[6] | carry[7], skip_step, attempt_step, carry)
+        # The outer cond keeps a scalar predicate under vmap (see _unvmap),
+        # so the frozen tail is skipped for real once every lane finishes;
+        # the inner cond preserves per-lane freezing while any lane is live.
+        def live_lanes(carry):
+            return jax.lax.cond(carry[6] | carry[7], skip_step, attempt_step, carry)
+
+        return jax.lax.cond(
+            unvmap_all(carry[6] | carry[7]), skip_step, live_lanes, carry
+        )
 
     def fixed_attempt_step(carry):
         t, x, f_cur, done, num_accepted = carry
@@ -467,7 +476,10 @@ def solve_ode(
         return carry, output
 
     def fixed_body(carry, _):
-        return jax.lax.cond(carry[3], fixed_skip_step, fixed_attempt_step, carry)
+        def live_lanes(carry):
+            return jax.lax.cond(carry[3], fixed_skip_step, fixed_attempt_step, carry)
+
+        return jax.lax.cond(unvmap_all(carry[3]), fixed_skip_step, live_lanes, carry)
 
     def uniform_fixed_body(carry, step_index):
         t, x, f_cur, _, num_accepted = carry
@@ -532,7 +544,7 @@ def solve_ode(
             return chunk_carry, repeat_output(output)
 
         def outer(chunk_carry, chunk_valid):
-            inactive = chunk_carry[6] | chunk_carry[7]
+            inactive = unvmap_all(chunk_carry[6] | chunk_carry[7])
             return jax.lax.cond(
                 inactive, skip_chunk, run_chunk, chunk_carry, chunk_valid
             )

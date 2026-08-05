@@ -31,6 +31,7 @@ from tinydiffeq._tree import (
     where,
     zeros_like,
 )
+from tinydiffeq._unvmap import unvmap_all
 from tinydiffeq.controllers import ConstantStepSize
 from tinydiffeq.interpolation import (
     hermite_interpolate,
@@ -613,7 +614,14 @@ def _solve_rodas5p_dae(
         return carry, out
 
     def body(carry, _):
-        return jax.lax.cond(carry[5] | carry[6], skip_step, attempt_step, carry)
+        # Scalar-predicate outer cond under vmap (see _unvmap): the frozen
+        # tail skips for real; the inner cond keeps per-lane freezing.
+        def live_lanes(carry):
+            return jax.lax.cond(carry[5] | carry[6], skip_step, attempt_step, carry)
+
+        return jax.lax.cond(
+            unvmap_all(carry[5] | carry[6]), skip_step, live_lanes, carry
+        )
 
     carry_0 = (
         t_0,
@@ -1528,8 +1536,12 @@ def solve_semi_explicit_dae(
         return carry, out
 
     def body(carry, _):
-        terminated = carry[8] | carry[9]
-        return jax.lax.cond(terminated, skip_step, attempt_step, carry)
+        def live_lanes(carry):
+            return jax.lax.cond(carry[8] | carry[9], skip_step, attempt_step, carry)
+
+        return jax.lax.cond(
+            unvmap_all(carry[8] | carry[9]), skip_step, live_lanes, carry
+        )
 
     carry_0 = (
         t_0,

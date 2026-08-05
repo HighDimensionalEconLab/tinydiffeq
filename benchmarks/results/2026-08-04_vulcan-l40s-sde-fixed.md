@@ -58,6 +58,30 @@ saved, SRA1) is ~8 ms rolled and **~3.4 ms with `unroll=8`**.
    remedy if ensembles ever grow to B·n ≳ 10⁷ in grad mode; a package
    `checkpoint_every=` option was considered and deliberately not added.
 
+## Follow-up: vmapped adaptive solves (CPU measurement, same session)
+
+A batched-predicate `lax.cond` lowers under `vmap` to a both-branches
+select, so vmapped **adaptive** solves used to execute every `max_steps`
+attempt slot: a B=32 Tsit5 solve of the neoclassical policy model that
+needs 8 attempts took 2.6 ms at `max_steps=64` but 47.5 ms at
+`max_steps=1024` (CPU). Gating the skip conds on a scalar `unvmap_all`
+predicate (batching rule reduces over the batch axis; the diffrax
+`unvmap_any` trick) makes the vmapped primal budget-invariant: 0.5 ms at
+every budget, a 95× win at `max_steps=1024`. Reverse mode improved 3.9×
+(129 → 33 ms) but still scales with the budget through the scan's stacked
+per-slot residuals — keep `max_steps` realistic when differentiating
+adaptive solves.
+
+Validated on the L40S (same probe, pre-gate vs gated, ms per call):
+
+| B | max_steps | primal before → after | grad before → after |
+|---:|---:|---|---|
+| 32 | 64 | 2.05 → 0.87 (2.4×) | 9.0 → 5.7 (1.6×) |
+| 32 | 256 | 7.82 → 1.16 (6.7×) | 36.2 → 15.4 (2.3×) |
+| 32 | 1024 | 30.7 → 2.50 (12.3×) | 144.3 → 54.7 (2.6×) |
+| 256 | 64 | 2.71 → 1.00 (2.7×) | — |
+| 256 | 1024 | 40.9 → 2.59 (15.8×) | — |
+
 ## Reproduce
 
 ```bash
