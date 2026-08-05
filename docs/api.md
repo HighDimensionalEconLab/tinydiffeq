@@ -36,6 +36,10 @@
 
 ::: tinydiffeq.EulerMaruyama
 
+::: tinydiffeq.Milstein
+
+::: tinydiffeq.SRA1
+
 ::: tinydiffeq.DenseExponential
 
 ::: tinydiffeq.KrylovExponential
@@ -77,6 +81,8 @@
 ::: tinydiffeq.MarkovDistribution
 
 ## Utilities
+
+::: tinydiffeq.diagonal_brownian_increments
 
 ::: tinydiffeq.hermite_interpolate
 
