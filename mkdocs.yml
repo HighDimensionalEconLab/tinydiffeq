@@ -47,6 +47,7 @@ nav:
   - SDEs: sde.md
   - Semi-Explicit DAEs: dae.md
   - Semi-Explicit SDAEs: sdae.md
+  - Boundary Value Problems: bvp.md
   - Markov Chains: markov_chains.md
   - Linear Exponential Solves: exponential.md
   - API Reference: api.md

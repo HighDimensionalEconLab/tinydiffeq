@@ -4,6 +4,8 @@
 
 ::: tinydiffeq.solve_ode
 
+::: tinydiffeq.solve_bvp
+
 ::: tinydiffeq.solve_semi_explicit_dae
 
 ::: tinydiffeq.solve_semi_explicit_sdae
@@ -76,6 +78,8 @@
 
 ::: tinydiffeq.DAESolution
 
+::: tinydiffeq.BVPSolution
+
 ::: tinydiffeq.Solution
 
 ::: tinydiffeq.MarkovDistribution
@@ -85,5 +89,7 @@
 ::: tinydiffeq.diagonal_brownian_increments
 
 ::: tinydiffeq.hermite_interpolate
+
+::: tinydiffeq.hermite_derivative
 
 ::: tinydiffeq.cumulative_trapezoid
