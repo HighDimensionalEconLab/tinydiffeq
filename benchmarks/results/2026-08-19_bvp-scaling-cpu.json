@@ -1,0 +1,68 @@
+{
+  "date": "2026-08-19",
+  "machine": "i9-10900K (20 threads), CPU, float64",
+  "command": "JAX_PLATFORMS=cpu uv run python -m benchmarks.bvp_scaling --repeat 7",
+  "methodology": "every case calls the solve through a jitted wrapper: cold_ms is compile-plus-first-run, run_ms is the median warm call",
+  "linear_solve": "structured orthogonal factorization (tinydiffeq.babd cyclic reduction)",
+  "cache_audit": "JAX_EXPLAIN_CACHE_MISSES=1 JAX_LOG_COMPILES=1 --cache-audit: 0 XLA compiles and 0 executable-cache misses after the second solve; the single tracing event is the per-call eval_shape validation trace",
+  "growth_baseline": "kernels neoclassical growth (801->1489 nodes, tol=1e-10, max_nodes=1536): 17 ms warm as a direct (un-jitted) call vs scipy 17.4 ms, solutions agree to 4e-16; dense LU on the same problem took 304 ms",
+  "gpu_float32": "RTX 3090, 64-lane vmapped exp ensemble at max_nodes=32: 0.79 ms (~12 us/lane), all converged",
+  "rows": [
+    {
+      "case": "exp",
+      "max_nodes": "32",
+      "cold_ms": "821.8",
+      "run_ms": "0.250",
+      "scipy_ms": "0.601"
+    },
+    {
+      "case": "shock",
+      "max_nodes": "32",
+      "cold_ms": "681.9",
+      "run_ms": "0.450",
+      "scipy_ms": "6.323"
+    },
+    {
+      "case": "eigen_grad",
+      "max_nodes": "32",
+      "cold_ms": "1108.4",
+      "run_ms": "0.532",
+      "scipy_ms": ""
+    },
+    {
+      "case": "vmap_exp_b32",
+      "max_nodes": "32",
+      "cold_ms": "1462.9",
+      "run_ms": "1.459",
+      "scipy_ms": ""
+    },
+    {
+      "case": "exp",
+      "max_nodes": "128",
+      "cold_ms": "830.9",
+      "run_ms": "0.470",
+      "scipy_ms": "0.593"
+    },
+    {
+      "case": "shock",
+      "max_nodes": "128",
+      "cold_ms": "818.8",
+      "run_ms": "2.072",
+      "scipy_ms": "6.300"
+    },
+    {
+      "case": "eigen_grad",
+      "max_nodes": "128",
+      "cold_ms": "1306.8",
+      "run_ms": "1.603",
+      "scipy_ms": ""
+    },
+    {
+      "case": "vmap_exp_b32",
+      "max_nodes": "128",
+      "cold_ms": "1756.4",
+      "run_ms": "6.373",
+      "scipy_ms": ""
+    }
+  ]
+}
