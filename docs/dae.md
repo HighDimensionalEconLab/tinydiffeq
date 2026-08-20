@@ -256,6 +256,7 @@ Only the internally constructed constant block mass matrix
 `diag(I_y, 0_z)` is supported; there is no general mass-matrix or fully
 implicit residual API. Rodas5P uses dense Jacobians and dense pivoted LU.
 Higher-index constraints and automatic index reduction are unsupported. This
-is an initial-value solver: it does not determine unknown initial costates
-or solve boundary-value problems, and jumps between multiple root branches
+is an initial-value solver: it does not determine unknown initial costates —
+for two-point boundary conditions see
+[Boundary Value Problems](bvp.md) — and jumps between multiple root branches
 are not differentiable.

@@ -30,6 +30,38 @@ class Solution:
 
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
+class BVPSolution:
+    """Result of ``solve_bvp``.
+
+    Arrays are padded to the static ``max_nodes``: the ``t`` tail repeats the
+    right endpoint and the ``y``/``yp`` tails repeat the last active row, so
+    ``hermite_interpolate(ts, sol.t, sol.y, sol.yp)`` evaluates exactly the C1
+    cubic spline scipy's ``solve_bvp`` returns and ``hermite_derivative`` its
+    derivative. ``z`` holds the solved unknown parameters (``None`` when the
+    problem has none), ``rms_residuals`` is zero on inactive intervals,
+    ``num_nodes`` counts active mesh nodes, and ``num_iterations`` is scipy's
+    ``niter``. ``status`` uses scipy's codes (0 converged, 1 ``max_nodes``
+    exceeded, 2 singular Jacobian, 3 boundary-condition tolerance unsatisfied)
+    and ``ok`` is ``status == 0``; a failed status returns the last iterate,
+    which may be non-finite. Under AD only ``y``, ``yp``, ``z``, and ``aux``
+    carry tangents with respect to ``p``; every other field is
+    differentiation-inert with exact-zero tangents.
+    """
+
+    t: jax.Array
+    y: Any
+    yp: Any
+    z: Any
+    rms_residuals: jax.Array
+    num_nodes: jax.Array
+    num_iterations: jax.Array
+    status: jax.Array
+    ok: jax.Array
+    aux: Any = None
+
+
+@jax.tree_util.register_dataclass
+@dataclass(frozen=True)
 class DAESolution:
     """Result of the deterministic or stochastic semi-explicit DAE solvers.
 

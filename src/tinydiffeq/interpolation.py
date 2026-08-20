@@ -60,6 +60,44 @@ def hermite_interpolate(ts_query, knot_ts, knot_xs, knot_fs):
     return jax.tree.map(interpolate_leaf, knot_xs, knot_fs)
 
 
+def hermite_derivative(ts_query, knot_ts, knot_xs, knot_fs):
+    """Derivative of the C1 cubic Hermite interpolant at ``ts_query``.
+
+    Uses ``searchsorted(side="left")`` so a query at a repeated right-endpoint
+    knot lands on the last positive-width bracket and returns the knot
+    derivative instead of the degenerate bracket's zero. Queries outside the
+    knot span return zero, the derivative of the clamped value extension.
+    """
+    n = knot_ts.shape[0]
+    idx = jnp.clip(jnp.searchsorted(knot_ts, ts_query, side="left") - 1, 0, n - 2)
+    t_left, t_right = knot_ts[idx], knot_ts[idx + 1]
+    width = t_right - t_left
+    degenerate = width <= 0.0
+    width_safe = jnp.where(degenerate, 1.0, width)
+    s = jnp.clip((ts_query - t_left) / width_safe, 0.0, 1.0)
+    outside = (ts_query < knot_ts[0]) | (ts_query > knot_ts[n - 1])
+
+    def derivative_leaf(xs, fs):
+        x_left, x_right = xs[idx], xs[idx + 1]
+        f_left, f_right = fs[idx], fs[idx + 1]
+        extra = xs.ndim - 1
+
+        def bc(a):
+            return a.reshape(a.shape + (1,) * extra)
+
+        s_leaf = s.astype(xs.dtype)
+        width_leaf = width_safe.astype(xs.dtype)
+        s_, w_, deg_, out_ = bc(s_leaf), bc(width_leaf), bc(degenerate), bc(outside)
+        d00 = 6.0 * s_**2 - 6.0 * s_
+        d10 = 3.0 * s_**2 - 4.0 * s_ + 1.0
+        d11 = 3.0 * s_**2 - 2.0 * s_
+        value = d00 * (x_left - x_right) / w_ + d10 * f_left + d11 * f_right
+        value = jnp.where(deg_, f_left, value)
+        return jnp.where(out_, jnp.zeros_like(value), value)
+
+    return jax.tree.map(derivative_leaf, knot_xs, knot_fs)
+
+
 def rodas_interpolate(ts_query, knot_ts, knot_xs, interval_coefficients):
     """Evaluate the Rodas5P continuous extension over raw attempt rows.
 
