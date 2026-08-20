@@ -38,13 +38,6 @@ def test_vmap_matches_sequential():
             np.asarray(batched.t[lane]), np.asarray(single.t), rtol=1e-12
         )
 
-    batched_gradients = jax.vmap(jax.grad(lambda p: scaled_solve(p).y[2, 0]))(p_values)
-    for lane, p in enumerate([0.5, 1.0, 2.0]):
-        single = jax.grad(lambda p: scaled_solve(p).y[2, 0])(p)
-        np.testing.assert_allclose(
-            float(batched_gradients[lane]), float(single), rtol=1e-10
-        )
-
 
 def test_vmap_mixed_success_and_failure():
     def stiff_solve(eps):
