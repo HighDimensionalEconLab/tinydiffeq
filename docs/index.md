@@ -1,16 +1,25 @@
 # tinydiffeq
 
-`tinydiffeq` is a deliberately tiny set of differentiable ODE/SDE/DAE/SDAE
-integrators and finite-state Markov simulators for JAX: fixed-step Euler and
-RK4, adaptive Tsit5, linearly implicit Rodas5P for stiff ODEs and index-1
-DAEs, and fixed-step Euler–Maruyama, Milstein, and SRA1 for Itô SDEs and
-SDAEs. Solves run in bounded `lax.scan` loops with static shapes and support
-forward mode, reverse mode, and reverse-over-forward; adaptive ODE/DAE solves
-can opt into a dynamic actual-work loop (`adaptive_loop="forward"`, no
-reverse mode). Probability forecasts and general fixed homogeneous linear
-solves use matrix powers, dense exponentials, or matrix-free Krylov actions;
-see [Markov Chains](markov_chains.md) and
-[Linear Exponential Solves](exponential.md).
+tinydiffeq is an unsupported research repo of vibe-coded ports of
+well-established ODE, DAE, and SDE algorithms to JAX. Heavily AI-generated —
+but the algorithms are well established, with
+[SciML](https://docs.sciml.ai/DiffEqDocs/stable/),
+[scipy](https://docs.scipy.org/doc/scipy/reference/integrate.html), and
+[diffrax](https://docs.kidger.site/diffrax/) as the reference
+implementations — so correctness and performance are often reasonable. The
+method set is intentionally minimal, though the package is no longer
+especially tiny.
+
+Fixed-step Euler and RK4, adaptive Tsit5, and linearly implicit Rodas5P for
+stiff [ODEs](ode.md) and index-1 [DAEs](dae.md); Euler–Maruyama, Milstein,
+and SRA1 for Itô [SDEs](sde.md) and [SDAEs](sdae.md); a faithful port of
+scipy's collocation [boundary-value solver](bvp.md) for two-point BVPs with
+unknown parameters; [Markov chains](markov_chains.md) and
+[linear exponential solves](exponential.md). Every solve runs in bounded
+`lax` loops with static shapes and composes with `jit`, `vmap`, forward
+mode, reverse mode, and reverse-over-forward; iterative solves (BVP, DAE
+roots) differentiate implicitly at the solution, never through the
+iterations.
 
 **Use [SciML](https://docs.sciml.ai/DiffEqDocs/stable/) or
 [diffrax](https://docs.kidger.site/diffrax/) instead if you need any of:**
@@ -20,6 +29,8 @@ see [Markov Chains](markov_chains.md) and
 - adaptive SDE stepping (Brownian-bridge noise), full PID step-size control
 - events, root-finding, or backward-time integration
 - dense output objects or checkpointed/backsolve adjoints for long horizons
+- multipoint or complex-valued boundary value problems, or BVP meshes beyond
+  a few hundred nodes
 
 ## Install
 
@@ -122,6 +133,7 @@ jax.jvp(endpoint, (jnp.asarray(1.3),), (jnp.asarray(1.0),))  # forward mode
   are data leaves, so changing them never recompiles.
 
 Read next: [ODEs](ode.md), [SDEs](sde.md), [Semi-Explicit DAEs](dae.md),
-[SDAEs](sdae.md), [Markov Chains](markov_chains.md),
+[SDAEs](sdae.md), [Boundary Value Problems](bvp.md),
+[Markov Chains](markov_chains.md),
 [Linear Exponential Solves](exponential.md), and the
 [API Reference](api.md).
