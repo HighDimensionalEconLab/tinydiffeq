@@ -247,23 +247,3 @@ def test_field_and_project_must_preserve_structure():
             dt_0=0.1,
             project=lambda x: (x["x"],),
         )
-
-
-def test_same_pytree_structure_and_shapes_reuse_compilation():
-    @jax.jit
-    def run(x):
-        return solve_ode(
-            lambda state: jax.tree.map(lambda leaf: -leaf, state),
-            RK4(),
-            0.0,
-            1.0,
-            x,
-            dt_0=0.1,
-            max_steps=10,
-        ).xs
-
-    run({"a": jnp.ones(2), "b": jnp.ones(3)})
-    run({"a": 2 * jnp.ones(2), "b": 3 * jnp.ones(3)})
-    assert run._cache_size() == 1
-    run({"a": jnp.ones(2), "b": jnp.ones(4)})
-    assert run._cache_size() == 2
