@@ -3,6 +3,8 @@ from typing import Any
 
 import jax
 
+from tinydiffeq.interpolation import hermite_derivative, hermite_interpolate
+
 
 @jax.tree_util.register_dataclass
 @dataclass(frozen=True)
@@ -35,9 +37,9 @@ class BVPSolution:
 
     Arrays are padded to the static ``max_nodes``: the ``t`` tail repeats the
     right endpoint and the ``y``/``yp`` tails repeat the last active row, so
-    ``hermite_interpolate(ts, sol.t, sol.y, sol.yp)`` evaluates exactly the C1
-    cubic spline scipy's ``solve_bvp`` returns and ``hermite_derivative`` its
-    derivative. ``z`` holds the solved unknown parameters (``None`` when the
+    ``sol(ts)`` evaluates exactly the C1 cubic spline scipy's ``solve_bvp``
+    returns and ``sol.derivative(ts)`` its derivative. ``z`` holds the solved
+    unknown parameters (``None`` when the
     problem has none), ``rms_residuals`` is zero on inactive intervals,
     ``num_nodes`` counts active mesh nodes, and ``num_iterations`` is scipy's
     ``niter``. ``status`` uses scipy's codes (0 converged, 1 ``max_nodes``
@@ -58,6 +60,12 @@ class BVPSolution:
     status: jax.Array
     ok: jax.Array
     aux: Any = None
+
+    def __call__(self, ts):
+        return hermite_interpolate(ts, self.t, self.y, self.yp)
+
+    def derivative(self, ts):
+        return hermite_derivative(ts, self.t, self.y, self.yp)
 
 
 @jax.tree_util.register_dataclass
