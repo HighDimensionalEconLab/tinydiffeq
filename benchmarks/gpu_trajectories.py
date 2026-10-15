@@ -48,15 +48,30 @@ GROWTH_LOG_Z_VARIANCE = 0.012564
 GROWTH_LOG_K_VARIANCE = 0.01
 
 
+PRESETS = {
+    "default": {"batch": [100, 1000, 10000], "dim": [1, 8], "n_steps": [31, 127, 1024]},
+    "large": {"batch": [10000, 25000], "dim": [1, 4], "n_steps": [1024, 2048]},
+}
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--solvers", nargs="+", default=["sra1", "em", "rk4"])
-    parser.add_argument("--batch", nargs="+", type=int, default=[100, 1000, 10000])
-    parser.add_argument("--dim", nargs="+", type=int, default=[1, 8])
     parser.add_argument(
-        "--n-steps", nargs="+", type=int, default=[31, 127, 1024], dest="n_steps"
+        "--preset",
+        default="default",
+        choices=list(PRESETS),
+        help="default sweep or larger trajectory/step grid",
     )
-    parser.add_argument("--dtypes", nargs="+", default=["float32"])
+    parser.add_argument("--solvers", nargs="+", default=["sra1", "em", "rk4"])
+    parser.add_argument("--batch", nargs="+", type=int, default=None)
+    parser.add_argument("--dim", nargs="+", type=int, default=None)
+    parser.add_argument("--n-steps", nargs="+", type=int, default=None, dest="n_steps")
+    parser.add_argument(
+        "--dtypes",
+        nargs="+",
+        default=["float32", "float64"],
+        choices=["float32", "float64"],
+    )
     parser.add_argument(
         "--drifts",
         nargs="+",
@@ -101,7 +116,15 @@ def parse_args():
         default="benchmarks/results/gpu_trajectories",
         help="prefix for the .json and .md outputs",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    preset = PRESETS[args.preset]
+    if args.batch is None:
+        args.batch = preset["batch"]
+    if args.dim is None:
+        args.dim = preset["dim"]
+    if args.n_steps is None:
+        args.n_steps = preset["n_steps"]
+    return args
 
 
 def unit_softplus(raw):

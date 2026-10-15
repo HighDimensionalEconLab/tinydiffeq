@@ -17,16 +17,19 @@ from tinydiffeq import solve_bvp
 jax.config.update("jax_enable_x64", True)
 
 
-def exp_problem(max_nodes):
+def exp_problem(max_nodes, dtype):
     def fun(t, y):
-        return jnp.array([y[1], y[0]])
+        return jnp.array([y[1], y[0]], dtype=y.dtype)
 
     def bc(ya, yb):
-        return jnp.array([ya[0] - 1.0, yb[0]])
+        return jnp.array([ya[0] - 1.0, yb[0]], dtype=ya.dtype)
 
-    t = jnp.linspace(0.0, 1.0, 5)
-    y_0 = jnp.zeros((5, 2))
-    jitted = jax.jit(lambda tt, yy: solve_bvp(fun, bc, tt, yy, max_nodes=max_nodes))
+    t = jnp.linspace(0.0, 1.0, 5, dtype=dtype)
+    y_0 = jnp.zeros((5, 2), dtype=dtype)
+    tol = 1e-4 if dtype == jnp.float32 else 1e-3
+    jitted = jax.jit(
+        lambda tt, yy: solve_bvp(fun, bc, tt, yy, tol=tol, max_nodes=max_nodes)
+    )
 
     def solve():
         return jitted(t, y_0)
@@ -44,7 +47,7 @@ def exp_problem(max_nodes):
     return solve, scipy_solve
 
 
-def shock_problem(max_nodes):
+def shock_problem(max_nodes, dtype):
     eps = 1e-3
 
     def fun(t, y):
@@ -57,15 +60,19 @@ def shock_problem(max_nodes):
                     + jnp.pi * t * jnp.sin(jnp.pi * t)
                 )
                 / eps,
-            ]
+            ],
+            dtype=y.dtype,
         )
 
     def bc(ya, yb):
-        return jnp.array([ya[0] + 2.0, yb[0]])
+        return jnp.array([ya[0] + 2.0, yb[0]], dtype=ya.dtype)
 
-    t = jnp.linspace(-1.0, 1.0, 5)
-    y_0 = jnp.zeros((5, 2))
-    jitted = jax.jit(lambda tt, yy: solve_bvp(fun, bc, tt, yy, max_nodes=max_nodes))
+    t = jnp.linspace(-1.0, 1.0, 5, dtype=dtype)
+    y_0 = jnp.zeros((5, 2), dtype=dtype)
+    tol = 1e-3
+    jitted = jax.jit(
+        lambda tt, yy: solve_bvp(fun, bc, tt, yy, tol=tol, max_nodes=max_nodes)
+    )
 
     def solve():
         return jitted(t, y_0)
@@ -96,15 +103,16 @@ def shock_problem(max_nodes):
     return solve, scipy_solve
 
 
-def eigen_gradient(max_nodes):
+def eigen_gradient(max_nodes, dtype):
     def fun(t, y, z, args, p):
-        return jnp.array([y[1], -(z[0] ** 2) * p * y[0]])
+        return jnp.array([y[1], -(z[0] ** 2) * p * y[0]], dtype=y.dtype)
 
     def bc(ya, yb, z, args, p):
-        return jnp.array([ya[0], yb[0], ya[1] - z[0]])
+        return jnp.array([ya[0], yb[0], ya[1] - z[0]], dtype=ya.dtype)
 
-    t = jnp.linspace(0.0, 1.0, 9)
+    t = jnp.linspace(0.0, 1.0, 9, dtype=dtype)
     y_0 = jnp.stack([jnp.sin(jnp.pi * t), jnp.pi * jnp.cos(jnp.pi * t)], axis=1)
+    tol = 1e-4 if dtype == jnp.float32 else 1e-6
 
     def objective(p):
         return solve_bvp(
@@ -112,33 +120,35 @@ def eigen_gradient(max_nodes):
             bc,
             t,
             y_0,
-            jnp.array([3.0]),
+            jnp.array([3.0], dtype=dtype),
             p=p,
-            tol=1e-6,
+            tol=tol,
             max_nodes=max_nodes,
         ).z[0]
 
     gradient = jax.jit(jax.grad(objective))
+    p_0 = jnp.asarray(1.0, dtype=dtype)
 
     def solve():
-        return gradient(1.0)
+        return gradient(p_0)
 
     return solve, None
 
 
-def vmapped_exp(max_nodes, batch):
+def vmapped_exp(max_nodes, batch, dtype):
     def fun(t, y, z, args, p):
-        return jnp.array([y[1], y[0]])
+        return jnp.array([y[1], y[0]], dtype=y.dtype)
 
     def bc(ya, yb, z, args, p):
-        return jnp.array([ya[0] - p, yb[0]])
+        return jnp.array([ya[0] - p, yb[0]], dtype=ya.dtype)
 
-    t = jnp.linspace(0.0, 1.0, 5)
-    y_0 = jnp.zeros((5, 2))
-    p_values = jnp.linspace(0.5, 2.0, batch)
+    t = jnp.linspace(0.0, 1.0, 5, dtype=dtype)
+    y_0 = jnp.zeros((5, 2), dtype=dtype)
+    p_values = jnp.linspace(0.5, 2.0, batch, dtype=dtype)
+    tol = 1e-4 if dtype == jnp.float32 else 1e-3
 
     def one(p):
-        return solve_bvp(fun, bc, t, y_0, p=p, max_nodes=max_nodes)
+        return solve_bvp(fun, bc, t, y_0, p=p, tol=tol, max_nodes=max_nodes)
 
     batched = jax.jit(lambda ps: jax.vmap(one)(ps))
 
@@ -182,6 +192,12 @@ def cache_audit(max_nodes):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--max-nodes", nargs="+", type=int, default=[32, 128])
+    parser.add_argument(
+        "--dtypes",
+        nargs="+",
+        default=["float32", "float64"],
+        choices=["float32", "float64"],
+    )
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--repeat", type=int, default=5)
     parser.add_argument("--cache-audit", action="store_true")
@@ -191,21 +207,30 @@ def main():
         cache_audit(args.max_nodes[0])
         return
 
-    print("case,max_nodes,cold_ms,run_ms,scipy_ms")
-    for max_nodes in args.max_nodes:
-        for name, factory in (("exp", exp_problem), ("shock", shock_problem)):
-            solve, scipy_solve = factory(max_nodes)
+    dtypes = {"float32": jnp.float32, "float64": jnp.float64}
+    print("dtype,case,max_nodes,cold_ms,run_ms,scipy_ms")
+    for dtype_name in args.dtypes:
+        dtype = dtypes[dtype_name]
+        for max_nodes in args.max_nodes:
+            for name, factory in (("exp", exp_problem), ("shock", shock_problem)):
+                solve, scipy_solve = factory(max_nodes, dtype)
+                cold_ms, run_ms = cold_and_warm_ms(solve, args.repeat)
+                scipy_ms = 1e3 * statistics.median(
+                    timeit.repeat(scipy_solve, repeat=args.repeat, number=1)
+                )
+                print(
+                    f"{dtype_name},{name},{max_nodes},"
+                    f"{cold_ms:.1f},{run_ms:.3f},{scipy_ms:.3f}"
+                )
+            solve, _ = eigen_gradient(max_nodes, dtype)
             cold_ms, run_ms = cold_and_warm_ms(solve, args.repeat)
-            scipy_ms = 1e3 * statistics.median(
-                timeit.repeat(scipy_solve, repeat=args.repeat, number=1)
+            print(f"{dtype_name},eigen_grad,{max_nodes},{cold_ms:.1f},{run_ms:.3f},")
+            solve, _ = vmapped_exp(max_nodes, args.batch, dtype)
+            cold_ms, run_ms = cold_and_warm_ms(solve, args.repeat)
+            print(
+                f"{dtype_name},vmap_exp_b{args.batch},{max_nodes},"
+                f"{cold_ms:.1f},{run_ms:.3f},"
             )
-            print(f"{name},{max_nodes},{cold_ms:.1f},{run_ms:.3f},{scipy_ms:.3f}")
-        solve, _ = eigen_gradient(max_nodes)
-        cold_ms, run_ms = cold_and_warm_ms(solve, args.repeat)
-        print(f"eigen_grad,{max_nodes},{cold_ms:.1f},{run_ms:.3f},")
-        solve, _ = vmapped_exp(max_nodes, args.batch)
-        cold_ms, run_ms = cold_and_warm_ms(solve, args.repeat)
-        print(f"vmap_exp_b{args.batch},{max_nodes},{cold_ms:.1f},{run_ms:.3f},")
 
 
 if __name__ == "__main__":
