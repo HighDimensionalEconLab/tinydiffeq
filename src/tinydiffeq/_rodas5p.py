@@ -165,7 +165,7 @@ def _sum_vectors(vectors, coefficients, model):
 
 def _safe_lu_factor(matrix):
     """Factor once and replace an unusable factor before any stage solve."""
-    lu, pivots = jsp_linalg.lu_factor(matrix, check_finite=False)
+    lu, pivots = jsp_linalg.lu_factor(jax.lax.stop_gradient(matrix), check_finite=False)
     diagonal = jnp.diag(lu)
     ok = jax.lax.stop_gradient(
         jnp.all(jnp.isfinite(lu)) & jnp.all(jnp.abs(diagonal) > 0.0)
@@ -180,27 +180,19 @@ def _safe_lu_factor(matrix):
     return (safe_lu, safe_pivots), ok
 
 
-@jax.custom_jvp
 def _factored_solve(matrix, lu, pivots, rhs):
     """Solve with an implicit derivative that does not differentiate pivots."""
-    return jsp_linalg.lu_solve((lu, pivots), rhs, check_finite=False)
-
-
-@_factored_solve.defjvp
-def _factored_solve_jvp(primals, tangents):
-    matrix, lu, pivots, rhs = primals
-    matrix_dot, _, _, rhs_dot = tangents
-    value = _factored_solve(matrix, lu, pivots, rhs)
-    value_dot = _factored_solve(
-        matrix,
-        lu,
-        pivots,
-        rhs_dot - matrix_dot @ value,
+    return jax.lax.custom_linear_solve(
+        lambda x: matrix @ x,
+        rhs,
+        solve=lambda _, b: jsp_linalg.lu_solve((lu, pivots), b, check_finite=False),
+        transpose_solve=lambda _, b: jsp_linalg.lu_solve(
+            (lu, pivots), b, trans=1, check_finite=False
+        ),
     )
-    return value, value_dot
 
 
-def rodas5p_step(field, t, state, dt, mass_diagonal, project):
+def rodas5p_step(field, t, state, dt, mass_diagonal, project, *, need_dense=True):
     """Take one Rodas5P attempt.
 
     ``field`` maps a state pytree and scalar time to a pytree with the same
@@ -218,9 +210,12 @@ def rodas5p_step(field, t, state, dt, mass_diagonal, project):
         output, _ = ravel_pytree(field(unravel(value), time))
         return output
 
-    field_initial = field_flat(state_flat, t)
+    field_initial, time_derivative = jax.jvp(
+        lambda time: field_flat(state_flat, time),
+        (t,),
+        (jnp.ones_like(t),),
+    )
     jacobian = jax.jacfwd(lambda value: field_flat(value, t))(state_flat)
-    time_derivative = jax.jacfwd(lambda time: field_flat(state_flat, time))(t)
     gamma = jnp.asarray(GAMMA, dtype)
     matrix = jnp.diag(mass_diagonal / (gamma * dt)) - jacobian
     (lu, pivots), factor_ok = _safe_lu_factor(matrix)
@@ -251,11 +246,7 @@ def rodas5p_step(field, t, state, dt, mass_diagonal, project):
     candidate_flat = state_flat + _sum_vectors(stages, SOLUTION, state_flat)
     candidate = project(unravel(candidate_flat))
     candidate_flat, _ = ravel_pytree(candidate)
-    error = unravel(stages[-1])
-    dense = tuple(
-        unravel(_sum_vectors(stages, coefficients, state_flat))
-        for coefficients in DENSE
-    )
+    error = unravel(jax.lax.stop_gradient(stages[-1]))
     finite = (
         jnp.all(jnp.isfinite(field_initial))
         & jnp.all(jnp.isfinite(jacobian))
@@ -265,10 +256,17 @@ def rodas5p_step(field, t, state, dt, mass_diagonal, project):
     )
     for stage in stages:
         finite = finite & jnp.all(jnp.isfinite(stage))
-    for coefficient in dense:
-        for leaf in jax.tree.leaves(coefficient):
-            finite = finite & jnp.all(jnp.isfinite(leaf))
-    ok = factor_ok & finite
+    if need_dense:
+        dense = tuple(
+            unravel(_sum_vectors(stages, coefficients, state_flat))
+            for coefficients in DENSE
+        )
+        for coefficient in dense:
+            for leaf in jax.tree.leaves(coefficient):
+                finite = finite & jnp.all(jnp.isfinite(leaf))
+    else:
+        dense = None
+    ok = jax.lax.stop_gradient(factor_ok & finite)
     safe_candidate = jax.tree.map(
         lambda value, fallback: jnp.where(ok, value, fallback),
         candidate,
@@ -278,10 +276,15 @@ def rodas5p_step(field, t, state, dt, mass_diagonal, project):
         lambda value: jnp.where(ok, value, jnp.full_like(value, jnp.inf)),
         error,
     )
-    safe_dense = tuple(
-        jax.tree.map(lambda value: jnp.where(ok, value, jnp.zeros_like(value)), item)
-        for item in dense
-    )
+    if need_dense:
+        safe_dense = tuple(
+            jax.tree.map(
+                lambda value: jnp.where(ok, value, jnp.zeros_like(value)), item
+            )
+            for item in dense
+        )
+    else:
+        safe_dense = None
     return safe_candidate, safe_error, safe_dense, ok
 
 

@@ -243,13 +243,18 @@ def build_system(cfg, args, S, t_a):
 
         return jac_transform(mode_bc)(fn, argnums=(0, 1, 2))(ya_flat, yb_flat, z_flat)
 
-    def jacobian_blocks(t, h, Y, Z, y_middle, p):
-        df_dy, df_dz = field_jacobians(t, Y, Z, p, True)
-        df_dy_middle, df_dz_middle = field_jacobians(
-            t[:-1] + 0.5 * h, y_middle, Z, p, False
-        )
+    def jacobian_blocks_and_f(t, h, Y, Z, y_middle, p):
+        m = t.shape[0]
+        t_all = jnp.concatenate([t, t[:-1] + 0.5 * h])
+        Y_all = jnp.concatenate([Y, y_middle])
+        df_dy_all, df_dz_all = field_jacobians(t_all, Y_all, Z, p, True)
+        df_dy, df_dy_middle = df_dy_all[:m], df_dy_all[m:]
+        if df_dz_all is None:
+            df_dz = df_dz_middle = None
+        else:
+            df_dz, df_dz_middle = df_dz_all[:m], df_dz_all[m:]
         dbc_dya, dbc_dyb, dbc_dz = bc_jacobians(Y[0], Y[-1], Z, p)
-        return collocation_jacobian_blocks(
+        blocks = collocation_jacobian_blocks(
             h,
             df_dy,
             df_dy_middle,
@@ -259,6 +264,10 @@ def build_system(cfg, args, S, t_a):
             dbc_dyb,
             dbc_dz,
         )
+        return blocks, df_dy, df_dz, df_dy_middle
+
+    def jacobian_blocks(t, h, Y, Z, y_middle, p):
+        return jacobian_blocks_and_f(t, h, Y, Z, y_middle, p)[0]
 
     def jacobian_at(t, h, Y, Z, y_middle, p):
         return babd_dense(jacobian_blocks(t, h, Y, Z, y_middle, p))
@@ -280,6 +289,7 @@ def build_system(cfg, args, S, t_a):
         collocation_parts=collocation_parts,
         bc_values=bc_values,
         jacobian_blocks=jacobian_blocks,
+        jacobian_blocks_and_f=jacobian_blocks_and_f,
         jacobian_at=jacobian_at,
         project=project,
         aux_values=aux_values,
@@ -294,8 +304,15 @@ def estimate_rms_residuals(system, t, h, h_safe, active, Y, Z, f, f_middle, col_
     tau_left = 0.5 - LOBATTO_OFFSET
     y1, y1_prime = hermite_pair(tau_right, h, h_safe, Y[:-1], Y[1:], f[:-1], f[1:])
     y2, y2_prime = hermite_pair(tau_left, h, h_safe, Y[:-1], Y[1:], f[:-1], f[1:])
-    f1 = system["field_values"](t[:-1] + tau_right * h, y1, Z, p, False)
-    f2 = system["field_values"](t[:-1] + tau_left * h, y2, Z, p, False)
+    m_int = h.shape[0]
+    f_lobatto = system["field_values"](
+        jnp.concatenate([t[:-1] + tau_right * h, t[:-1] + tau_left * h]),
+        jnp.concatenate([y1, y2]),
+        Z,
+        p,
+        False,
+    )
+    f1, f2 = f_lobatto[:m_int], f_lobatto[m_int:]
     r1 = (y1_prime - f1) / (1.0 + jnp.abs(f1))
     r2 = (y2_prime - f2) / (1.0 + jnp.abs(f2))
     r_middle = r_middle / (1.0 + jnp.abs(f_middle))
@@ -330,7 +347,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
     def stack_residual(col_res, bc_res):
         return jnp.concatenate([col_res.reshape(-1), bc_res])
 
-    col_res, y_middle, _, f_middle = system["collocation_parts"](t, h, Y, Z, p)
+    col_res, y_middle, f, f_middle = system["collocation_parts"](t, h, Y, Z, p)
     bc_res = system["bc_values"](Y[0], Y[-1], Z, p)
     # The carried solver state is whatever pytree the linear solver's init
     # returns; its structure is recovered abstractly for the placeholder.
@@ -350,6 +367,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
         Z=Z,
         y_middle=y_middle,
         col_res=col_res,
+        f=f,
         f_middle=f_middle,
         bc_res=bc_res,
         res=stack_residual(col_res, bc_res),
@@ -402,7 +420,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
             y_candidate = system["project"](y_candidate)
             y_candidate = pad_tail(y_candidate, num_nodes)
             z_candidate = c["Z"] - alpha * step[max_nodes * n :]
-            col_res, y_middle, _, f_middle = system["collocation_parts"](
+            col_res, y_middle, f, f_middle = system["collocation_parts"](
                 t, h, y_candidate, z_candidate, p
             )
             bc_res = system["bc_values"](
@@ -420,6 +438,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
                 Z=z_candidate,
                 y_middle=y_middle,
                 col_res=col_res,
+                f=f,
                 f_middle=f_middle,
                 bc_res=bc_res,
                 res=res,
@@ -440,6 +459,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
                 Z=c["Z"],
                 y_middle=c["y_middle"],
                 col_res=c["col_res"],
+                f=c["f"],
                 f_middle=c["f_middle"],
                 bc_res=c["bc_res"],
                 res=c["res"],
@@ -455,6 +475,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
                 c["Z"],
                 c["y_middle"],
                 c["col_res"],
+                c["f"],
                 c["f_middle"],
                 c["bc_res"],
                 c["res"],
@@ -466,12 +487,13 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
                 tr["Z"],
                 tr["y_middle"],
                 tr["col_res"],
+                tr["f"],
                 tr["f_middle"],
                 tr["bc_res"],
                 tr["res"],
             )
 
-        Y_next, Z_next, y_middle, col_res, f_middle, bc_res, res = jax.lax.cond(
+        Y_next, Z_next, y_middle, col_res, f, f_middle, bc_res, res = jax.lax.cond(
             singular, keep_current, take_candidate, trial
         )
 
@@ -492,6 +514,7 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
             Z=Z_next,
             y_middle=y_middle,
             col_res=col_res,
+            f=f,
             f_middle=f_middle,
             bc_res=bc_res,
             res=res,
@@ -506,7 +529,15 @@ def solve_newton(cfg, system, t, h, Y, Z, num_nodes, p, tol, bc_tol, live):
         )
 
     final = jax.lax.while_loop(newton_cond, newton_body, carry)
-    return final["Y"], final["Z"], final["singular"]
+    return (
+        final["Y"],
+        final["Z"],
+        final["singular"],
+        final["col_res"],
+        final["f"],
+        final["f_middle"],
+        final["bc_res"],
+    )
 
 
 def _solve_bvp_impl(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
@@ -526,7 +557,7 @@ def _solve_bvp_impl(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
         h = t_c[1:] - t_c[:-1]
         active = jnp.arange(max_nodes - 1) < num_c - 1
         h_safe = jnp.where(active, h, jnp.ones_like(h))
-        Y_c, Z_c, singular = solve_newton(
+        Y_c, Z_c, singular, col_res, f, f_middle, bc_res = solve_newton(
             cfg,
             system,
             t_c,
@@ -540,8 +571,6 @@ def _solve_bvp_impl(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
             c["status"] == RUNNING,
         )
         iteration = c["iteration"] + 1
-        col_res, _, f, f_middle = system["collocation_parts"](t_c, h, Y_c, Z_c, p)
-        bc_res = system["bc_values"](Y_c[0], Y_c[-1], Z_c, p)
         max_bc_res = jnp.max(jnp.abs(bc_res))
         rms = estimate_rms_residuals(
             system, t_c, h, h_safe, active, Y_c, Z_c, f, f_middle, col_res, p
@@ -649,7 +678,7 @@ def _run_with_ad(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
         p_dot = tangents[4]
         if p_in is None:
             return result, zeros
-        t_f, Y_f, Z_f, _, _, num_f, _, status, _ = result
+        t_f, Y_f, Z_f, f_f, _, num_f, _, status, _ = result
 
         # Implicit function theorem at the solution on the frozen final mesh;
         # a failed lane's tangent program runs at the inert initial guess so
@@ -664,26 +693,41 @@ def _run_with_ad(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
         num_c = jax.lax.stop_gradient(num_f)
         Y_sol = jnp.where(ad_ok, Y_f, jax.lax.stop_gradient(Y_in))
         Z_sol = jnp.where(ad_ok, Z_f, jax.lax.stop_gradient(Z_in))
+        f_sol = jnp.where(ad_ok, f_f, jnp.zeros_like(f_f))
         p_c = p_in
         args_c = jax.lax.stop_gradient(args_in)
         S_c = jax.lax.stop_gradient(S_in) if cfg.has_singular_term else None
         system = build_system(cfg, args_c, S_c, t_c[0])
         h_c = t_c[1:] - t_c[:-1]
-        _, y_middle, _, _ = system["collocation_parts"](t_c, h_c, Y_sol, Z_sol, p_c)
-        blocks = system["jacobian_blocks"](t_c, h_c, Y_sol, Z_sol, y_middle, p_c)
+        p_dot_masked = mask_tangent(ad_ok, p_dot, zero_tangent(p_in))
+        y_middle = 0.5 * (Y_sol[1:] + Y_sol[:-1]) - 0.125 * h_c[:, None] * (
+            f_sol[1:] - f_sol[:-1]
+        )
+        blocks, df_dy, df_dz, df_dy_middle = system["jacobian_blocks_and_f"](
+            t_c, h_c, Y_sol, Z_sol, y_middle, p_c
+        )
+        m = cfg.max_nodes
+        t_all = jnp.concatenate([t_c, t_c[:-1] + 0.5 * h_c])
+        Y_all = jnp.concatenate([Y_sol, y_middle])
+
+        def partial_f_and_bc(p_value):
+            f_all = system["field_values"](t_all, Y_all, Z_sol, p_value, True)
+            bc_res = system["bc_values"](Y_sol[0], Y_sol[-1], Z_sol, p_value)
+            return f_all, bc_res
+
+        _, (df_all_dp_dot, dbc_dp_dot) = jax.jvp(
+            partial_f_and_bc, (p_c,), (p_dot_masked,)
+        )
+        df_dp_dot, df_mid_dp_dot = df_all_dp_dot[:m], df_all_dp_dot[m:]
+        y_mid_p_dot = -0.125 * h_c[:, None] * (df_dp_dot[1:] - df_dp_dot[:-1])
+        f_mid_dot = df_mid_dp_dot + jnp.einsum("mij,mj->mi", df_dy_middle, y_mid_p_dot)
+        col_res_dot = (
+            -h_c[:, None] / 6.0 * (df_dp_dot[:-1] + df_dp_dot[1:] + 4.0 * f_mid_dot)
+        )
+        rhs_dot = jnp.concatenate([col_res_dot.reshape(-1), dbc_dp_dot])
         # The factorization is solver state, not a differentiation path:
         # tangents of the matrix flow through custom_linear_solve's matvec.
         state, factor_ok = structured_qr_factor(jax.lax.stop_gradient(blocks))
-        p_dot_masked = mask_tangent(ad_ok, p_dot, zero_tangent(p_in))
-
-        def residual_of_p(p_value):
-            col_res, _, _, _ = system["collocation_parts"](
-                t_c, h_c, Y_sol, Z_sol, p_value
-            )
-            bc_res = system["bc_values"](Y_sol[0], Y_sol[-1], Z_sol, p_value)
-            return jnp.concatenate([col_res.reshape(-1), bc_res])
-
-        rhs_dot = jax.jvp(residual_of_p, (p_c,), (p_dot_masked,))[1]
         delta = jax.lax.custom_linear_solve(
             lambda u: babd_matvec(blocks, u),
             -rhs_dot,
@@ -708,11 +752,9 @@ def _run_with_ad(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
 
         y_dot = finalize(y_dot)
         z_dot = finalize(z_dot)
-        f_dot = jax.jvp(
-            lambda yv, zv, pv: system["field_values"](t_c, yv, zv, pv, True),
-            (Y_sol, Z_sol, p_c),
-            (y_dot, z_dot, p_dot_masked),
-        )[1]
+        f_dot = jnp.einsum("mij,mj->mi", df_dy, y_dot) + df_dp_dot
+        if cfg.k:
+            f_dot = f_dot + jnp.einsum("mik,k->mi", df_dz, z_dot)
         f_dot = finalize(f_dot)
         if cfg.has_aux:
             aux_dot = jax.jvp(

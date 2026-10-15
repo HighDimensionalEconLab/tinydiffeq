@@ -1,5 +1,4 @@
 import inspect
-import numbers
 
 import jax
 import jax.numpy as jnp
@@ -49,16 +48,18 @@ def _has_static_uniform_horizon(t_0, t_1, dt_0, max_steps, dtype):
     the single clipped scan below.
     """
     values = (t_0, t_1, dt_0)
-    if not all(
-        isinstance(value, numbers.Real) and not isinstance(value, bool)
+    if any(
+        isinstance(value, (jax.core.Tracer, bool, np.bool_)) or np.ndim(value) != 0
         for value in values
     ):
-        return False
+        return False, False
     try:
         numpy_dtype = np.dtype(dtype)
-        t_0_value, t_1_value, dt_0_value = (numpy_dtype.type(value) for value in values)
+        t_0_value, t_1_value, dt_0_value = (
+            numpy_dtype.type(np.asarray(value).item()) for value in values
+        )
         if not dt_0_value > 0:
-            return False
+            return False, False
         nominal_final = numpy_dtype.type(
             t_0_value + numpy_dtype.type(max_steps) * dt_0_value
         )
@@ -71,11 +72,21 @@ def _has_static_uniform_horizon(t_0, t_1, dt_0, max_steps, dtype):
             numpy_dtype.type(0.25) * abs(dt_0_value),
         )
     except (TypeError, ValueError):
-        return False
+        return False, False
     penultimate_reaches = (nominal_penultimate >= t_1_value) or (
         abs(nominal_penultimate - t_1_value) <= tolerance
     )
-    return bool(abs(nominal_final - t_1_value) <= tolerance and not penultimate_reaches)
+    is_uniform = bool(
+        abs(nominal_final - t_1_value) <= tolerance and not penultimate_reaches
+    )
+    is_exact_step = bool(
+        is_uniform
+        and np.frexp(dt_0_value)[0] == 0.5
+        and nominal_final == t_1_value
+        and numpy_dtype.type((t_0_value + dt_0_value) - t_0_value) == dt_0_value
+        and numpy_dtype.type(t_1_value - nominal_penultimate) == dt_0_value
+    )
+    return is_uniform, is_exact_step
 
 
 def identity_project(x):
@@ -189,7 +200,7 @@ def solve_ode(
 
     original_times = (t_0, t_1, dt_0)
     x_0, time_dtype = asarray_state(x_0, "x_0")
-    static_uniform_horizon = _has_static_uniform_horizon(
+    static_uniform_horizon, exact_step_dt = _has_static_uniform_horizon(
         *original_times, max_steps, time_dtype
     )
     t_0 = jnp.asarray(t_0, time_dtype)
@@ -251,7 +262,7 @@ def solve_ode(
     need_f = not is_rodas and (
         solver.fsal or (save_at.ts is not None and not save_at.exact)
     )
-    f_init = g(x_0, t_0) if need_f else zeros_like(x_0)
+    f_init = g(x_0, t_0) if need_f else None
     track_aux = has_aux and not save_at.t_1 and not save_at.exact
     if track_aux:
         aux_init, aux_init_ok = evaluate_aux(
@@ -297,12 +308,18 @@ def solve_ode(
         )
         if is_rodas:
             x_1, err, dense, step_ok = rodas5p_step(
-                g, t, x, h, identity_mass, project_state
+                g,
+                t,
+                x,
+                h,
+                identity_mass,
+                project_state,
+                need_dense=save_at.ts is not None,
             )
             f_1 = f_cur
         else:
             step = solver.step_fixed if is_fixed else solver.step
-            x_1, f_1, err = step(g, t, x, h, f_cur if need_f else None, project_state)
+            x_1, f_1, err = step(g, t, x, h, f_cur, project_state)
             if need_f and f_1 is None:
                 f_1 = g(x_1, proposed_t)
             dense = None
@@ -364,7 +381,7 @@ def solve_ode(
             else aux_dot
         )
         t_new = jnp.where(advance, proposed_t, t)
-        f_new = where(advance, f_1, f_cur) if need_f else f_cur
+        f_new = where(advance, f_1, f_cur) if need_f else None
         dt_new = jnp.where(done | failed, dt, dt_next)
         controller_state_new = jax.tree.map(
             lambda old, new: jnp.where(done | failed | ~step_ok, old, new),
@@ -450,13 +467,11 @@ def solve_ode(
             constant=True,
             time_tolerance=t_eps,
         )
-        x_1, f_1, _ = solver.step_fixed(
-            g, t, x, h, f_cur if need_f else None, project_state
-        )
+        x_1, f_1, _ = solver.step_fixed(g, t, x, h, f_cur, project_state)
         if need_f and f_1 is None:
             f_1 = g(x_1, t_1_step)
         done_1 = reaches_horizon
-        carry_1 = (t_1_step, x_1, f_1 if need_f else f_cur, done_1, num_accepted + 1)
+        carry_1 = (t_1_step, x_1, f_1 if need_f else None, done_1, num_accepted + 1)
         if save_at.t_1:
             output = None
         elif save_at.steps or save_at.exact:
@@ -482,35 +497,36 @@ def solve_ode(
         return jax.lax.cond(unvmap_all(carry[3]), fixed_skip_step, live_lanes, carry)
 
     def uniform_fixed_body(carry, step_index):
-        t, x, f_cur, _, num_accepted = carry
-        h, t_1_step, reaches_horizon = select_step(
-            t,
-            t_0,
-            t_1,
-            dt_0,
-            dt_0,
-            step_index,
-            constant=True,
-            time_tolerance=t_eps,
-        )
-        x_1, f_1, _ = solver.step_fixed(
-            g, t, x, h, f_cur if need_f else None, project_state
-        )
+        t, x, f_cur = carry
+        t = jax.lax.stop_gradient(t)
+        if exact_step_dt:
+            h = jax.lax.stop_gradient(dt_0)
+            t_1_step = jax.lax.stop_gradient(
+                t_0 + jnp.asarray(step_index + 1, time_dtype) * dt_0
+            )
+        else:
+            h, t_1_step, _ = select_step(
+                t,
+                t_0,
+                t_1,
+                dt_0,
+                dt_0,
+                step_index,
+                constant=True,
+                time_tolerance=t_eps,
+            )
+            h = jax.lax.stop_gradient(h)
+            t_1_step = jax.lax.stop_gradient(t_1_step)
+        x_1, f_1, _ = solver.step_fixed(g, t, x, h, f_cur, project_state)
         if need_f and f_1 is None:
             f_1 = g(x_1, t_1_step)
-        carry_1 = (
-            t_1_step,
-            x_1,
-            f_1 if need_f else f_cur,
-            reaches_horizon,
-            num_accepted + 1,
-        )
+        carry_1 = (t_1_step, x_1, f_1 if need_f else None)
         if save_at.t_1:
             output = None
         elif save_at.steps or save_at.exact:
-            output = (t_1_step, x_1, jnp.asarray(True))
+            output = x_1
         else:
-            output = (t_1_step, x_1, f_1, jnp.asarray(True))
+            output = (x_1, f_1)
         return carry_1, output
 
     def bounded_adaptive_scan(carry):
@@ -573,23 +589,28 @@ def solve_ode(
     )
     use_fast_fixed = is_fixed and not is_rodas and not track_aux
     if use_fast_fixed:
-        fixed_carry_0 = (
-            t_0,
-            x_0,
-            f_init,
-            jnp.asarray(False),
-            jnp.asarray(0, jnp.int32),
-        )
         if static_uniform_horizon:
             step_indices = jnp.arange(max_steps, dtype=jnp.int32)
-            fixed_final, rows = jax.lax.scan(
-                uniform_fixed_body, fixed_carry_0, step_indices, unroll=unroll
+            (t_final, x_final, _), rows = jax.lax.scan(
+                uniform_fixed_body,
+                (t_0, x_0, f_init),
+                step_indices,
+                unroll=unroll,
             )
+            done = jnp.asarray(True)
+            num_accepted = jnp.asarray(max_steps, jnp.int32)
         else:
+            fixed_carry_0 = (
+                t_0,
+                x_0,
+                f_init,
+                jnp.asarray(False),
+                jnp.asarray(0, jnp.int32),
+            )
             fixed_final, rows = jax.lax.scan(
                 fixed_body, fixed_carry_0, None, length=max_steps, unroll=unroll
             )
-        t_final, x_final, _, done, num_accepted = fixed_final
+            t_final, x_final, _, done, num_accepted = fixed_final
         num_steps = num_accepted
         failed = jnp.asarray(False)
     elif controller.uses_error_estimate and adaptive_loop == "forward":
@@ -665,7 +686,11 @@ def solve_ode(
         )
 
     if save_at.steps or save_at.exact:
-        if use_fast_fixed:
+        if use_fast_fixed and static_uniform_horizon:
+            xs_s = rows
+            aux_s = None
+            adv_s = None
+        elif use_fast_fixed:
             ts_s, xs_s, adv_s = rows
             aux_s = None
         else:
@@ -681,12 +706,28 @@ def solve_ode(
             adv_s,
         ) = rows
     else:
-        if use_fast_fixed:
+        if use_fast_fixed and static_uniform_horizon:
+            xs_s, fs_s = rows
+            aux_s = None
+            aux_dots_s = None
+            adv_s = None
+        elif use_fast_fixed:
             ts_s, xs_s, fs_s, adv_s = rows
             aux_s = None
             aux_dots_s = None
         else:
             ts_s, xs_s, aux_s, fs_s, aux_dots_s, adv_s = rows
+    if use_fast_fixed and static_uniform_horizon:
+        next_indices = jnp.asarray(step_indices + 1, time_dtype)
+        nominal_next = t_0 + next_indices * dt_0
+        snap_tolerance = jnp.minimum(
+            jnp.asarray(t_eps, time_dtype),
+            0.25 * jnp.abs(dt_0),
+        )
+        reaches_horizon = (nominal_next >= t_1) | (
+            jnp.abs(nominal_next - t_1) <= snap_tolerance
+        )
+        ts_s = jnp.where(reaches_horizon, t_1, nominal_next)
     all_times = jnp.concatenate([t_0[None], ts_s])
     all_states = prepend(x_0, xs_s)
     if save_at.exact:
@@ -741,9 +782,19 @@ def solve_ode(
             aux=query_aux,
         )
     all_aux = prepend(aux_init, aux_s) if has_aux else None
-    raw_accepted = jnp.concatenate([jnp.ones((1,), bool), adv_s])
 
     if save_at.steps:
+        if use_fast_fixed and static_uniform_horizon:
+            return Solution(
+                ts=all_times,
+                xs=all_states,
+                ok=integration_ok,
+                num_accepted=num_accepted,
+                num_steps=num_steps,
+                accepted=jnp.ones((max_steps + 1,), dtype=bool),
+                aux=None,
+            )
+        raw_accepted = jnp.concatenate([jnp.ones((1,), bool), adv_s])
         output_size = max_steps + 1
         accepted_indices = jnp.nonzero(raw_accepted, size=output_size, fill_value=0)[0]
         compact_times = all_times[accepted_indices]

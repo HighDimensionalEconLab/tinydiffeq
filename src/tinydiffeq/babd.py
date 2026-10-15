@@ -264,18 +264,13 @@ def structured_qr_transpose_solve(state, rhs):
         sum_border = sum_border + jnp.einsum("pik,pi->k", level["border"], v)
         contrib_left = jnp.einsum("pij,pi->pj", level["left"], v)
         contrib_right = jnp.einsum("pij,pi->pj", level["right"], v)
-        reduced = jnp.concatenate(
-            [b_nodes[0 : 2 * pairs : 2], b_nodes[2 * pairs :]], axis=0
+        b_nodes = (
+            jnp.concatenate([b_nodes[0 : 2 * pairs : 2], b_nodes[2 * pairs :]], axis=0)
+            .at[:pairs]
+            .add(-contrib_left)
+            .at[1 : pairs + 1]
+            .add(-contrib_right)
         )
-        tail = reduced.shape[0] - pairs
-        reduced = reduced - jnp.concatenate(
-            [contrib_left, jnp.zeros((tail, n), dtype)], axis=0
-        )
-        reduced = reduced - jnp.concatenate(
-            [jnp.zeros((1, n), dtype), contrib_right, jnp.zeros((tail - 1, n), dtype)],
-            axis=0,
-        )
-        b_nodes = reduced
 
     boundary = jsp_linalg.lu_solve(
         (state["final_lu"], state["final_pivots"]),

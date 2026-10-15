@@ -120,38 +120,12 @@ class AdaptiveKrylovExponential:
                 )
 
 
-@jax.custom_jvp
 def _dense_exponential_action(matrix, vector, time):
-    return jsp_linalg.expm(time * matrix) @ vector
-
-
-def _dense_exponential_action_jvp(primals, tangents):
-    matrix, vector, time = primals
-    matrix_tangent, vector_tangent, time_tangent = tangents
-    scaled_matrix = time * matrix
-    matrix_active = not isinstance(matrix_tangent, jax.custom_derivatives.SymbolicZero)
-    time_active = not isinstance(time_tangent, jax.custom_derivatives.SymbolicZero)
-    vector_active = not isinstance(vector_tangent, jax.custom_derivatives.SymbolicZero)
-    if matrix_active or time_active:
-        scaled_tangent = (
-            time * matrix_tangent if matrix_active else jnp.zeros_like(matrix)
-        ) + (time_tangent * matrix if time_active else jnp.zeros_like(matrix))
-        exponential, frechet = jsp_linalg.expm_frechet(
-            scaled_matrix,
-            scaled_tangent,
-            compute_expm=True,
-        )
-    else:
-        exponential = jsp_linalg.expm(scaled_matrix)
-        frechet = jnp.zeros_like(matrix)
+    t_sg = jax.lax.stop_gradient(time)
+    dt = time - t_sg
+    exponential = jsp_linalg.expm(t_sg * matrix)
     value = exponential @ vector
-    tangent = frechet @ vector
-    if vector_active:
-        tangent = tangent + exponential @ vector_tangent
-    return value, tangent
-
-
-_dense_exponential_action.defjvp(_dense_exponential_action_jvp, symbolic_zeros=True)
+    return value + dt * (matrix @ value)
 
 
 def _krylov_tolerances(method, dtype):
@@ -164,23 +138,8 @@ def _krylov_tolerances(method, dtype):
     return jnp.asarray(rtol, dtype), jnp.asarray(atol, dtype)
 
 
-def _arnoldi_exponential_action(
-    action, vector, time, krylov_dim, reorthogonalization_passes
-):
+def _arnoldi_decomposition(action, vector, subspace_dim, reorthogonalization_passes):
     dimension = vector.shape[0]
-    subspace_dim = min(krylov_dim, dimension)
-    if subspace_dim == dimension:
-        # A full-dimensional Krylov space is the whole linear state space, so
-        # the action is exact. Materializing the operator also removes the
-        # coordinate singularity of an Arnoldi basis at an early happy
-        # breakdown (for example, an eigenvector initial state). In that case
-        # the exponential action is smooth even though the normalized Krylov
-        # basis is not; differentiating the dense action gives its unique
-        # JVP/VJP. This does not change the matrix-free scaling regime, where
-        # ``krylov_dim < dimension``.
-        dense_operator = jax.jacfwd(action)(jnp.zeros_like(vector))
-        result = _dense_exponential_action(dense_operator, vector, time)
-        return result, jnp.asarray(0.0, vector.dtype)
     beta = jnp.linalg.norm(vector)
     beta_safe = jnp.where(beta > 0, beta, 1)
     # Each Krylov vector is a contiguous row. This orientation is materially
@@ -194,7 +153,7 @@ def _arnoldi_exponential_action(
     def arnoldi_step(index, carry):
         current_basis, current_hessenberg = carry
         candidate = action(current_basis[index])
-        action_norm = jnp.linalg.norm(candidate)
+        action_norm = jnp.linalg.norm(jax.lax.stop_gradient(candidate))
         coefficients = current_basis @ candidate
         candidate = candidate - coefficients @ current_basis
         if reorthogonalization_passes == 2:
@@ -225,13 +184,45 @@ def _arnoldi_exponential_action(
     )
     augmented = jnp.zeros((subspace_dim + 1, subspace_dim + 1), vector.dtype)
     augmented = augmented.at[:, :subspace_dim].set(hessenberg)
-    projected_exponential = jsp_linalg.expm(time * augmented)
-    result = beta * (projected_exponential[:subspace_dim, 0] @ basis[:subspace_dim])
+    return basis, augmented, beta
+
+
+def _arnoldi_eval_from_decomposition(
+    basis, augmented, beta, vector, time, subspace_dim
+):
+    e_0 = jnp.zeros(subspace_dim + 1, vector.dtype).at[0].set(1)
+    first_col = _dense_exponential_action(augmented, e_0, time)
+    result = beta * (first_col[:subspace_dim] @ basis[:subspace_dim])
     # The final component of exp(t H_aug)e_1 is the standard leading-term
     # Arnoldi error estimate used by static expv implementations.
-    residual = beta * jnp.abs(projected_exponential[subspace_dim, 0])
+    residual = jax.lax.stop_gradient(beta * jnp.abs(first_col[subspace_dim]))
     result = jnp.where(beta > 0, result, vector)
     return result, residual
+
+
+def _arnoldi_exponential_action(
+    action, vector, time, krylov_dim, reorthogonalization_passes
+):
+    dimension = vector.shape[0]
+    subspace_dim = min(krylov_dim, dimension)
+    if subspace_dim == dimension:
+        # A full-dimensional Krylov space is the whole linear state space, so
+        # the action is exact. Materializing the operator also removes the
+        # coordinate singularity of an Arnoldi basis at an early happy
+        # breakdown (for example, an eigenvector initial state). In that case
+        # the exponential action is smooth even though the normalized Krylov
+        # basis is not; differentiating the dense action gives its unique
+        # JVP/VJP. This does not change the matrix-free scaling regime, where
+        # ``krylov_dim < dimension``.
+        dense_operator = jax.jacfwd(action)(jnp.zeros_like(vector))
+        result = _dense_exponential_action(dense_operator, vector, time)
+        return result, jnp.asarray(0.0, vector.dtype)
+    basis, augmented, beta = _arnoldi_decomposition(
+        action, vector, subspace_dim, reorthogonalization_passes
+    )
+    return _arnoldi_eval_from_decomposition(
+        basis, augmented, beta, vector, time, subspace_dim
+    )
 
 
 def _krylov_propagate(action, vector, time, method):
@@ -255,7 +246,7 @@ def _krylov_propagate(action, vector, time, method):
         (vector, jnp.asarray(0.0, vector.dtype)),
     )
     rtol, atol = _krylov_tolerances(method, vector.dtype)
-    accurate = residual <= atol + rtol * jnp.linalg.norm(result)
+    accurate = residual <= atol + rtol * jnp.linalg.norm(jax.lax.stop_gradient(result))
     return result, accurate
 
 
@@ -265,16 +256,17 @@ def _adaptive_krylov_propagate(action, vector, time, method):
     zero = jnp.asarray(0.0, dtype)
     one = jnp.asarray(1.0, dtype)
     total = jnp.maximum(jnp.asarray(time, dtype), zero)
+    total_sg = jax.lax.stop_gradient(total)
     rtol, atol = _krylov_tolerances(method, dtype)
     epsilon = jnp.asarray(jnp.finfo(dtype).eps, dtype)
-    time_scale = jnp.maximum(one, total)
+    time_scale = jnp.maximum(one, total_sg)
     time_tolerance = 8 * epsilon * time_scale
     minimum_step = 16 * epsilon * time_scale
     if method.initial_step is None:
-        first_step = total
+        first_step = total_sg
     else:
-        first_step = jnp.minimum(jnp.asarray(method.initial_step, dtype), total)
-    first_step = jnp.where(total > zero, jnp.maximum(first_step, minimum_step), one)
+        first_step = jnp.minimum(jnp.asarray(method.initial_step, dtype), total_sg)
+    first_step = jnp.where(total_sg > zero, jnp.maximum(first_step, minimum_step), one)
 
     def attempt(carry, _):
         current, elapsed, step, done, failed, accepted, rejected = carry
@@ -282,7 +274,9 @@ def _adaptive_krylov_propagate(action, vector, time, method):
         def advance(active_carry):
             current, elapsed, step, done, failed, accepted, rejected = active_carry
             remaining = jnp.maximum(total - elapsed, zero)
-            step_used = jnp.minimum(step, remaining)
+            step_used = jnp.where(
+                step < jax.lax.stop_gradient(remaining), step, remaining
+            )
             candidate, residual = _arnoldi_exponential_action(
                 action,
                 current,
@@ -290,16 +284,20 @@ def _adaptive_krylov_propagate(action, vector, time, method):
                 method.krylov_dim,
                 method.reorthogonalization_passes,
             )
+            curr_sg = jax.lax.stop_gradient(current)
+            cand_sg = jax.lax.stop_gradient(candidate)
+            res_sg = jax.lax.stop_gradient(residual)
+            step_sg = jax.lax.stop_gradient(step_used)
             global_scale = atol + rtol * jnp.maximum(
-                jnp.linalg.norm(current), jnp.linalg.norm(candidate)
+                jnp.linalg.norm(curr_sg), jnp.linalg.norm(cand_sg)
             )
             # Budget local error in proportion to the fraction of the full
             # interval advanced. Summed accepted residual estimates then obey
             # the requested endpoint scale rather than an N-times-looser one.
-            interval_fraction = step_used / jnp.maximum(total, minimum_step)
+            interval_fraction = step_sg / jnp.maximum(total_sg, minimum_step)
             scale = jnp.maximum(global_scale * interval_fraction, jnp.finfo(dtype).tiny)
-            error_ratio = residual / scale
-            finite = jnp.all(jnp.isfinite(candidate)) & jnp.isfinite(error_ratio)
+            error_ratio = res_sg / scale
+            finite = jnp.all(jnp.isfinite(cand_sg)) & jnp.isfinite(error_ratio)
             accept = finite & (error_ratio <= one)
 
             # An epsilon floor is enough to select the maximum growth factor
@@ -327,17 +325,17 @@ def _adaptive_krylov_propagate(action, vector, time, method):
             )
             factor = jnp.where(accept, accepted_factor, rejected_factor)
 
-            next_elapsed = jnp.where(accept, elapsed + step_used, elapsed)
-            reached_end = accept & (total - next_elapsed <= time_tolerance)
-            next_elapsed = jnp.where(reached_end, total, next_elapsed)
+            next_elapsed = jnp.where(accept, elapsed + step_sg, elapsed)
+            reached_end = accept & (total_sg - next_elapsed <= time_tolerance)
+            next_elapsed = jnp.where(reached_end, total_sg, next_elapsed)
             next_current = jnp.where(accept, candidate, current)
-            next_remaining = jnp.maximum(total - next_elapsed, zero)
-            proposed_step = step_used * factor
+            next_remaining = jnp.maximum(total_sg - next_elapsed, zero)
+            proposed_step = step_sg * factor
             next_step = jnp.minimum(proposed_step, next_remaining)
             next_step = jnp.where(
                 reached_end, step, jnp.maximum(next_step, minimum_step)
             )
-            stalled = (~accept) & (step_used <= minimum_step)
+            stalled = (~accept) & (step_sg <= minimum_step)
             return (
                 next_current,
                 next_elapsed,
@@ -451,15 +449,46 @@ def solve_linear_ode(operator, method, t_0, t_1, x_0, *, save_at=None):
     t_0 = jnp.asarray(t_0, dtype)
     t_1 = jnp.asarray(t_1, dtype)
 
-    if isinstance(method, DenseExponential) and dense_operator is None:
+    dimension = flat_initial.shape[0]
+    use_dense = isinstance(method, DenseExponential) or (
+        isinstance(method, KrylovExponential)
+        and method.num_substeps == 1
+        and min(method.krylov_dim, dimension) == dimension
+    )
+    if use_dense and dense_operator is None:
         dense_operator = jax.jacfwd(flat_action)(jnp.zeros_like(flat_initial))
+
+    single_krylov = (
+        not use_dense
+        and not save_at.t_1
+        and isinstance(method, KrylovExponential)
+        and method.num_substeps == 1
+    )
+    if single_krylov:
+        subspace_dim = min(method.krylov_dim, dimension)
+        basis, augmented, beta = _arnoldi_decomposition(
+            flat_action,
+            flat_initial,
+            subspace_dim,
+            method.reorthogonalization_passes,
+        )
+        rtol, atol = _krylov_tolerances(method, dtype)
 
     def evaluate(time):
         elapsed = time - t_0
-        if isinstance(method, DenseExponential):
+        if use_dense:
             value = _dense_exponential_action(dense_operator, flat_initial, elapsed)
             count = jnp.where(elapsed > 0, 1, 0).astype(jnp.int32)
             return value, jnp.asarray(True), count, count
+        if single_krylov:
+            value, residual = _arnoldi_eval_from_decomposition(
+                basis, augmented, beta, flat_initial, elapsed, subspace_dim
+            )
+            accurate = residual <= atol + rtol * jnp.linalg.norm(
+                jax.lax.stop_gradient(value)
+            )
+            count = jnp.where(elapsed > 0, 1, 0).astype(jnp.int32)
+            return value, accurate, count, count
         return _propagate_krylov(flat_action, flat_initial, elapsed, method)
 
     if save_at.t_1:

@@ -162,10 +162,11 @@ class Tsit5:
         )
         k_7 = g(x_1, t + C_7 * dt)
         if need_error:
+            dt_sg = jax.lax.stop_gradient(dt)
             err = jax.tree.map(
-                lambda value: dt * value,
+                lambda value: dt_sg * value,
                 weighted_sum(
-                    (k_1, k_2, k_3, k_4, k_5, k_6, k_7),
+                    jax.lax.stop_gradient((k_1, k_2, k_3, k_4, k_5, k_6, k_7)),
                     (E_1, E_2, E_3, E_4, E_5, E_6, E_7),
                 ),
             )
