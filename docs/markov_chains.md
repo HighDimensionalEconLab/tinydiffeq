@@ -23,10 +23,9 @@ from tinydiffeq import (
     simulate_markov_chain,
 )
 
-chain = DiscreteMarkovChain(
-    jnp.asarray([[0.9, 0.1], [0.25, 0.75]], dtype=jnp.float32)
-)
+chain = DiscreteMarkovChain(jnp.asarray([[0.9, 0.1], [0.25, 0.75]], dtype=jnp.float32))
 keys = jax.random.split(jax.random.key(0), 256)
+
 
 def trajectory(key):
     return simulate_markov_chain(
@@ -37,6 +36,7 @@ def trajectory(key):
         method=AssociativeMarkov(),
         save_at=SaveAt(steps=True),
     ).xs
+
 
 paths = jax.jit(jax.vmap(trajectory))(keys)  # (256, 1025)
 ```
@@ -167,6 +167,7 @@ from tinydiffeq import (
     forecast_continuous_time_markov_chain,
 )
 
+
 def forward_generator(probabilities):
     employed = probabilities["employment"]
     inventory = probabilities["inventory"]
@@ -177,10 +178,9 @@ def forward_generator(probabilities):
         "employment": jnp.asarray(
             [-employment_switch - sector_switch, employment_switch]
         ),
-        "inventory": jnp.asarray(
-            [sector_switch - inventory_switch, inventory_switch]
-        ),
+        "inventory": jnp.asarray([sector_switch - inventory_switch, inventory_switch]),
     }
+
 
 chain = MatrixFreeContinuousTimeMarkovChain(forward_generator)
 distribution_0 = {

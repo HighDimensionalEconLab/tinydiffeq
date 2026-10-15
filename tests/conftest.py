@@ -1,6 +1,8 @@
+import os
+
 import jax
 
-jax.config.update("jax_enable_x64", True)
+jax.config.update("jax_enable_x64", os.environ.get("JAX_PLATFORMS") != "metal")
 # XLA:GPU serves float32 dot_general from TF32 tensor cores by default (10-bit
 # mantissa, ~1e-3). The float32 tests compare against closed forms, and the
 # linear-exponential and Markov paths are matmul-heavy, so without this a GPU

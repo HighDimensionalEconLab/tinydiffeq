@@ -16,7 +16,12 @@ subdivided intervals, which is diffrax territory.
 from tinydiffeq import solve_sde, SRA1, SaveAt
 
 sol = solve_sde(
-    drift, diffusion, SRA1(), 0.0, 1.0, x_0,
+    drift,
+    diffusion,
+    SRA1(),
+    0.0,
+    1.0,
+    x_0,
     key=jax.random.key(0),
     n_steps=256,
     p=(mu, sigma),

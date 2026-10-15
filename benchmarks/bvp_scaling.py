@@ -5,6 +5,7 @@ compile-plus-first-run, run is the warm steady state.
 """
 
 import argparse
+import os
 import statistics
 import timeit
 
@@ -13,8 +14,6 @@ import jax.numpy as jnp
 import numpy as np
 
 from tinydiffeq import solve_bvp
-
-jax.config.update("jax_enable_x64", True)
 
 
 def exp_problem(max_nodes, dtype):
@@ -195,13 +194,22 @@ def main():
     parser.add_argument(
         "--dtypes",
         nargs="+",
-        default=["float32", "float64"],
+        default=None,
         choices=["float32", "float64"],
     )
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--repeat", type=int, default=5)
     parser.add_argument("--cache-audit", action="store_true")
     args = parser.parse_args()
+    if args.dtypes is None:
+        args.dtypes = (
+            ["float32"]
+            if os.environ.get("JAX_PLATFORMS") == "metal"
+            else ["float32", "float64"]
+        )
+
+    if args.cache_audit or "float64" in args.dtypes:
+        jax.config.update("jax_enable_x64", True)
 
     if args.cache_audit:
         cache_audit(args.max_nodes[0])

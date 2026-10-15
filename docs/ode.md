@@ -92,13 +92,13 @@ state, so the residual there is finite wherever the endpoint is — a single
 `where` is safe for both values and gradients (no double-`where` needed):
 
 ```python
-sol = jax.vmap(solve_one)(x_0s)            # SaveAt(steps=True), (B, rows, ...)
-rows = pointwise_residual(sol.xs, p)       # evaluated on all rows in parallel
+sol = jax.vmap(solve_one)(x_0s)  # SaveAt(steps=True), (B, rows, ...)
+rows = pointwise_residual(sol.xs, p)  # evaluated on all rows in parallel
 masked = jnp.where(sol.accepted, rows, 0.0)
-count = jax.lax.stop_gradient(sol.accepted.sum())      # actual points, inert
+count = jax.lax.stop_gradient(sol.accepted.sum())  # actual points, inert
 residual = jnp.where(
     sol.ok[:, None], masked / jnp.sqrt(count.astype(masked.dtype)), jnp.inf
-).reshape(-1)                              # static length B * rows
+).reshape(-1)  # static length B * rows
 ```
 
 Zero rows contribute nothing to a least-squares objective, so this is
@@ -193,8 +193,14 @@ def stiff_field(x, t):
 
 
 sol = solve_ode(
-    stiff_field, Rodas5P(), 0.0, 1.0, jnp.asarray(1.0),
-    dt_0=0.01, controller=IController(), max_steps=512,
+    stiff_field,
+    Rodas5P(),
+    0.0,
+    1.0,
+    jnp.asarray(1.0),
+    dt_0=0.01,
+    controller=IController(),
+    max_steps=512,
 )
 ```
 

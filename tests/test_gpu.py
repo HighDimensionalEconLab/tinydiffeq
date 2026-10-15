@@ -35,8 +35,35 @@ from tinydiffeq import (
     vjp_linear_ode,
 )
 
+GPU_PLATFORMS = ("gpu", "metal")
+
+
+def gpu_devices():
+    try:
+        devices = jax.devices()
+    except RuntimeError:
+        return []
+    return [device for device in devices if device.platform in GPU_PLATFORMS]
+
+
+def gpu_supports_float64():
+    devices = gpu_devices()
+    return bool(devices) and devices[0].platform == "gpu"
+
+
 DTYPES = pytest.mark.parametrize(
-    "dtype", [jnp.float32, jnp.float64], ids=["float32", "float64"]
+    "dtype",
+    [
+        jnp.float32,
+        pytest.param(
+            jnp.float64,
+            marks=pytest.mark.skipif(
+                not gpu_supports_float64(),
+                reason="Active GPU backend does not support float64",
+            ),
+        ),
+    ],
+    ids=["float32", "float64"],
 )
 
 
@@ -81,7 +108,7 @@ def test_markov_methods_jit_and_vmap_on_gpu(dtype):
         )(keys)
         jax.block_until_ready((discrete_paths, continuous_endpoints))
 
-    assert next(iter(discrete_paths.devices())).platform == "gpu"
+    assert next(iter(discrete_paths.devices())).platform in GPU_PLATFORMS
     assert discrete_paths.shape == (64, 129)
     assert continuous_endpoints.ts.dtype == dtype
     assert bool(jnp.all(continuous_endpoints.ok))
@@ -123,7 +150,7 @@ def test_markov_distribution_forecasts_and_ad_on_gpu(dtype):
         )
         jax.block_until_ready((discrete_path, continuous_value, continuous_gradient))
 
-    assert next(iter(discrete_path.devices())).platform == "gpu"
+    assert next(iter(discrete_path.devices())).platform in GPU_PLATFORMS
     assert discrete_path.dtype == dtype
     assert continuous_gradient.dtype == dtype
     assert jnp.allclose(discrete_path.sum(axis=1), 1.0)
@@ -166,10 +193,10 @@ def test_matrix_free_pytree_markov_forecast_and_ad_on_gpu(dtype):
         value, gradient = jax.jit(jax.value_and_grad(objective))(initial)
         jax.block_until_ready((value, gradient))
 
-    assert next(iter(value.devices())).platform == "gpu"
+    assert next(iter(value.devices())).platform in GPU_PLATFORMS
     assert value.dtype == dtype
     assert all(
-        leaf.dtype == dtype and leaf.devices().pop().platform == "gpu"
+        leaf.dtype == dtype and leaf.devices().pop().platform in GPU_PLATFORMS
         for leaf in jax.tree.leaves(gradient)
     )
     assert all(jnp.all(jnp.isfinite(leaf)) for leaf in jax.tree.leaves(gradient))
@@ -242,7 +269,7 @@ def test_dense_and_matrix_free_linear_exponential_ad_on_gpu(dtype):
         jax.block_until_ready(result)
 
     assert all(
-        leaf.dtype == dtype and leaf.devices().pop().platform == "gpu"
+        leaf.dtype == dtype and leaf.devices().pop().platform in GPU_PLATFORMS
         for leaf in result
     )
     grouped = jnp.asarray(result).reshape(3, 3)
@@ -292,19 +319,11 @@ def test_handcoded_linear_exponential_jvp_vjp_batches_on_gpu(dtype):
     assert bool(jvp_solution.ok & vjp_solution.ok)
     assert tangents.dtype == dtype and gradients.dtype == dtype
     for leaf in jax.tree.leaves(result):
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.all(jnp.isfinite(leaf)))
     pairing_forward = jnp.einsum("bi,ci->bc", tangents, cotangents)
     pairing_reverse = jnp.einsum("bi,ci->bc", directions, gradients)
     assert jnp.allclose(pairing_forward, pairing_reverse, rtol=3e-4, atol=3e-5)
-
-
-def gpu_devices():
-    try:
-        devices = jax.devices()
-    except RuntimeError:
-        return []
-    return [device for device in devices if device.platform == "gpu"]
 
 
 def gpu_bytes_limit():
@@ -360,7 +379,7 @@ def test_jitted_adaptive_solve_runs_on_gpu(dtype):
 
     assert bool(sol.ok)
     assert sol.xs.dtype == dtype
-    assert next(iter(sol.xs.devices())).platform == "gpu"
+    assert next(iter(sol.xs.devices())).platform in GPU_PLATFORMS
     assert bool(jnp.all(jnp.isfinite(sol.xs[sol.accepted])))
 
 
@@ -388,7 +407,7 @@ def test_gradient_through_solve_on_gpu(dtype):
         grad.block_until_ready()
 
     assert grad.dtype == dtype
-    assert next(iter(grad.devices())).platform == "gpu"
+    assert next(iter(grad.devices())).platform in GPU_PLATFORMS
     assert bool(jnp.isfinite(grad))
 
 
@@ -418,8 +437,8 @@ def test_dae_value_and_gradient_run_on_gpu(dtype):
         jax.block_until_ready((value, grad))
 
     assert value.dtype == dtype and grad.dtype == dtype
-    assert next(iter(value.devices())).platform == "gpu"
-    assert next(iter(grad.devices())).platform == "gpu"
+    assert next(iter(value.devices())).platform in GPU_PLATFORMS
+    assert next(iter(grad.devices())).platform in GPU_PLATFORMS
     assert bool(jnp.isfinite(value))
     assert bool(jnp.isfinite(grad))
 
@@ -462,7 +481,7 @@ def test_pytree_ode_and_sde_run_on_gpu(dtype):
 
     assert bool(ode.ok & sde.ok)
     assert all(
-        leaf.dtype == dtype and leaf.devices().pop().platform == "gpu"
+        leaf.dtype == dtype and leaf.devices().pop().platform in GPU_PLATFORMS
         for leaf in jax.tree.leaves((ode.xs, sde.xs))
     )
     assert all(jnp.all(jnp.isfinite(leaf)) for leaf in jax.tree.leaves(sde.xs))
@@ -531,7 +550,7 @@ def test_interpolated_aux_and_sdae_ad_run_on_gpu(dtype):
 
     for leaf in jax.tree.leaves((values, gradients)):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.isfinite(leaf))
 
 
@@ -585,7 +604,7 @@ def test_rodas5p_ode_dae_and_derivatives_run_on_gpu(dtype):
 
     for leaf in jax.tree.leaves(result):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.isfinite(leaf))
 
 
@@ -612,7 +631,7 @@ def test_adaptive_ode_endpoint_on_gpu(dtype):
         )
 
     assert out.dtype == dtype
-    assert out.devices().pop().platform == "gpu"
+    assert out.devices().pop().platform in GPU_PLATFORMS
     assert bool(jnp.isfinite(out))
     assert abs(float(out) - float(jnp.exp(-DECAY))) < 1e-3
 
@@ -638,7 +657,7 @@ def test_sde_runs_on_gpu(dtype):
         out = jax.block_until_ready(run(jnp.asarray(1.0, dtype)))
 
     assert out.dtype == dtype
-    assert out.devices().pop().platform == "gpu"
+    assert out.devices().pop().platform in GPU_PLATFORMS
     assert bool(jnp.isfinite(out))
     assert abs(float(out)) < 10.0  # a diverged path, not a tolerance check
 
@@ -678,7 +697,7 @@ def test_dae_endpoint_value_and_grad_run_on_gpu(dtype):
 
     for leaf in (value, grad):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.isfinite(leaf))
 
 
@@ -703,7 +722,7 @@ def test_fixed_euler_rk4_ode_on_gpu(dtype):
     exact = float(jnp.exp(-DECAY))
     for out, tol in ((euler, 1e-3), (rk4, 1e-5)):
         assert out.dtype == dtype
-        assert out.devices().pop().platform == "gpu"
+        assert out.devices().pop().platform in GPU_PLATFORMS
         assert abs(float(out) - exact) < tol
 
 
@@ -736,7 +755,7 @@ def test_milstein_and_sra1_run_on_gpu(solver, diffusion, dtype):
         out = jax.block_until_ready(run(jnp.asarray(1.0, dtype)))
 
     assert out.dtype == dtype
-    assert out.devices().pop().platform == "gpu"
+    assert out.devices().pop().platform in GPU_PLATFORMS
     assert bool(jnp.isfinite(out))
     assert abs(float(out)) < 10.0
 
@@ -782,7 +801,7 @@ def test_vmapped_sra1_ensemble_matches_per_trajectory_on_gpu(n_steps, dtype):
         )
 
     assert batched.dtype == dtype
-    assert batched.devices().pop().platform == "gpu"
+    assert batched.devices().pop().platform in GPU_PLATFORMS
     assert jnp.allclose(batched, looped, atol=1e-5)
 
 
@@ -819,7 +838,7 @@ def test_grad_of_vmapped_sra1_ensemble_on_gpu(n_steps, dtype):
 
     for leaf in jax.tree.leaves((value, grad_x, grad_p, grad_noise)):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.all(jnp.isfinite(leaf)))
 
     def one_loss(x_0, w, z):
@@ -865,7 +884,7 @@ def test_grad_of_vmapped_rk4_ensemble_on_gpu(n_steps, dtype):
     expected_p = jnp.sum(-2.0 * (x_0s * decay - 1.0) * x_0s * decay)
     for leaf in (grad_x, grad_p):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
     assert jnp.allclose(grad_x, expected_x, atol=1e-3)
     assert jnp.allclose(grad_p, expected_p, atol=1e-2)
 
@@ -897,11 +916,15 @@ def test_bvp_value_grad_and_vmap_on_gpu(dtype):
 
     for leaf in (value, grad, batched.y):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.all(jnp.isfinite(leaf)))
     assert bool(jnp.all(batched.status == 0))
 
 
+@pytest.mark.skipif(
+    not gpu_supports_float64(),
+    reason="Active GPU backend does not support float64",
+)
 def test_float32_y_with_float64_z_keeps_the_tight_root_tolerance_on_gpu():
     # dae.py picks root_atol from z_dtype alone: 1e-10 when z has more than 32
     # bits, 1e-6 otherwise. A float32 y with a float64 z therefore gets the
@@ -1029,7 +1052,7 @@ def test_large_vmapped_ode_and_sde_ensembles_on_gpu(dtype):
         )
     ):
         assert leaf.dtype == dtype
-        assert leaf.devices().pop().platform == "gpu"
+        assert leaf.devices().pop().platform in GPU_PLATFORMS
         assert bool(jnp.all(jnp.isfinite(leaf)))
 
     ode_tol = 1e-4 if dtype == jnp.float32 else 1e-8

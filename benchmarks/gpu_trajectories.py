@@ -29,6 +29,7 @@ Writes <output>.json (raw records) and <output>.md (summary table).
 import argparse
 import itertools
 import json
+import os
 import time
 from pathlib import Path
 
@@ -69,7 +70,7 @@ def parse_args():
     parser.add_argument(
         "--dtypes",
         nargs="+",
-        default=["float32", "float64"],
+        default=None,
         choices=["float32", "float64"],
     )
     parser.add_argument(
@@ -124,6 +125,12 @@ def parse_args():
         args.dim = preset["dim"]
     if args.n_steps is None:
         args.n_steps = preset["n_steps"]
+    if args.dtypes is None:
+        args.dtypes = (
+            ["float32"]
+            if os.environ.get("JAX_PLATFORMS") == "metal"
+            else ["float32", "float64"]
+        )
     return args
 
 

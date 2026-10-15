@@ -64,17 +64,20 @@ evaluated once at the solution and participates in AD.
 import jax.numpy as jnp
 from tinydiffeq import solve_bvp
 
+
 # Sturm–Liouville: y'' = -z^2 y, y(0) = y(pi) = 0, y'(0) = z.
 def fun(t, y, z):
-    return jnp.array([y[1], -z[0]**2 * y[0]])
+    return jnp.array([y[1], -(z[0] ** 2) * y[0]])
+
 
 def bc(ya, yb, z):
     return jnp.array([ya[0], yb[0], ya[1] - z[0]])
 
+
 t = jnp.linspace(0.0, jnp.pi, 5)
 sol = solve_bvp(fun, bc, t, jnp.ones((5, 2)), jnp.array([0.5]))
-sol.z           # the eigenvalue, ~1.0
-sol.num_nodes   # active nodes on the refined mesh
+sol.z  # the eigenvalue, ~1.0
+sol.num_nodes  # active nodes on the refined mesh
 ```
 
 ## Static shapes

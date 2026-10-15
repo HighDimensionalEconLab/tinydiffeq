@@ -42,7 +42,8 @@ For accelerator use, install the JAX build matching your hardware alongside
 it, for example:
 
 ```bash
-uv add tinydiffeq "jax[cuda13]"
+uv add tinydiffeq "jax[cuda13]"   # Linux CUDA
+uv add tinydiffeq metaljax        # Apple Silicon macOS (JAX_PLATFORMS=metal, float32)
 ```
 
 ## Vector-field interface
@@ -51,7 +52,7 @@ The vector field may take one to four positional arguments — always in this
 order:
 
 ```python
-f(x)                # autonomous, closes over everything
+f(x)  # autonomous, closes over everything
 f(x, t)
 f(x, t, args)
 f(x, t, args, p)
@@ -85,7 +86,11 @@ def f(x, t, args, p):
 
 
 sol = solve_ode(
-    f, Tsit5(), 0.0, 2.0, jnp.asarray(1.0),
+    f,
+    Tsit5(),
+    0.0,
+    2.0,
+    jnp.asarray(1.0),
     p=jnp.asarray(1.3),
     dt_0=0.1,
     controller=IController(rtol=1e-8, atol=1e-10),
@@ -101,12 +106,19 @@ Gradients go straight through the solve:
 ```python
 def endpoint(p):
     return solve_ode(
-        f, Tsit5(), 0.0, 2.0, jnp.asarray(1.0), p=p,
-        dt_0=0.1, controller=IController(rtol=1e-10, atol=1e-12),
+        f,
+        Tsit5(),
+        0.0,
+        2.0,
+        jnp.asarray(1.0),
+        p=p,
+        dt_0=0.1,
+        controller=IController(rtol=1e-10, atol=1e-12),
         max_steps=512,
     ).xs
 
-jax.grad(endpoint)(jnp.asarray(1.3))          # reverse mode
+
+jax.grad(endpoint)(jnp.asarray(1.3))  # reverse mode
 jax.jvp(endpoint, (jnp.asarray(1.3),), (jnp.asarray(1.0),))  # forward mode
 ```
 

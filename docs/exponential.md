@@ -49,12 +49,14 @@ from tinydiffeq import KrylovExponential
 
 rates = jnp.linspace(0.1, 1.0, 100_000)
 
+
 def operator(state):
     flat = jnp.concatenate([state["low"], state["high"]])
     flux = rates * flat
     derivative = jnp.roll(flux, 1) - flux
     split = state["low"].size
     return {"low": derivative[:split], "high": derivative[split:]}
+
 
 x_0 = {
     "low": jnp.zeros(40_000).at[0].set(1.0),

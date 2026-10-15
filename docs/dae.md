@@ -47,16 +47,30 @@ def g(y, z, t, args, p):
 
 
 fixed = solve_semi_explicit_dae(
-    f, g, RK4(), 0.0, 1.0,
-    jnp.asarray(1.0), jnp.asarray(0.5),
-    p=jnp.asarray(2.0), dt_0=0.01, max_steps=100,
+    f,
+    g,
+    RK4(),
+    0.0,
+    1.0,
+    jnp.asarray(1.0),
+    jnp.asarray(0.5),
+    p=jnp.asarray(2.0),
+    dt_0=0.01,
+    max_steps=100,
 )
 
 adaptive = solve_semi_explicit_dae(
-    f, g, Tsit5(), 0.0, 1.0,
-    jnp.asarray(1.0), jnp.asarray(0.5),
-    p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128,
+    f,
+    g,
+    Tsit5(),
+    0.0,
+    1.0,
+    jnp.asarray(1.0),
+    jnp.asarray(0.5),
+    p=jnp.asarray(2.0),
+    dt_0=0.1,
+    controller=IController(),
+    max_steps=128,
 )
 
 adaptive.aux["flow"]
@@ -76,9 +90,9 @@ from tinydiffeq import LMRootSolver
 
 root_solver = LMRootSolver(
     max_steps=8,
-    atol=None,          # 1e-6 float32, 1e-10 float64
-    gtol=0.0,           # required: residual stopping only
-    xtol=0.0,           # required: residual stopping only
+    atol=None,  # 1e-6 float32, 1e-10 float64
+    gtol=0.0,  # required: residual stopping only
+    xtol=0.0,  # required: residual stopping only
     predictor="previous",
     solver_options=(),  # nlls-gram constructor defaults
 )
@@ -190,10 +204,17 @@ $$
 
 ```python
 linearly_implicit = solve_semi_explicit_dae(
-    f, g, Rodas5P(), 0.0, 1.0,
-    jnp.asarray(1.0), jnp.asarray(0.5),
-    p=jnp.asarray(2.0), dt_0=0.1,
-    controller=IController(), max_steps=128,
+    f,
+    g,
+    Rodas5P(),
+    0.0,
+    1.0,
+    jnp.asarray(1.0),
+    jnp.asarray(0.5),
+    p=jnp.asarray(2.0),
+    dt_0=0.1,
+    controller=IController(),
+    max_steps=128,
 )
 ```
 
