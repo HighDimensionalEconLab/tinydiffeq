@@ -7,7 +7,6 @@ import jax.numpy as jnp
 import numpy as np
 
 from tinydiffeq._tree import all_finite, asarray_aux, asarray_context
-from tinydiffeq._unvmap import unvmap_all
 
 
 def _validate_mode(mode, name):
@@ -155,11 +154,7 @@ def make_safe_evaluator(function, output_shape, *, check_finite=True):
     @jax.custom_jvp
     def evaluate(inputs, active, reference):
         safe_inputs = _tree_where(active, inputs, reference)
-        raw = jax.lax.cond(
-            unvmap_all(~active),
-            zeros,
-            lambda: function(safe_inputs),
-        )
+        raw = jax.lax.cond(active, lambda: function(safe_inputs), zeros)
         finite = all_finite(raw) if check_finite else jnp.asarray(True)
         ok = active & finite
         return _tree_where(ok, raw, zeros()), ok

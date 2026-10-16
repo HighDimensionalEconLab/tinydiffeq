@@ -496,7 +496,6 @@ def _solve_rodas5p_dae(
             h,
             mass_diagonal,
             identity,
-            need_dense=save_at.ts is not None,
         )
         y_1, z_1 = candidate
         control_err = where(step_ok, err, full_like(err, jnp.inf))

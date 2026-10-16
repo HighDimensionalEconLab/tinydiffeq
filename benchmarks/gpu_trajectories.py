@@ -50,8 +50,9 @@ GROWTH_LOG_K_VARIANCE = 0.01
 
 
 PRESETS = {
-    "default": {"batch": [100, 1000, 10000], "dim": [1, 8], "n_steps": [31, 127, 1024]},
-    "large": {"batch": [10000, 25000], "dim": [1, 4], "n_steps": [1024, 2048]},
+    "default": {"batch": [1000, 10000], "dim": [8], "n_steps": [127, 1024]},
+    "large": {"batch": [10000, 25000], "dim": [4, 8], "n_steps": [1024, 2048]},
+    "datacenter": {"batch": [25000, 100000], "dim": [8, 16], "n_steps": [1024, 2048]},
 }
 
 
@@ -90,7 +91,18 @@ def parse_args():
         dest="noise_modes",
     )
     parser.add_argument("--save", nargs="+", default=["t1"], choices=["t1", "steps"])
-    parser.add_argument("--modes", nargs="+", default=["primal", "grad"])
+    parser.add_argument(
+        "--modes",
+        nargs="+",
+        default=["primal", "grad", "vmap_jvp", "vmap_vjp"],
+        choices=["primal", "grad", "vmap_jvp", "vmap_vjp"],
+    )
+    parser.add_argument(
+        "--directions",
+        type=int,
+        default=None,
+        help="number of batched tangent/cotangent directions for vmap_jvp/vmap_vjp",
+    )
     parser.add_argument(
         "--remat",
         default="none",
@@ -309,7 +321,73 @@ def identity(x):
     return x
 
 
-def build_case(case, dtype, remat, unroll=1):
+def _default_directions():
+    override = os.environ.get("TINYDIFFEQ_BENCH_DIRECTIONS")
+    if override is not None:
+        return int(override)
+    dev = jax.devices()[0]
+    stats = (dev.memory_stats() or {}) if dev.platform == "gpu" else {}
+    return 32 if stats.get("bytes_limit", 0) >= 40 * 1024**3 else 8
+
+
+def _wrap_ensemble_mode(ensemble_fn, inputs, mode, n_directions, dtype):
+    if mode == "primal":
+        return ensemble_fn, inputs
+    if mode == "grad":
+        diff_third = len(inputs) == 3 and jax.tree.leaves(inputs[2])[0].dtype in (
+            jnp.float32,
+            jnp.float64,
+        )
+        argnums = (0, 1, 2) if diff_third else (0, 1)
+
+        def loss(*args):
+            return jnp.sum(ensemble_fn(*args) ** 2)
+
+        return jax.grad(loss, argnums=argnums), inputs
+
+    scales = jnp.linspace(0.5, 1.5, n_directions, dtype=dtype)
+    if mode == "vmap_jvp":
+        x_0s, p = inputs[0], inputs[1]
+        dx_batch = jax.vmap(lambda s: s * jnp.ones_like(x_0s))(scales)
+        dp_batch = jax.vmap(
+            lambda s: jax.tree.map(lambda leaf: s * jnp.ones_like(leaf), p)
+        )(scales)
+        if len(inputs) == 2:
+
+            def fn(x_0s, p):
+                _, push = jax.linearize(ensemble_fn, x_0s, p)
+                return jax.vmap(push)(dx_batch, dp_batch)
+
+            return fn, inputs
+
+        def fn(x_0s, p, third):
+            _, push = jax.linearize(
+                lambda x, param: ensemble_fn(x, param, third), x_0s, p
+            )
+            return jax.vmap(push)(dx_batch, dp_batch)
+
+        return fn, inputs
+
+    out_shape = jax.eval_shape(ensemble_fn, *inputs)
+    cotangents = jax.vmap(
+        lambda s: s * jnp.ones(out_shape.shape, dtype=out_shape.dtype)
+    )(scales)
+    if len(inputs) == 2:
+
+        def fn(x_0s, p):
+            _, pull = jax.vjp(ensemble_fn, x_0s, p)
+            return jax.vmap(pull)(cotangents)
+
+        return fn, inputs
+
+    def fn(x_0s, p, third):
+        _, pull = jax.vjp(lambda x, param: ensemble_fn(x, param, third), x_0s, p)
+        return jax.vmap(pull)(cotangents)
+
+    return fn, inputs
+
+
+def build_case(case, dtype, remat, unroll=1, n_directions=8):
     """Return (fn, inputs) where jit(fn)(*inputs) runs the whole ensemble."""
     save_at = SaveAt(steps=True) if case["save"] == "steps" else SaveAt(t_1=True)
     n = case["n_steps"]
@@ -349,17 +427,12 @@ def build_case(case, dtype, remat, unroll=1):
             if remat == "solve":
                 one = jax.checkpoint(one)
 
-        if case["mode"] == "primal":
+        def ensemble(x_0s, p):
+            return jax.vmap(lambda x_0: one(x_0, p))(x_0s)
 
-            def fn(x_0s, p):
-                return jax.vmap(lambda x_0: one(x_0, p))(x_0s)
-
-            return fn, (x_0s, p)
-
-        def loss(x_0s, p):
-            return jnp.sum(jax.vmap(lambda x_0: one(x_0, p))(x_0s) ** 2)
-
-        return jax.grad(loss, argnums=(0, 1)), (x_0s, p)
+        return _wrap_ensemble_mode(
+            ensemble, (x_0s, p), case["mode"], n_directions, dtype
+        )
 
     keys = jax.random.split(jax.random.key(1), batch)
     if case["noise"] == "explicit":
@@ -389,17 +462,12 @@ def build_case(case, dtype, remat, unroll=1):
             if remat == "solve":
                 one = jax.checkpoint(one)
 
-        if case["mode"] == "primal":
+        def ensemble(x_0s, p, noise):
+            return jax.vmap(lambda x_0, w: one(x_0, p, w))(x_0s, noise)
 
-            def fn(x_0s, p, noise):
-                return jax.vmap(lambda x_0, w: one(x_0, p, w))(x_0s, noise)
-
-            return fn, (x_0s, p, noise)
-
-        def loss(x_0s, p, noise):
-            return jnp.sum(jax.vmap(lambda x_0, w: one(x_0, p, w))(x_0s, noise) ** 2)
-
-        return jax.grad(loss, argnums=(0, 1, 2)), (x_0s, p, noise)
+        return _wrap_ensemble_mode(
+            ensemble, (x_0s, p, noise), case["mode"], n_directions, dtype
+        )
 
     def one(x_0, p, key):
         return solve_sde(
@@ -420,17 +488,12 @@ def build_case(case, dtype, remat, unroll=1):
     if remat == "solve":
         one = jax.checkpoint(one)
 
-    if case["mode"] == "primal":
+    def ensemble(x_0s, p, keys):
+        return jax.vmap(lambda x_0, k: one(x_0, p, k))(x_0s, keys)
 
-        def fn(x_0s, p, keys):
-            return jax.vmap(lambda x_0, k: one(x_0, p, k))(x_0s, keys)
-
-        return fn, (x_0s, p, keys)
-
-    def loss(x_0s, p, keys):
-        return jnp.sum(jax.vmap(lambda x_0, k: one(x_0, p, k))(x_0s, keys) ** 2)
-
-    return jax.grad(loss, argnums=(0, 1)), (x_0s, p, keys)
+    return _wrap_ensemble_mode(
+        ensemble, (x_0s, p, keys), case["mode"], n_directions, dtype
+    )
 
 
 def verify_chunked(case, dtype):
@@ -471,6 +534,7 @@ def time_case(fn, inputs, repeats):
 
 def case_records(args, flush):
     dtypes = {"float32": jnp.float32, "float64": jnp.float64}
+    n_directions = _default_directions() if args.directions is None else args.directions
     records = []
     cases = [
         dict(
@@ -513,7 +577,9 @@ def case_records(args, flush):
             try:
                 if args.remat == "chunked":
                     verify_chunked(case, dtype)
-                fn, inputs = build_case(case, dtype, args.remat, args.scan_unroll)
+                fn, inputs = build_case(
+                    case, dtype, args.remat, args.scan_unroll, n_directions
+                )
                 seconds, compile_seconds = time_case(fn, inputs, args.repeats)
             except Exception as error:
                 # OOM is a measurement (the memory wall), not a crash; anything

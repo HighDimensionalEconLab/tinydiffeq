@@ -101,36 +101,21 @@ def hermite_pair(tau, h, h_safe, y_left, y_right, f_left, f_right):
     return value, slope + d10 * f_left + d11 * f_right
 
 
-def refined_mesh(t, num_nodes, insert_1, insert_2, Y=None, f=None, h=None):
-    # Refined mesh (and optional state table) via prefix-sum offsets, padded
-    # back to static length so the active prefix matches scipy's modify_mesh.
+def refined_mesh(t, num_nodes, insert_1, insert_2):
+    # Sorted refined mesh, padded back to static length with t_b. Inactive
+    # candidate slots sort to the end as +inf and are replaced by the right
+    # endpoint, so the first num_nodes + nodes_added entries are exactly
+    # scipy's modify_mesh output.
     max_nodes = t.shape[0]
-    active = jnp.arange(max_nodes - 1) < num_nodes - 1
-    insert_1 = insert_1 & active
-    insert_2 = insert_2 & active
-    added = insert_1.astype(jnp.int32) + 2 * insert_2.astype(jnp.int32)
-    prefix = jnp.concatenate([jnp.zeros(1, jnp.int32), jnp.cumsum(added)])
-    num_new = num_nodes + prefix[-1]
-    idx_keep = jnp.arange(max_nodes, dtype=jnp.int32) + prefix
-    idx_1 = jnp.where(insert_1, idx_keep[:-1] + 1, max_nodes)
-    idx_2l = jnp.where(insert_2, idx_keep[:-1] + 1, max_nodes)
-    idx_2r = jnp.where(insert_2, idx_keep[:-1] + 2, max_nodes)
-    t_new = jnp.full(max_nodes, t[-1], dtype=t.dtype)
-    t_new = t_new.at[idx_keep].set(t, mode="drop")
-    t_new = t_new.at[idx_1].set(0.5 * (t[:-1] + t[1:]), mode="drop")
-    t_new = t_new.at[idx_2l].set((2.0 * t[:-1] + t[1:]) / 3.0, mode="drop")
-    t_new = t_new.at[idx_2r].set((t[:-1] + 2.0 * t[1:]) / 3.0, mode="drop")
+    dtype = t.dtype
+    inf = jnp.asarray(jnp.inf, dtype)
+    keep = jnp.where(jnp.arange(max_nodes) < num_nodes, t, inf)
+    middles = jnp.where(insert_1, 0.5 * (t[:-1] + t[1:]), inf)
+    thirds_left = jnp.where(insert_2, (2.0 * t[:-1] + t[1:]) / 3.0, inf)
+    thirds_right = jnp.where(insert_2, (t[:-1] + 2.0 * t[1:]) / 3.0, inf)
+    candidates = jnp.sort(jnp.concatenate([keep, middles, thirds_left, thirds_right]))
+    nodes_added = jnp.sum(insert_1) + 2 * jnp.sum(insert_2)
+    num_new = num_nodes + nodes_added.astype(jnp.int32)
+    t_new = candidates[:max_nodes]
     t_new = jnp.where(jnp.arange(max_nodes) < num_new, t_new, t[-1])
-    if Y is None:
-        return t_new, num_new
-    hb = h[:, None]
-    y_mid = 0.5 * (Y[:-1] + Y[1:]) + 0.125 * hb * (f[:-1] - f[1:])
-    y_left = (20.0 * Y[:-1] + 7.0 * Y[1:] + hb * (4.0 * f[:-1] - 2.0 * f[1:])) / 27.0
-    y_right = (7.0 * Y[:-1] + 20.0 * Y[1:] + hb * (2.0 * f[:-1] - 4.0 * f[1:])) / 27.0
-    y_new = jnp.broadcast_to(Y[-1:], Y.shape)
-    y_new = y_new.at[idx_keep].set(Y, mode="drop")
-    y_new = y_new.at[idx_1].set(y_mid, mode="drop")
-    y_new = y_new.at[idx_2l].set(y_left, mode="drop")
-    y_new = y_new.at[idx_2r].set(y_right, mode="drop")
-    y_new = pad_tail(y_new, num_new)
-    return t_new, y_new, num_new
+    return t_new, num_new

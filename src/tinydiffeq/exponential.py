@@ -5,13 +5,9 @@ from dataclasses import dataclass, field
 import jax
 import jax.numpy as jnp
 import jax.scipy.linalg as jsp_linalg
-from jax._src import ad_util
-from jax._src.interpreters import ad, batching
-from jax.experimental import hijax
 from jax.flatten_util import ravel_pytree
 
 from tinydiffeq._tree import asarray_state, assert_same_structure
-from tinydiffeq._unvmap import unvmap_all
 from tinydiffeq.save_at import SaveAt
 from tinydiffeq.solution import Solution
 
@@ -124,91 +120,38 @@ class AdaptiveKrylovExponential:
                 )
 
 
-class _TimeShiftAction(hijax.HiPrim):
-    lin, linearized = hijax.linearize_from_jvp
-
-    def __init__(self, mat_shape, vec_shape, dt_shape, dtype):
-        self.in_avals = (
-            hijax.ShapedArray(mat_shape, dtype),
-            hijax.ShapedArray(vec_shape, dtype),
-            hijax.ShapedArray(dt_shape, dtype),
-        )
-        self.out_aval = hijax.ShapedArray(vec_shape, dtype)
-        self.params = {
-            "mat_shape": mat_shape,
-            "vec_shape": vec_shape,
-            "dt_shape": dt_shape,
-            "dtype": dtype,
-        }
-        super().__init__()
-
-    def expand(self, matrix, value, dt):
-        return value
-
-    def jvp(self, primals, tangents):
-        matrix, value, dt = primals
-        dM, dv, d_dt = tangents
-        out = self(matrix, value, dt)
-        dot = jnp.zeros_like(out)
-        if type(dv) is not ad_util.Zero:
-            dot = dot + self(matrix, dv, dt)
-        if type(dM) is not ad_util.Zero:
-            mv = jnp.einsum("...ij,...j->...i", dM, value)
-            dot = dot + jnp.expand_dims(dt, -1) * self(matrix, mv, dt)
-        if type(d_dt) is not ad_util.Zero:
-            mv = jnp.einsum("...ij,...j->...i", matrix, value)
-            dot = dot + jnp.expand_dims(d_dt, -1) * self(matrix, mv, dt)
-        return out, dot
-
-    def vjp_fwd(self, nzs_in, matrix, value, dt):
-        return self(matrix, value, dt), (matrix, value, dt)
-
-    def vjp_bwd_retval(self, res, ct):
-        matrix, value, dt = res
-        shifted = self(jnp.swapaxes(matrix, -1, -2), ct, dt)
-        grad_M = jnp.expand_dims(dt, (-1, -2)) * jnp.einsum(
-            "...i,...j->...ij", shifted, value
-        )
-        grad_dt = jnp.sum(
-            shifted * jnp.einsum("...ij,...j->...i", matrix, value), axis=-1
-        )
-        if grad_M.ndim > matrix.ndim:
-            grad_M = jnp.sum(grad_M, axis=tuple(range(grad_M.ndim - matrix.ndim)))
-        if grad_dt.ndim > dt.ndim:
-            grad_dt = jnp.sum(grad_dt, axis=tuple(range(grad_dt.ndim - dt.ndim)))
-        return grad_M, shifted, grad_dt
-
-    def transpose(self, out_ct, matrix_acc, value_acc, dt_acc):
-        if type(out_ct) is ad_util.Zero:
-            return None
-        if isinstance(value_acc, ad.GradAccum):
-            value_acc.accum(self(jnp.swapaxes(matrix_acc, -1, -2), out_ct, dt_acc))
-        return None
-
-    def batch(self, axis_data, args, dims):
-        matrix, value, dt = args
-        m_d, v_d, t_d = dims
-        if m_d is None and v_d is None and t_d is None:
-            return self(matrix, value, dt), None
-        if m_d is not None:
-            matrix = batching.moveaxis(matrix, m_d, 0)
-        if v_d is not None:
-            value = batching.moveaxis(value, v_d, 0)
-        else:
-            value = jnp.broadcast_to(value, (axis_data.size,) + value.shape)
-        if t_d is not None:
-            dt = batching.moveaxis(dt, t_d, 0)
-        prim = _TimeShiftAction(matrix.shape, value.shape, dt.shape, value.dtype)
-        return prim(matrix, value, dt), 0
-
-
+@jax.custom_jvp
 def _dense_exponential_action(matrix, vector, time):
-    time = jnp.asarray(time, dtype=vector.dtype)
-    t_sg = jax.lax.stop_gradient(time)
-    dt = time - t_sg
-    value = jsp_linalg.expm(t_sg * matrix) @ vector
-    prim = _TimeShiftAction(matrix.shape, value.shape, dt.shape, value.dtype)
-    return prim(matrix, value, dt)
+    return jsp_linalg.expm(time * matrix) @ vector
+
+
+def _dense_exponential_action_jvp(primals, tangents):
+    matrix, vector, time = primals
+    matrix_tangent, vector_tangent, time_tangent = tangents
+    scaled_matrix = time * matrix
+    matrix_active = not isinstance(matrix_tangent, jax.custom_derivatives.SymbolicZero)
+    time_active = not isinstance(time_tangent, jax.custom_derivatives.SymbolicZero)
+    vector_active = not isinstance(vector_tangent, jax.custom_derivatives.SymbolicZero)
+    if matrix_active or time_active:
+        scaled_tangent = (
+            time * matrix_tangent if matrix_active else jnp.zeros_like(matrix)
+        ) + (time_tangent * matrix if time_active else jnp.zeros_like(matrix))
+        exponential, frechet = jsp_linalg.expm_frechet(
+            scaled_matrix,
+            scaled_tangent,
+            compute_expm=True,
+        )
+    else:
+        exponential = jsp_linalg.expm(scaled_matrix)
+        frechet = jnp.zeros_like(matrix)
+    value = exponential @ vector
+    tangent = frechet @ vector
+    if vector_active:
+        tangent = tangent + exponential @ vector_tangent
+    return value, tangent
+
+
+_dense_exponential_action.defjvp(_dense_exponential_action_jvp, symbolic_zeros=True)
 
 
 def _krylov_tolerances(method, dtype):
@@ -221,8 +164,23 @@ def _krylov_tolerances(method, dtype):
     return jnp.asarray(rtol, dtype), jnp.asarray(atol, dtype)
 
 
-def _arnoldi_decomposition(action, vector, subspace_dim, reorthogonalization_passes):
+def _arnoldi_exponential_action(
+    action, vector, time, krylov_dim, reorthogonalization_passes
+):
     dimension = vector.shape[0]
+    subspace_dim = min(krylov_dim, dimension)
+    if subspace_dim == dimension:
+        # A full-dimensional Krylov space is the whole linear state space, so
+        # the action is exact. Materializing the operator also removes the
+        # coordinate singularity of an Arnoldi basis at an early happy
+        # breakdown (for example, an eigenvector initial state). In that case
+        # the exponential action is smooth even though the normalized Krylov
+        # basis is not; differentiating the dense action gives its unique
+        # JVP/VJP. This does not change the matrix-free scaling regime, where
+        # ``krylov_dim < dimension``.
+        dense_operator = jax.jacfwd(action)(jnp.zeros_like(vector))
+        result = _dense_exponential_action(dense_operator, vector, time)
+        return result, jnp.asarray(0.0, vector.dtype)
     beta = jnp.linalg.norm(vector)
     beta_safe = jnp.where(beta > 0, beta, 1)
     # Each Krylov vector is a contiguous row. This orientation is materially
@@ -236,7 +194,7 @@ def _arnoldi_decomposition(action, vector, subspace_dim, reorthogonalization_pas
     def arnoldi_step(index, carry):
         current_basis, current_hessenberg = carry
         candidate = action(current_basis[index])
-        action_norm = jnp.linalg.norm(jax.lax.stop_gradient(candidate))
+        action_norm = jnp.linalg.norm(candidate)
         coefficients = current_basis @ candidate
         candidate = candidate - coefficients @ current_basis
         if reorthogonalization_passes == 2:
@@ -267,54 +225,16 @@ def _arnoldi_decomposition(action, vector, subspace_dim, reorthogonalization_pas
     )
     augmented = jnp.zeros((subspace_dim + 1, subspace_dim + 1), vector.dtype)
     augmented = augmented.at[:, :subspace_dim].set(hessenberg)
-    return basis, augmented, beta
-
-
-def _arnoldi_eval_from_decomposition(
-    basis, augmented, beta, vector, time, subspace_dim
-):
-    e_0 = jnp.zeros(subspace_dim + 1, vector.dtype).at[0].set(1)
-    first_col = _dense_exponential_action(augmented, e_0, time)
-    result = beta * (first_col[:subspace_dim] @ basis[:subspace_dim])
+    projected_exponential = jsp_linalg.expm(time * augmented)
+    result = beta * (projected_exponential[:subspace_dim, 0] @ basis[:subspace_dim])
     # The final component of exp(t H_aug)e_1 is the standard leading-term
     # Arnoldi error estimate used by static expv implementations.
-    residual = jax.lax.stop_gradient(beta * jnp.abs(first_col[subspace_dim]))
+    residual = beta * jnp.abs(projected_exponential[subspace_dim, 0])
     result = jnp.where(beta > 0, result, vector)
     return result, residual
 
 
-def _arnoldi_exponential_action(
-    action,
-    vector,
-    time,
-    krylov_dim,
-    reorthogonalization_passes,
-    dense_operator=None,
-):
-    dimension = vector.shape[0]
-    subspace_dim = min(krylov_dim, dimension)
-    if subspace_dim == dimension:
-        # A full-dimensional Krylov space is the whole linear state space, so
-        # the action is exact. Materializing the operator also removes the
-        # coordinate singularity of an Arnoldi basis at an early happy
-        # breakdown (for example, an eigenvector initial state). In that case
-        # the exponential action is smooth even though the normalized Krylov
-        # basis is not; differentiating the dense action gives its unique
-        # JVP/VJP. This does not change the matrix-free scaling regime, where
-        # ``krylov_dim < dimension``.
-        if dense_operator is None:
-            dense_operator = jax.jacfwd(action)(jnp.zeros_like(vector))
-        result = _dense_exponential_action(dense_operator, vector, time)
-        return result, jnp.asarray(0.0, vector.dtype)
-    basis, augmented, beta = _arnoldi_decomposition(
-        action, vector, subspace_dim, reorthogonalization_passes
-    )
-    return _arnoldi_eval_from_decomposition(
-        basis, augmented, beta, vector, time, subspace_dim
-    )
-
-
-def _krylov_propagate(action, vector, time, method, dense_operator=None):
+def _krylov_propagate(action, vector, time, method):
     substep_time = time / method.num_substeps
 
     def substep(_, carry):
@@ -325,7 +245,6 @@ def _krylov_propagate(action, vector, time, method, dense_operator=None):
             substep_time,
             method.krylov_dim,
             method.reorthogonalization_passes,
-            dense_operator=dense_operator,
         )
         return next_value, jnp.maximum(maximum_residual, residual)
 
@@ -336,60 +255,51 @@ def _krylov_propagate(action, vector, time, method, dense_operator=None):
         (vector, jnp.asarray(0.0, vector.dtype)),
     )
     rtol, atol = _krylov_tolerances(method, vector.dtype)
-    accurate = residual <= atol + rtol * jnp.linalg.norm(jax.lax.stop_gradient(result))
+    accurate = residual <= atol + rtol * jnp.linalg.norm(result)
     return result, accurate
 
 
-def _adaptive_krylov_propagate(action, vector, time, method, dense_operator=None):
+def _adaptive_krylov_propagate(action, vector, time, method):
     """Propagate with residual-controlled time slices and a bounded scan."""
     dtype = vector.dtype
     zero = jnp.asarray(0.0, dtype)
     one = jnp.asarray(1.0, dtype)
     total = jnp.maximum(jnp.asarray(time, dtype), zero)
-    total_sg = jax.lax.stop_gradient(total)
     rtol, atol = _krylov_tolerances(method, dtype)
     epsilon = jnp.asarray(jnp.finfo(dtype).eps, dtype)
-    time_scale = jnp.maximum(one, total_sg)
+    time_scale = jnp.maximum(one, total)
     time_tolerance = 8 * epsilon * time_scale
     minimum_step = 16 * epsilon * time_scale
     if method.initial_step is None:
-        first_step = total_sg
+        first_step = total
     else:
-        first_step = jnp.minimum(jnp.asarray(method.initial_step, dtype), total_sg)
-    first_step = jnp.where(total_sg > zero, jnp.maximum(first_step, minimum_step), one)
+        first_step = jnp.minimum(jnp.asarray(method.initial_step, dtype), total)
+    first_step = jnp.where(total > zero, jnp.maximum(first_step, minimum_step), one)
 
     def attempt(carry, _):
         current, elapsed, step, done, failed, accepted, rejected = carry
-        inactive = done | failed
 
         def advance(active_carry):
             current, elapsed, step, done, failed, accepted, rejected = active_carry
             remaining = jnp.maximum(total - elapsed, zero)
-            step_used = jnp.where(
-                step < jax.lax.stop_gradient(remaining), step, remaining
-            )
+            step_used = jnp.minimum(step, remaining)
             candidate, residual = _arnoldi_exponential_action(
                 action,
                 current,
                 step_used,
                 method.krylov_dim,
                 method.reorthogonalization_passes,
-                dense_operator=dense_operator,
             )
-            curr_sg = jax.lax.stop_gradient(current)
-            cand_sg = jax.lax.stop_gradient(candidate)
-            res_sg = jax.lax.stop_gradient(residual)
-            step_sg = jax.lax.stop_gradient(step_used)
             global_scale = atol + rtol * jnp.maximum(
-                jnp.linalg.norm(curr_sg), jnp.linalg.norm(cand_sg)
+                jnp.linalg.norm(current), jnp.linalg.norm(candidate)
             )
             # Budget local error in proportion to the fraction of the full
             # interval advanced. Summed accepted residual estimates then obey
             # the requested endpoint scale rather than an N-times-looser one.
-            interval_fraction = step_sg / jnp.maximum(total_sg, minimum_step)
+            interval_fraction = step_used / jnp.maximum(total, minimum_step)
             scale = jnp.maximum(global_scale * interval_fraction, jnp.finfo(dtype).tiny)
-            error_ratio = res_sg / scale
-            finite = jnp.all(jnp.isfinite(cand_sg)) & jnp.isfinite(error_ratio)
+            error_ratio = residual / scale
+            finite = jnp.all(jnp.isfinite(candidate)) & jnp.isfinite(error_ratio)
             accept = finite & (error_ratio <= one)
 
             # An epsilon floor is enough to select the maximum growth factor
@@ -417,18 +327,18 @@ def _adaptive_krylov_propagate(action, vector, time, method, dense_operator=None
             )
             factor = jnp.where(accept, accepted_factor, rejected_factor)
 
-            next_elapsed = jnp.where(accept, elapsed + step_sg, elapsed)
-            reached_end = accept & (total_sg - next_elapsed <= time_tolerance)
-            next_elapsed = jnp.where(reached_end, total_sg, next_elapsed)
+            next_elapsed = jnp.where(accept, elapsed + step_used, elapsed)
+            reached_end = accept & (total - next_elapsed <= time_tolerance)
+            next_elapsed = jnp.where(reached_end, total, next_elapsed)
             next_current = jnp.where(accept, candidate, current)
-            next_remaining = jnp.maximum(total_sg - next_elapsed, zero)
-            proposed_step = step_sg * factor
+            next_remaining = jnp.maximum(total - next_elapsed, zero)
+            proposed_step = step_used * factor
             next_step = jnp.minimum(proposed_step, next_remaining)
             next_step = jnp.where(
                 reached_end, step, jnp.maximum(next_step, minimum_step)
             )
-            stalled = (~accept) & (step_sg <= minimum_step)
-            updated = (
+            stalled = (~accept) & (step_used <= minimum_step)
+            return (
                 next_current,
                 next_elapsed,
                 next_step,
@@ -437,15 +347,9 @@ def _adaptive_krylov_propagate(action, vector, time, method, dense_operator=None
                 accepted + accept.astype(jnp.int32),
                 rejected + (~accept).astype(jnp.int32),
             )
-            return jax.tree.map(
-                lambda old, new: jnp.where(inactive, old, new),
-                active_carry,
-                updated,
-            )
 
-        next_carry = jax.lax.cond(
-            unvmap_all(inactive), lambda value: value, advance, carry
-        )
+        inactive = done | failed
+        next_carry = jax.lax.cond(inactive, lambda value: value, advance, carry)
         return next_carry, None
 
     initial = (
@@ -469,15 +373,13 @@ _EXPONENTIAL_METHODS = (
 )
 
 
-def _propagate_krylov(action, vector, time, method, dense_operator=None):
+def _propagate_krylov(action, vector, time, method):
     if isinstance(method, AdaptiveKrylovExponential):
         value, ok, accepted, rejected = _adaptive_krylov_propagate(
-            action, vector, time, method, dense_operator=dense_operator
+            action, vector, time, method
         )
         return value, ok, accepted, accepted + rejected
-    value, ok = _krylov_propagate(
-        action, vector, time, method, dense_operator=dense_operator
-    )
+    value, ok = _krylov_propagate(action, vector, time, method)
     accepted = jnp.where(time > 0, method.num_substeps, 0).astype(jnp.int32)
     return value, ok, accepted, accepted
 
@@ -549,56 +451,16 @@ def solve_linear_ode(operator, method, t_0, t_1, x_0, *, save_at=None):
     t_0 = jnp.asarray(t_0, dtype)
     t_1 = jnp.asarray(t_1, dtype)
 
-    dimension = flat_initial.shape[0]
-    full_krylov = not isinstance(method, DenseExponential) and (
-        min(method.krylov_dim, dimension) == dimension
-    )
-    use_dense = isinstance(method, DenseExponential) or (
-        isinstance(method, KrylovExponential)
-        and method.num_substeps == 1
-        and full_krylov
-    )
-    if (use_dense or full_krylov) and dense_operator is None:
+    if isinstance(method, DenseExponential) and dense_operator is None:
         dense_operator = jax.jacfwd(flat_action)(jnp.zeros_like(flat_initial))
-
-    single_krylov = (
-        not use_dense
-        and not save_at.t_1
-        and isinstance(method, KrylovExponential)
-        and method.num_substeps == 1
-    )
-    if single_krylov:
-        subspace_dim = min(method.krylov_dim, dimension)
-        basis, augmented, beta = _arnoldi_decomposition(
-            flat_action,
-            flat_initial,
-            subspace_dim,
-            method.reorthogonalization_passes,
-        )
-        rtol, atol = _krylov_tolerances(method, dtype)
 
     def evaluate(time):
         elapsed = time - t_0
-        if use_dense:
+        if isinstance(method, DenseExponential):
             value = _dense_exponential_action(dense_operator, flat_initial, elapsed)
             count = jnp.where(elapsed > 0, 1, 0).astype(jnp.int32)
             return value, jnp.asarray(True), count, count
-        if single_krylov:
-            value, residual = _arnoldi_eval_from_decomposition(
-                basis, augmented, beta, flat_initial, elapsed, subspace_dim
-            )
-            accurate = residual <= atol + rtol * jnp.linalg.norm(
-                jax.lax.stop_gradient(value)
-            )
-            count = jnp.where(elapsed > 0, 1, 0).astype(jnp.int32)
-            return value, accurate, count, count
-        return _propagate_krylov(
-            flat_action,
-            flat_initial,
-            elapsed,
-            method,
-            dense_operator=dense_operator,
-        )
+        return _propagate_krylov(flat_action, flat_initial, elapsed, method)
 
     if save_at.t_1:
         times = t_1
@@ -659,9 +521,7 @@ def _terminal_value(method, dense_operator, action, initial, elapsed):
         exponential = jsp_linalg.expm(elapsed * dense_operator)
         count = jnp.where(elapsed > 0, 1, 0).astype(jnp.int32)
         return exponential @ initial, jnp.asarray(True), exponential, count, count
-    value, ok, accepted, steps = _propagate_krylov(
-        action, initial, elapsed, method, dense_operator=dense_operator
-    )
+    value, ok, accepted, steps = _propagate_krylov(action, initial, elapsed, method)
     return value, ok, None, accepted, steps
 
 
@@ -705,11 +565,7 @@ def jvp_linear_ode(
     )
     if tangent_dtype != dtype:
         raise TypeError("x_0_tangent must have the same dtype as x_0")
-    dimension = flat_initial.shape[0]
-    full_krylov = not isinstance(method, DenseExponential) and (
-        min(method.krylov_dim, dimension) == dimension
-    )
-    if (isinstance(method, DenseExponential) or full_krylov) and dense_operator is None:
+    if isinstance(method, DenseExponential) and dense_operator is None:
         dense_operator = jax.jacfwd(flat_action)(jnp.zeros_like(flat_initial))
     t_0 = jnp.asarray(t_0, dtype)
     t_1 = jnp.asarray(t_1, dtype)
@@ -722,17 +578,11 @@ def jvp_linear_ode(
         tangent_ok = jnp.asarray(True)
     elif batched:
         flat_tangent, tangent_ok, _, _ = jax.vmap(
-            lambda direction: _propagate_krylov(
-                flat_action,
-                direction,
-                elapsed,
-                method,
-                dense_operator=dense_operator,
-            )
+            lambda direction: _propagate_krylov(flat_action, direction, elapsed, method)
         )(tangent)
     else:
         flat_tangent, tangent_ok, _, _ = _propagate_krylov(
-            flat_action, tangent, elapsed, method, dense_operator=dense_operator
+            flat_action, tangent, elapsed, method
         )
     finite = jnp.all(jnp.isfinite(flat_value)) & jnp.all(jnp.isfinite(flat_tangent))
     solution = Solution(
@@ -785,11 +635,7 @@ def vjp_linear_ode(
     )
     if cotangent_dtype != dtype:
         raise TypeError("cotangent must have the same dtype as x_0")
-    dimension = flat_initial.shape[0]
-    full_krylov = not isinstance(method, DenseExponential) and (
-        min(method.krylov_dim, dimension) == dimension
-    )
-    if (isinstance(method, DenseExponential) or full_krylov) and dense_operator is None:
+    if isinstance(method, DenseExponential) and dense_operator is None:
         dense_operator = jax.jacfwd(flat_action)(jnp.zeros_like(flat_initial))
     t_0 = jnp.asarray(t_0, dtype)
     t_1 = jnp.asarray(t_1, dtype)
@@ -804,7 +650,6 @@ def vjp_linear_ode(
         gradient_ok = jnp.asarray(True)
     else:
         zero = jnp.zeros_like(flat_initial)
-        transpose_dense = None if dense_operator is None else dense_operator.T
 
         def transpose_action(vector):
             return jax.linear_transpose(flat_action, zero)(vector)[0]
@@ -812,20 +657,12 @@ def vjp_linear_ode(
         if batched:
             flat_gradient, gradient_ok, _, _ = jax.vmap(
                 lambda direction: _propagate_krylov(
-                    transpose_action,
-                    direction,
-                    elapsed,
-                    method,
-                    dense_operator=transpose_dense,
+                    transpose_action, direction, elapsed, method
                 )
             )(flat_cotangent)
         else:
             flat_gradient, gradient_ok, _, _ = _propagate_krylov(
-                transpose_action,
-                flat_cotangent,
-                elapsed,
-                method,
-                dense_operator=transpose_dense,
+                transpose_action, flat_cotangent, elapsed, method
             )
     finite = jnp.all(jnp.isfinite(flat_value)) & jnp.all(jnp.isfinite(flat_gradient))
     solution = Solution(

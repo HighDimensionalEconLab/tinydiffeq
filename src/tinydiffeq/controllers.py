@@ -85,24 +85,15 @@ class IController:
         return ()
 
     def adapt(self, x_0, x_1, err, dt_used, dt_prev, order, state, time_scale=1.0):
-        x_0, x_1, err, dt_used, state, time_scale = jax.lax.stop_gradient(
-            (x_0, x_1, err, dt_used, state, time_scale)
-        )
         dtype = jax.tree.leaves(x_0)[0].dtype
-        rtol, atol = jax.lax.stop_gradient(
-            _resolve_tolerances(self.rtol, self.atol, dtype)
+        rtol, atol = _resolve_tolerances(self.rtol, self.atol, dtype)
+        dt_min = _resolve_dt_min(
+            self.dt_min, jnp.result_type(dt_used), jnp.asarray(time_scale)
         )
-        dt_min = jax.lax.stop_gradient(
-            _resolve_dt_min(
-                self.dt_min, jnp.result_type(dt_used), jnp.asarray(time_scale)
-            )
-        )
-        dt_max = jax.lax.stop_gradient(
-            jnp.asarray(self.dt_max, jnp.result_type(dt_used))
-        )
-        safety = jax.lax.stop_gradient(jnp.asarray(self.safety, dtype))
-        factor_min = jax.lax.stop_gradient(jnp.asarray(self.factor_min, dtype))
-        factor_max = jax.lax.stop_gradient(jnp.asarray(self.factor_max, dtype))
+        dt_max = jnp.asarray(self.dt_max, jnp.result_type(dt_used))
+        safety = jnp.asarray(self.safety, dtype)
+        factor_min = jnp.asarray(self.factor_min, dtype)
+        factor_max = jnp.asarray(self.factor_max, dtype)
         # The controller is wrapped in stop_gradient: accept/reject is a
         # non-differentiable branch either way, the gradient of E**(-1/order)
         # blows up at the exact-zero error of a flat-start policy, and the
@@ -111,7 +102,7 @@ class IController:
         # state. The states themselves remain fully differentiable through
         # the solver stages.
         scaled_error = jnp.asarray(
-            error_ratio(x_0, x_1, err, rtol, atol),
+            jax.lax.stop_gradient(error_ratio(x_0, x_1, err, rtol, atol)),
             dtype,
         )
         accept = (scaled_error <= 1.0) | (dt_used <= dt_min)
@@ -121,7 +112,7 @@ class IController:
             factor_min,
             factor_max,
         )
-        dt_next = jnp.clip(dt_used * factor, dt_min, dt_max)
+        dt_next = jnp.clip(jax.lax.stop_gradient(dt_used) * factor, dt_min, dt_max)
         return accept, dt_next, state
 
 
@@ -155,28 +146,19 @@ class PIController:
         return jnp.asarray(1.0, jax.tree.leaves(x_0)[0].dtype)
 
     def adapt(self, x_0, x_1, err, dt_used, dt_prev, order, state, time_scale=1.0):
-        x_0, x_1, err, dt_used, state, time_scale = jax.lax.stop_gradient(
-            (x_0, x_1, err, dt_used, state, time_scale)
-        )
         dtype = jax.tree.leaves(x_0)[0].dtype
-        rtol, atol = jax.lax.stop_gradient(
-            _resolve_tolerances(self.rtol, self.atol, dtype)
+        rtol, atol = _resolve_tolerances(self.rtol, self.atol, dtype)
+        dt_min = _resolve_dt_min(
+            self.dt_min, jnp.result_type(dt_used), jnp.asarray(time_scale)
         )
-        dt_min = jax.lax.stop_gradient(
-            _resolve_dt_min(
-                self.dt_min, jnp.result_type(dt_used), jnp.asarray(time_scale)
-            )
-        )
-        dt_max = jax.lax.stop_gradient(
-            jnp.asarray(self.dt_max, jnp.result_type(dt_used))
-        )
-        safety = jax.lax.stop_gradient(jnp.asarray(self.safety, dtype))
-        factor_min = jax.lax.stop_gradient(jnp.asarray(self.factor_min, dtype))
-        factor_max = jax.lax.stop_gradient(jnp.asarray(self.factor_max, dtype))
-        p_coeff = jax.lax.stop_gradient(jnp.asarray(self.p_coeff, dtype))
-        i_coeff = jax.lax.stop_gradient(jnp.asarray(self.i_coeff, dtype))
+        dt_max = jnp.asarray(self.dt_max, jnp.result_type(dt_used))
+        safety = jnp.asarray(self.safety, dtype)
+        factor_min = jnp.asarray(self.factor_min, dtype)
+        factor_max = jnp.asarray(self.factor_max, dtype)
+        p_coeff = jnp.asarray(self.p_coeff, dtype)
+        i_coeff = jnp.asarray(self.i_coeff, dtype)
         scaled_error = jnp.asarray(
-            error_ratio(x_0, x_1, err, rtol, atol),
+            jax.lax.stop_gradient(error_ratio(x_0, x_1, err, rtol, atol)),
             dtype,
         )
         accept = (scaled_error <= 1.0) | (dt_used <= dt_min)
@@ -190,6 +172,6 @@ class PIController:
             factor_min,
             factor_max,
         )
-        dt_next = jnp.clip(dt_used * factor, dt_min, dt_max)
+        dt_next = jnp.clip(jax.lax.stop_gradient(dt_used) * factor, dt_min, dt_max)
         state_next = jnp.where(accept, scaled_error, state)
         return accept, dt_next, state_next
