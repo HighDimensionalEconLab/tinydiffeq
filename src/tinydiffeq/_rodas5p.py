@@ -171,13 +171,14 @@ def _safe_lu_factor(matrix):
         jnp.all(jnp.isfinite(lu)) & jnp.all(jnp.abs(diagonal) > 0.0)
     )
     identity = jnp.eye(matrix.shape[0], dtype=matrix.dtype)
+    safe_matrix = jnp.where(ok, matrix, identity)
     safe_lu = jnp.where(ok, lu, identity)
     safe_pivots = jnp.where(
         ok,
         pivots,
         jnp.arange(matrix.shape[0], dtype=pivots.dtype),
     )
-    return (safe_lu, safe_pivots), ok
+    return safe_matrix, (safe_lu, safe_pivots), ok
 
 
 def _factored_solve(matrix, lu, pivots, rhs):
@@ -218,10 +219,10 @@ def rodas5p_step(field, t, state, dt, mass_diagonal, project, *, need_dense=True
     jacobian = jax.jacfwd(lambda value: field_flat(value, t))(state_flat)
     gamma = jnp.asarray(GAMMA, dtype)
     matrix = jnp.diag(mass_diagonal / (gamma * dt)) - jacobian
-    (lu, pivots), factor_ok = _safe_lu_factor(matrix)
+    safe_matrix, (lu, pivots), factor_ok = _safe_lu_factor(matrix)
 
     def linear_solve(rhs):
-        return _factored_solve(matrix, lu, pivots, rhs)
+        return _factored_solve(safe_matrix, lu, pivots, rhs)
 
     stages = []
     first_rhs = (

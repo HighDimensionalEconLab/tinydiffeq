@@ -115,6 +115,15 @@ def test_modify_mesh_matches_scipy():
     )
     assert jnp.array_equal(t_new, expected)
 
+    Y = jnp.stack([jnp.sin(t), jnp.cos(t)], axis=1)
+    f = jnp.stack([jnp.cos(t), -jnp.sin(t)], axis=1)
+    t_ref, y_ref, n_ref = refined_mesh(
+        t, jnp.asarray(5, jnp.int32), insert_1, insert_2, Y, f, t[1:] - t[:-1]
+    )
+    assert jnp.array_equal(t_ref, expected)
+    assert int(n_ref) == 12
+    assert jnp.allclose(y_ref, hermite_interpolate(t_ref, t, Y, f), atol=1e-14)
+
 
 def test_exponential_no_refinement():
     t = jnp.linspace(0.0, 1.0, 5)

@@ -118,11 +118,13 @@ def structured_qr_factor(blocks):
         q, r_full = jnp.linalg.qr(
             jnp.concatenate([b_even, a_odd], axis=1), mode="complete"
         )
-        q_t = jnp.swapaxes(q, -1, -2)
-        zeros_pair = jnp.zeros_like(a_even)
-        left_pair = q_t @ jnp.concatenate([a_even, zeros_pair], axis=1)
-        right_pair = q_t @ jnp.concatenate([zeros_pair, b_odd], axis=1)
-        border_pair = q_t @ jnp.concatenate([c_even, c_odd], axis=1)
+        left_pair = jnp.sum(q[:, :n, :, None] * a_even[:, :, None, :], axis=1)
+        right_pair = jnp.sum(q[:, n:, :, None] * b_odd[:, :, None, :], axis=1)
+        if k > 0:
+            q_t = jnp.swapaxes(q, -1, -2)
+            border_pair = q_t @ jnp.concatenate([c_even, c_odd], axis=1)
+        else:
+            border_pair = jnp.zeros((pairs, 2 * n, 0), dtype)
         r = r_full[:, :n]
         diag_r = jnp.diagonal(r, axis1=-2, axis2=-1)
         ok = (

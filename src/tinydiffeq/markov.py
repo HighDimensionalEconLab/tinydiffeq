@@ -307,18 +307,22 @@ def _compose_maps(earlier, later):
     return jnp.take_along_axis(later, earlier, axis=-1)
 
 
-def _simulate_discrete_states(chain, state_0, uniforms, method):
+def _simulate_discrete_states(chain, state_0, uniforms, method, *, endpoint_only=False):
     if isinstance(method, SequentialMarkov):
 
         def step(state, uniform):
             next_state = _alias_sample(chain, state, uniform)
-            return next_state, next_state
+            return next_state, (None if endpoint_only else next_state)
 
-        return jax.lax.scan(step, state_0, uniforms, unroll=method.unroll)[1]
+        final_state, step_states = jax.lax.scan(
+            step, state_0, uniforms, unroll=method.unroll
+        )
+        return final_state if endpoint_only else step_states
     if isinstance(method, AssociativeMarkov):
         maps = _random_maps(chain, uniforms)
         prefixes = jax.lax.associative_scan(_compose_maps, maps, axis=0)
-        return prefixes[:, state_0]
+        step_states = prefixes[:, state_0]
+        return step_states[-1] if endpoint_only else step_states
     raise TypeError("method must be SequentialMarkov or AssociativeMarkov")
 
 
@@ -348,17 +352,20 @@ def simulate_markov_chain(
         chain, state_0, num_steps, "num_steps", save_at
     )
     uniforms = _unit_uniform(key, (num_steps,), chain.transition_matrix.dtype)
-    step_states = _simulate_discrete_states(chain, state_0, uniforms, method)
-    all_states = prepend(state_0, step_states)
     count = jnp.asarray(num_steps, jnp.int32)
     if save_at.t_1:
+        final_state = _simulate_discrete_states(
+            chain, state_0, uniforms, method, endpoint_only=True
+        )
         return Solution(
             ts=count,
-            xs=step_states[-1],
+            xs=final_state,
             ok=initial_ok,
             num_accepted=count,
             num_steps=count,
         )
+    step_states = _simulate_discrete_states(chain, state_0, uniforms, method)
+    all_states = prepend(state_0, step_states)
     if save_at.steps:
         return Solution(
             ts=jnp.arange(num_steps + 1, dtype=jnp.int32),

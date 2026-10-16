@@ -236,3 +236,42 @@ def test_grad_through_fixed_step_rk4():
 
     fd = central_difference(endpoint, A_0)
     assert jnp.abs(jax.grad(endpoint)(A_0) - fd) < 1e-7
+
+
+def test_vmap_over_t_1_grad_adaptive_and_fixed():
+    horizons = jnp.asarray([0.4, 0.9, 1.5])
+    expected_grad_a = -horizons * X_0 * jnp.exp(-A_0 * horizons)
+    expected_grad_x = jnp.exp(-A_0 * horizons)
+
+    def adaptive_endpoint(a, x_0, t_1):
+        return solve_ode(
+            field,
+            Tsit5(),
+            0.0,
+            t_1,
+            x_0,
+            p=a,
+            dt_0=0.1,
+            controller=IController(rtol=1e-11, atol=1e-13),
+            max_steps=512,
+        ).xs
+
+    def fixed_endpoint(a, x_0, t_1):
+        return solve_ode(
+            field,
+            RK4(),
+            0.0,
+            t_1,
+            x_0,
+            p=a,
+            dt_0=0.01,
+            controller=ConstantStepSize(),
+            max_steps=256,
+        ).xs
+
+    for fn in (adaptive_endpoint, fixed_endpoint):
+        grad_a, grad_x = jax.jit(
+            jax.vmap(jax.grad(fn, argnums=(0, 1)), in_axes=(None, None, 0))
+        )(A_0, X_0, horizons)
+        assert jnp.allclose(grad_a, expected_grad_a, atol=1e-6)
+        assert jnp.allclose(grad_x, expected_grad_x, atol=1e-6)

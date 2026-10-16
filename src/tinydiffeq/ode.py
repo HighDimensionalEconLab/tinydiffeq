@@ -200,9 +200,12 @@ def solve_ode(
 
     original_times = (t_0, t_1, dt_0)
     x_0, time_dtype = asarray_state(x_0, "x_0")
-    static_uniform_horizon, exact_step_dt = _has_static_uniform_horizon(
-        *original_times, max_steps, time_dtype
-    )
+    if is_fixed and not is_rodas:
+        static_uniform_horizon, exact_step_dt = _has_static_uniform_horizon(
+            *original_times, max_steps, time_dtype
+        )
+    else:
+        static_uniform_horizon, exact_step_dt = False, False
     t_0 = jnp.asarray(t_0, time_dtype)
     t_1 = jnp.asarray(t_1, time_dtype)
     dt_0 = jnp.asarray(dt_0, time_dtype)
@@ -273,14 +276,17 @@ def solve_ode(
                 x_0, t_0, f_init, aux_init_ok
             )
         else:
-            aux_dot_init = zero_aux
+            aux_dot_init = None
     else:
         aux_init = None
         aux_dot_init = None
         aux_init_ok = jnp.asarray(True)
     controller_state_init = controller.init(x_0)
-    flat_x_0, _ = ravel_pytree(x_0)
-    identity_mass = jnp.ones_like(flat_x_0)
+    if is_rodas:
+        flat_x_0, _ = ravel_pytree(x_0)
+        identity_mass = jnp.ones_like(flat_x_0)
+    else:
+        identity_mass = None
 
     def attempt_step(carry):
         (
@@ -296,6 +302,8 @@ def solve_ode(
             num_steps,
             controller_state,
         ) = carry
+        t = jax.lax.stop_gradient(t)
+        dt = jax.lax.stop_gradient(dt)
         h, proposed_t, reaches_horizon = select_step(
             t,
             t_0,
@@ -306,6 +314,8 @@ def solve_ode(
             constant=is_fixed,
             time_tolerance=t_eps,
         )
+        h = jax.lax.stop_gradient(h)
+        proposed_t = jax.lax.stop_gradient(proposed_t)
         if is_rodas:
             x_1, err, dense, step_ok = rodas5p_step(
                 g,
@@ -363,9 +373,9 @@ def solve_ode(
                 return aux_candidate, aux_ok, aux_dot, aux_right_dot
 
             aux_candidate, aux_ok, aux_left_dot, aux_right_dot = jax.lax.cond(
-                provisional_advance,
-                accepted_auxiliary,
+                unvmap_all(~provisional_advance),
                 lambda: (aux, jnp.asarray(True), zero_aux, zero_aux),
+                accepted_auxiliary,
             )
         else:
             aux_candidate = None
@@ -457,6 +467,7 @@ def solve_ode(
 
     def fixed_attempt_step(carry):
         t, x, f_cur, done, num_accepted = carry
+        t = jax.lax.stop_gradient(t)
         h, t_1_step, reaches_horizon = select_step(
             t,
             t_0,
@@ -467,6 +478,8 @@ def solve_ode(
             constant=True,
             time_tolerance=t_eps,
         )
+        h = jax.lax.stop_gradient(h)
+        t_1_step = jax.lax.stop_gradient(t_1_step)
         x_1, f_1, _ = solver.step_fixed(g, t, x, h, f_cur, project_state)
         if need_f and f_1 is None:
             f_1 = g(x_1, t_1_step)

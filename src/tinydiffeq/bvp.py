@@ -42,7 +42,6 @@ from tinydiffeq.babd import (
     structured_qr_solve,
     structured_qr_transpose_solve,
 )
-from tinydiffeq.interpolation import hermite_interpolate
 from tinydiffeq.solution import BVPSolution
 
 
@@ -133,9 +132,10 @@ def build_system(cfg, args, S, t_a):
     if cfg.has_singular_term:
         S = jax.lax.stop_gradient(S)
         eye = jnp.eye(n, dtype=S.dtype)
-        # rtol pins numpy's pinv cutoff so rank decisions agree with scipy.
-        B = eye - jnp.linalg.pinv(S, rtol=1e-15) @ S
-        D = jnp.linalg.pinv(eye - S, rtol=1e-15)
+        # rtol pins numpy's float64 pinv cutoff so rank decisions agree with scipy.
+        pinv_rtol = 1e-15 if jnp.finfo(S.dtype).bits > 32 else None
+        B = eye - jnp.linalg.pinv(S, rtol=pinv_rtol) @ S
+        D = jnp.linalg.pinv(eye - S, rtol=pinv_rtol)
     else:
         B = D = None
 
@@ -606,9 +606,10 @@ def _solve_bvp_impl(cfg, t, Y, Z, num_nodes, p, args, S, tol, bc_tol):
             ),
         ).astype(jnp.int32)
         # Refinement is computed unconditionally and selected: a batched cond
-        # would run both branches under vmap anyway, and the sort is cheap.
-        t_refined, num_refined = refined_mesh(t_c, num_c, insert_1, insert_2)
-        y_refined = pad_tail(hermite_interpolate(t_refined, t_c, Y_c, f), num_refined)
+        # would run both branches under vmap anyway, and the scatter is cheap.
+        t_refined, y_refined, num_refined = refined_mesh(
+            t_c, num_c, insert_1, insert_2, Y_c, f, h
+        )
         return dict(
             t=jnp.where(refine, t_refined, t_c),
             Y=jnp.where(refine, y_refined, Y_c),
