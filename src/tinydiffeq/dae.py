@@ -7,7 +7,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax.flatten_util import ravel_pytree
-from nlls_gram import LevenbergMarquardt, LMState, LMStatus
+from nlls_gram import LevenbergMarquardt, LMState, SolverStatus
 
 from tinydiffeq._aux import (
     make_safe_evaluator,
@@ -352,7 +352,7 @@ def _make_implicit_root_solver(
             z_initial,
             args,
             p=root_p,
-            lm_state=lm_state,
+            state=lm_state,
             max_steps=root_solver.max_steps,
             max_steps_is_success=False,
             atol=root_tolerance,
@@ -360,7 +360,7 @@ def _make_implicit_root_solver(
             xtol=zero_tolerance,
         )
         converged = result.status == jnp.asarray(
-            LMStatus.CONVERGED, result.status.dtype
+            SolverStatus.CONVERGED, result.status.dtype
         )
         residual_norm = jnp.sqrt(result.info.loss)
         residual_ok = residual_norm < jnp.asarray(root_atol, residual_norm.dtype)

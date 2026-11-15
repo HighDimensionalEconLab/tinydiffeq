@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tinydiffeq"
-version = "2.6.1"
+version = "2.6.2"
 description = "Tiny differentiable ODE/SDE/DAE/SDAE solvers for JAX with static shapes and composable AD"
 readme = "README.md"
 license = "MIT"
@@ -27,8 +27,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "jax>=0.11.2",
-    "nlls-gram>=2.10.0",
+    "jax>=0.12.0.1",
+    "nlls-gram>=3.2.0",
 ]
 
 [project.urls]
@@ -64,6 +64,5 @@ docs = [
     "mkdocstrings[python]>=1.0.7",
 ]
 gpu = [
-    "jax[cuda13]>=0.11.2 ; sys_platform == 'linux'",
-    "metaljax>=0.11.9 ; platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "jax[cuda13]>=0.12.0.1 ; sys_platform == 'linux'",
 ]
