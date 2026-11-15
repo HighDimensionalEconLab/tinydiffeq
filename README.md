@@ -37,10 +37,8 @@ events, continuous solution objects, or specialized adjoints.
 uv add tinydiffeq
 ```
 
-For GPU use, add the JAX accelerator build matching your hardware, for
-example `uv add tinydiffeq "jax[cuda13]"` on Linux CUDA or
-`uv add tinydiffeq metaljax` on Apple Silicon macOS (run with
-`JAX_PLATFORMS=metal` in `float32`).
+For GPU use, add the JAX CUDA build matching your hardware, for example
+`uv add tinydiffeq "jax[cuda13]"` on Linux CUDA.
 
 ## Example
 

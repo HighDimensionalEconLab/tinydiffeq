@@ -6,17 +6,12 @@ for GPU nodes; run `python -m benchmarks.gpu_trajectories --help` for the
 sweep axes (`--preset default` or `--preset large`). Committed results live
 under `results/`.
 
-Install the `gpu` dependency group (`jax[cuda13]` on Linux, `metaljax` on Apple
-Silicon macOS) and run GPU benchmarks or the GPU test suite with:
+Install the `gpu` dependency group (`jax[cuda13]` on Linux) and run GPU
+benchmarks or the GPU test suite with:
 
 ```bash
-# Linux CUDA (float32 + float64)
 uv run --group gpu python -m benchmarks.gpu_trajectories
 uv run --group gpu pytest tests/test_gpu.py
-
-# Apple Silicon Metal (float32; CPU remains default when JAX_PLATFORMS is unset)
-JAX_PLATFORMS=metal uv run --group gpu python -m benchmarks.gpu_trajectories
-JAX_PLATFORMS=metal uv run --group gpu pytest tests/test_gpu.py
 ```
 
 Run the opt-in CPU suite with:

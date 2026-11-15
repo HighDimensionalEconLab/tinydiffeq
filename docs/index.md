@@ -38,12 +38,11 @@ iterations.
 uv add tinydiffeq
 ```
 
-For accelerator use, install the JAX build matching your hardware alongside
-it, for example:
+For accelerator use, install the JAX CUDA build matching your hardware
+alongside it, for example:
 
 ```bash
-uv add tinydiffeq "jax[cuda13]"   # Linux CUDA
-uv add tinydiffeq metaljax        # Apple Silicon macOS (JAX_PLATFORMS=metal, float32)
+uv add tinydiffeq "jax[cuda13]"
 ```
 
 ## Vector-field interface
